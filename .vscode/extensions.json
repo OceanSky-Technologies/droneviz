@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "yzhang.markdown-all-in-one",
+    "pmneo.tsimporter",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint"
+  ]
+}
