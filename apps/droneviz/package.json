@@ -9,17 +9,20 @@
   "description": "Droneviz",
   "main": "dist/src/index.js",
   "scripts": {
-    "copy-files": "copyfiles -u 1 ./src/css/*.css ./dist/src",
-    "build": "yarn copy-files && tsc && webpack --config webpack.config.js",
+    "copy-files": "shx mkdir -p ./dist/src && shx cp -r ./src/css ./dist/src",
+    "copy-resources": "shx mkdir -p ./dist/resources && shx cp -r ../../resources ./dist",
+    "build": "yarn copy-files && yarn copy-resources && tsc && webpack --config webpack.config.js",
+    "watch": "tsc -w",
+    "clean": "shx rm -rf dist",
     "start": "webpack serve --config webpack.config.js",
     "start:built": "npx http-server -a localhost -p 8080 dist/"
   },
   "devDependencies": {
     "@types/copyfiles": "^2",
     "copy-webpack-plugin": "^12.0.2",
-    "copyfiles": "^2.4.1",
     "css-loader": "^6.11.0",
     "html-webpack-plugin": "^5.6.0",
+    "shx": "^0.3.4",
     "style-loader": "^3.3.4",
     "typescript": "^5.4.5",
     "webpack": "^5.91.0",

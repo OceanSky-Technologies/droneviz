@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable no-undef */
 "use strict";
 
 const CopyWebpackPlugin = require("copy-webpack-plugin");
@@ -57,6 +59,14 @@ module.exports = {
         {
           from: path.join(cesiumSource, "Widgets"),
           to: `${cesiumBaseUrl}/Widgets`,
+        },
+      ],
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: "../../resources",
+          to: `./resources`,
         },
       ],
     }),
