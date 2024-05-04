@@ -14,15 +14,15 @@ export function move(
 }
 
 export function getLonFromCartesian3(pos: Cartesian3) {
-  var carto = Ellipsoid.WGS84.cartesianToCartographic(pos);
-  var lon = Math.toDegrees(carto.longitude);
+  const carto = Ellipsoid.WGS84.cartesianToCartographic(pos);
+  const lon = Math.toDegrees(carto.longitude);
 
   return lon;
 }
 
 export function getLatFromCartesian3(pos: Cartesian3) {
-  var carto = Ellipsoid.WGS84.cartesianToCartographic(pos);
-  var lat = Math.toDegrees(carto.latitude);
+  const carto = Ellipsoid.WGS84.cartesianToCartographic(pos);
+  const lat = Math.toDegrees(carto.latitude);
 
   return lat;
 }

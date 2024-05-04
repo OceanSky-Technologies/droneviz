@@ -1,11 +1,15 @@
 import { Viewer } from "cesium";
-import { ShipInHamburg } from "./ShipInHamburg";
-import { AircraftInSanFrancisco } from "./AircraftInSanFrancisco";
-import { VehiclesInUkraine } from "./VehiclesInUkraine";
+import * as ShipInHamburg from "./ShipInHamburg";
+import * as AircraftInSanFrancisco from "./AircraftInSanFrancisco";
+import * as VehiclesInUkraine from "./VehiclesInUkraine";
+import * as DroneInNewYork from "./DroneInNewYork";
 
 export function initDemo(viewer: Viewer) {
-  viewer.entities.add(ShipInHamburg.getEntity());
-  viewer.entities.add(AircraftInSanFrancisco.getEntity());
+  const shipInHamburg = viewer.entities.add(ShipInHamburg.getEntity());
+  const aircraftInSanFrancisco = viewer.entities.add(
+    AircraftInSanFrancisco.getEntity(),
+  );
+  const droneInNewYork = viewer.entities.add(DroneInNewYork.getEntity());
 
   for (const entity of VehiclesInUkraine.getEntities()) {
     viewer.entities.add(entity);
@@ -16,17 +20,33 @@ export function initDemo(viewer: Viewer) {
     new ToolbarOption({
       text: ShipInHamburg.text,
       value: ShipInHamburg.value,
-      onSelect: () => ShipInHamburg.flyTo(viewer),
+      onSelect: () => {
+        viewer.selectedEntity = shipInHamburg;
+        ShipInHamburg.flyTo(viewer);
+      },
     }),
     new ToolbarOption({
       text: AircraftInSanFrancisco.text,
       value: AircraftInSanFrancisco.value,
-      onSelect: () => AircraftInSanFrancisco.flyTo(viewer),
+      onSelect: () => {
+        viewer.selectedEntity = aircraftInSanFrancisco;
+        AircraftInSanFrancisco.flyTo(viewer);
+      },
+    }),
+    new ToolbarOption({
+      text: DroneInNewYork.text,
+      value: DroneInNewYork.value,
+      onSelect: () => {
+        viewer.selectedEntity = droneInNewYork;
+        DroneInNewYork.flyTo(viewer);
+      },
     }),
     new ToolbarOption({
       text: VehiclesInUkraine.text,
       value: VehiclesInUkraine.value,
-      onSelect: () => VehiclesInUkraine.flyTo(viewer),
+      onSelect: () => {
+        VehiclesInUkraine.flyTo(viewer);
+      },
     }),
   ]);
 }
@@ -34,7 +54,7 @@ export function initDemo(viewer: Viewer) {
 class ToolbarOption {
   text!: string;
   value!: string;
-  onSelect: Function | undefined;
+  onSelect!: () => undefined;
 
   public constructor(init?: Partial<ToolbarOption>) {
     Object.assign(this, init);

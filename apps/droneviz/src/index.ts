@@ -4,6 +4,8 @@ import {
   Math,
   Ion,
   createGooglePhotorealistic3DTileset,
+  defined,
+  SkyAtmosphere,
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import "./css/main.css";
@@ -16,18 +18,19 @@ Ion.defaultAccessToken =
 
 // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
 const viewer = new Viewer("cesiumContainer", {
-  // terrain: Terrain.fromWorldTerrain(),
+  globe: false,
   timeline: false,
   infoBox: true,
   selectionIndicator: true,
-  animation: false,
-  shouldAnimate: false,
+  shouldAnimate: true,
   blurActiveElementOnCanvasFocus: false,
-  msaaSamples: undefined,
+  msaaSamples: 4,
   requestRenderMode: true,
+  maximumRenderTimeChange: Infinity,
+  skyAtmosphere: new SkyAtmosphere(),
 });
 
-viewer.scene.postProcessStages.fxaa.enabled = false;
+viewer.scene.postProcessStages.fxaa.enabled = true;
 viewer.scene.debugShowFramesPerSecond = true;
 
 // Add Cesium OSM Buildings, a global 3D buildings layer.
@@ -38,9 +41,18 @@ const googleTileSet = await createGooglePhotorealistic3DTileset(undefined, {
   preloadFlightDestinations: true,
 });
 viewer.scene.primitives.add(googleTileSet);
-// viewer.scene.globe.maximumScreenSpaceError = 1.5;
+// viewer.scene.globe.maximumScreenSpaceError = 8;
 
 initDemo(viewer);
+
+// If an entity is selected the animation shall be rendered. Deselecting the entity disables rendering.
+viewer.selectedEntityChanged.addEventListener(function (selectedEntity) {
+  if (defined(selectedEntity)) {
+    viewer.scene.requestRenderMode = false;
+  } else {
+    viewer.scene.requestRenderMode = true;
+  }
+});
 
 // Fly the camera to San Francisco at the given longitude, latitude, and height.
 viewer.camera.flyTo({

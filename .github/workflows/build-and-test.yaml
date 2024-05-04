@@ -1,0 +1,53 @@
+name: "Build and test"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          #- macos-latest # expensive as fuck
+
+        node-version:
+          - 22.0.0
+          - latest
+
+        architecture:
+          - x64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/workflows/setup
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Build
+        run: |
+          yarn build
+
+      - name: Test
+        run: |
+          yarn test
+
+      - name: Lint
+        run: |
+          yarn lint
+
+      - name: Format-check
+        run: |
+          yarn format-check
+
+      - name: Droneviz app
+        working-directory: apps/droneviz
+        run: |
+          yarn build
