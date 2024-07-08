@@ -18,9 +18,10 @@ Ion.defaultAccessToken =
 
 // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
 const viewer = new Viewer("cesiumContainer", {
+  animation: false,
   globe: false,
   timeline: false,
-  infoBox: true,
+  infoBox: false,
   selectionIndicator: true,
   shouldAnimate: true,
   blurActiveElementOnCanvasFocus: false,
@@ -33,15 +34,16 @@ const viewer = new Viewer("cesiumContainer", {
 viewer.scene.postProcessStages.fxaa.enabled = true;
 viewer.scene.debugShowFramesPerSecond = true;
 
-// Add Cesium OSM Buildings, a global 3D buildings layer.
-const googleTileSet = await createGooglePhotorealistic3DTileset(undefined, {
-  // maximumScreenSpaceError: 8, // quality
-  cacheBytes: 4000000000,
-  maximumCacheOverflowBytes: 4000000000,
-  preloadFlightDestinations: true,
-});
-viewer.scene.primitives.add(googleTileSet);
-// viewer.scene.globe.maximumScreenSpaceError = 8;
+// Add Google 3d tileset
+try {
+  const googleTileSet = await createGooglePhotorealistic3DTileset(undefined, {
+    //maximumScreenSpaceError: 8, // quality
+    preloadFlightDestinations: true,
+  });
+  viewer.scene.primitives.add(googleTileSet);
+} catch (error) {
+  console.log("Error loading Photorealistic 3D Tiles tileset: ${error}");
+}
 
 initDemo(viewer);
 

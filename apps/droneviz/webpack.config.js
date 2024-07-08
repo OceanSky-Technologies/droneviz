@@ -12,6 +12,9 @@ const cesiumSource = "../../node_modules/cesium/Build/Cesium";
 // Not required but if it's set remember to update CESIUM_BASE_URL as shown below
 const cesiumBaseUrl = "cesiumStatic";
 
+//var mode = "production";
+var mode = "development";
+
 module.exports = {
   context: __dirname,
   entry: {
@@ -75,6 +78,11 @@ module.exports = {
       CESIUM_BASE_URL: JSON.stringify(cesiumBaseUrl),
     }),
   ],
-  mode: "development",
-  devtool: "eval",
+  performance: {
+    hints: false,
+    maxEntrypointSize: 512000,
+    maxAssetSize: 512000,
+  },
+  mode: mode,
+  devtool: mode === "development" ? "eval" : false,
 };
