@@ -3,6 +3,7 @@
     "yzhang.markdown-all-in-one",
     "pmneo.tsimporter",
     "esbenp.prettier-vscode",
-    "dbaeumer.vscode-eslint"
+    "dbaeumer.vscode-eslint",
+    "george-alisson.html-preview-vscode"
   ]
 }

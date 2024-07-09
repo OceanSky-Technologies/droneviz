@@ -6,6 +6,8 @@ import {
   createGooglePhotorealistic3DTileset,
   defined,
   SkyAtmosphere,
+  Cesium3DTileset,
+  Terrain,
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import "./css/main.css";
@@ -19,9 +21,9 @@ Ion.defaultAccessToken =
 // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
 const viewer = new Viewer("cesiumContainer", {
   animation: false,
-  globe: false,
   timeline: false,
   infoBox: false,
+  baseLayerPicker: true,
   selectionIndicator: true,
   shouldAnimate: true,
   blurActiveElementOnCanvasFocus: false,
@@ -29,21 +31,52 @@ const viewer = new Viewer("cesiumContainer", {
   requestRenderMode: true,
   maximumRenderTimeChange: Infinity,
   skyAtmosphere: new SkyAtmosphere(),
+  terrain: Terrain.fromWorldTerrain({
+    requestWaterMask: false,
+  }),
 });
 
 viewer.scene.postProcessStages.fxaa.enabled = true;
 viewer.scene.debugShowFramesPerSecond = true;
 
 // Add Google 3d tileset
+let googleTileSet: Cesium3DTileset;
 try {
-  const googleTileSet = await createGooglePhotorealistic3DTileset(undefined, {
+  googleTileSet = await createGooglePhotorealistic3DTileset(undefined, {
     //maximumScreenSpaceError: 8, // quality
     preloadFlightDestinations: true,
+    showCreditsOnScreen: true,
   });
   viewer.scene.primitives.add(googleTileSet);
+
+  // on high zoom levels the globe and 3D tiles overlap / get mixed -> disable globe if 3D tiles are enabled
+  viewer.scene.globe.show = false;
 } catch (error) {
-  console.log("Error loading Photorealistic 3D Tiles tileset: ${error}");
+  console.log(`Error loading Google Photorealistic 3D tileset: ${error}`);
 }
+
+// pre-select a base layer
+const baseLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
+baseLayerPickerViewModel.selectedImagery =
+  baseLayerPickerViewModel.imageryProviderViewModels[2];
+
+// enable/disable Google 3D tiles checkbox
+const checkbox = document.querySelector(
+  "input[id=google-tiles-checkbox]",
+) as HTMLInputElement;
+checkbox?.addEventListener("change", function () {
+  if (checkbox.checked) {
+    googleTileSet.show = true;
+    viewer.scene.requestRender();
+    viewer.scene.globe.show = false;
+    console.log("3D Google tiles enabled");
+  } else {
+    googleTileSet.show = false;
+    viewer.scene.globe.show = true;
+    viewer.scene.requestRender();
+    console.log("3D Google tiles disabled");
+  }
+});
 
 initDemo(viewer);
 
