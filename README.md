@@ -3,6 +3,9 @@
 First, install `yarn` using these commands:
 
 ```bash
+nvm install stable
+nvm use stable
+
 corepack enable
 yarn set version stable
 yarn install

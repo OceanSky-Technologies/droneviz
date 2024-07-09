@@ -1,6 +1,6 @@
 {
   "name": "droneviz-ws",
-  "packageManager": "yarn@4.3.1",
+  "license": "UNLICENSED",
   "private": true,
   "workspaces": [
     "apps/*",
