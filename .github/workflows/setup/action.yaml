@@ -12,23 +12,25 @@ env:
 runs:
   using: "composite"
   steps:
-    - name: Enable corepack
+    - name: Enable Corepack
       shell: bash
       run: |
         corepack enable
+
+    - name: Fix yarn on Windows
+      shell: bash
+      run: |
+        npm install -g yarn@1.22.19 --force
+        yarn set version 4.1.1
+        # see https://github.com/yarnpkg/yarn/issues/9015#issuecomment-1831229617
 
     - name: Use Node.js ${{ inputs.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
-        cache: "yarn"
+        cache: yarn
 
-    - name: Install yarn
+    - name: Install packages with yarn
       shell: bash
       run: |
-        yarn set version stable
-
-    - name: Prerequisites
-      shell: bash
-      run: |
-        yarn install --frozen-lockfile
+        yarn install --immutable

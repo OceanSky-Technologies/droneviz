@@ -34,3 +34,11 @@ Run this command to update all dependencies to their latest version:
 ```bash
 yarn up "*" "@*/*"
 ```
+
+## Vitest dashboard
+
+Run
+
+```bash
+yarn vitest --ui
+```
