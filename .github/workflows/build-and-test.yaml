@@ -17,10 +17,6 @@ jobs:
           - windows-latest
           #- macos-latest # expensive as fuck
 
-        node-version:
-          - 22.4.1
-          - latest
-
         architecture:
           - x64
 
@@ -28,16 +24,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: ./.github/workflows/setup
-        with:
-          node-version: ${{ matrix.node-version }}
 
       - name: Build
         run: |
-          yarn build
+          yarn turbo build
 
       - name: Test
         run: |
-          yarn test
+          yarn turbo test
 
       - name: Lint
         run: |
@@ -47,7 +41,6 @@ jobs:
         run: |
           yarn format-check
 
-      - name: Droneviz app
-        working-directory: apps/droneviz
+      - name: Check dependencies
         run: |
-          yarn build
+          yarn depcheck

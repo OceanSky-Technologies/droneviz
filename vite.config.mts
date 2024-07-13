@@ -28,13 +28,10 @@ export default defineConfig({
       ],
     }),
   ],
-  base: "/src",
   build: {
     chunkSizeWarningLimit: 4000,
+    emptyOutDir: true, // also necessary
     rollupOptions: {
-      input: {
-        app: "src/index.html",
-      },
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
@@ -49,6 +46,7 @@ export default defineConfig({
     },
   },
   test: {
+    root: ".",
     exclude: ["node_modules"],
     environment: "jsdom",
     coverage: {

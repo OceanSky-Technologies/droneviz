@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 /* eslint @typescript-eslint/no-non-null-assertion: 0 */
 
-const indexHtmlPath = "./src/index.html";
+const indexHtmlPath = process.cwd() + "/index.html";
 
 describe("unit tests", function () {
   let dom: jsdom.JSDOM;

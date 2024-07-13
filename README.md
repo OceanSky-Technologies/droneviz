@@ -7,24 +7,32 @@ nvm install stable
 nvm use stable
 
 corepack enable
-yarn set version stable
+yarn set version 4.1.1
 yarn install
 ```
 
-Then go to the `apps/droneviz` folder and build the webpack project:
+To build the project use turbo:
+
+```bash
+yarn turbo build
+yarn turbo test
+```
+
+To run it with auto-refreshing use
+
+```bash
+yarn turbo dev
+```
+
+Turbo uses vite.
+
+Alternatively, you can also run every command without turbo and only use vite:
 
 ```bash
 yarn build
-yarn start
-
-# or
-yarn start:built
-```
-
-To refresh automatically when a source code file changed run this command in a new terminal:
-
-```bash
-yarn watch
+yarn test
+yarn dev
+yarn preview
 ```
 
 ## Update dependencies
@@ -42,3 +50,9 @@ Run
 ```bash
 yarn vitest --ui
 ```
+
+## Deployment
+
+Install `nginx`/`litespeed` server and serve the contents of the `dist` folder.
+
+**Don't waste time on electron, vue and whatever... it's way too complicated and doesn't work properly.**

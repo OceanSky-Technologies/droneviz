@@ -1,14 +1,6 @@
 name: "Setup"
 description: "Reusable action to setup the entire build environment"
 
-inputs:
-  node-version:
-    description: "NodeJS version"
-    required: true
-
-env:
-  SKIP_YARN_COREPACK_CHECK: 0
-
 runs:
   using: "composite"
   steps:
@@ -24,10 +16,10 @@ runs:
         yarn set version 4.1.1
         # see https://github.com/yarnpkg/yarn/issues/9015#issuecomment-1831229617
 
-    - name: Use Node.js ${{ inputs.node-version }}
+    - name: Installing Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ inputs.node-version }}
+        node-version-file: "package.json"
         cache: yarn
 
     - name: Install packages with yarn
