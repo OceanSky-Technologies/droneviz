@@ -103,3 +103,6 @@ typings/
 
 # Electron-Forge
 out/
+
+# Turbo
+.turbo
