@@ -19,6 +19,8 @@ export function getEntity() {
     orientation: orientation,
     model: {
       uri: "../../../resources/Plane.glb",
+      minimumPixelSize: 50,
+      maximumScale: 20000,
     },
   };
 }

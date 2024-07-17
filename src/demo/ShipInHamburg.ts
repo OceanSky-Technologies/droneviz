@@ -31,6 +31,8 @@ export function getEntity() {
     model: {
       uri: "../../../resources/CargoShip.glb",
       scale: 100,
+      minimumPixelSize: 50,
+      maximumScale: 20000,
     },
   };
 }

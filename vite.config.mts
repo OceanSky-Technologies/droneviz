@@ -1,8 +1,10 @@
 /// <reference types="vitest" />
 /// <reference types="vite/client" />
 
+import { fileURLToPath, URL } from "url";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
+import vue from "@vitejs/plugin-vue";
 
 const cesiumSource = "node_modules/cesium/Build/Cesium";
 // This is the base url for static files that CesiumJS needs to load.
@@ -27,7 +29,13 @@ export default defineConfig({
         { src: `${cesiumSource}/Widgets`, dest: cesiumBaseUrl },
       ],
     }),
+    vue(),
   ],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
   build: {
     chunkSizeWarningLimit: 4000,
     emptyOutDir: true, // also necessary

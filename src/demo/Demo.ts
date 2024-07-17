@@ -5,11 +5,14 @@ import * as VehiclesInUkraine from "./VehiclesInUkraine";
 import * as DroneInNewYork from "./DroneInNewYork";
 
 export function initDemo(viewer: Viewer) {
-  const shipInHamburg = viewer.entities.add(ShipInHamburg.getEntity());
-  const aircraftInSanFrancisco = viewer.entities.add(
-    AircraftInSanFrancisco.getEntity(),
-  );
-  const droneInNewYork = viewer.entities.add(DroneInNewYork.getEntity());
+  if (!viewer) {
+    console.error("Cesium viewer isn't initialized");
+    return;
+  }
+
+  viewer.entities.add(ShipInHamburg.getEntity());
+  viewer.entities.add(AircraftInSanFrancisco.getEntity());
+  viewer.entities.add(DroneInNewYork.getEntity());
 
   for (const entity of VehiclesInUkraine.getEntities()) {
     viewer.entities.add(entity);
@@ -21,7 +24,6 @@ export function initDemo(viewer: Viewer) {
       text: ShipInHamburg.text,
       value: ShipInHamburg.value,
       onSelect: () => {
-        viewer.selectedEntity = shipInHamburg;
         ShipInHamburg.flyTo(viewer);
       },
     }),
@@ -29,7 +31,6 @@ export function initDemo(viewer: Viewer) {
       text: AircraftInSanFrancisco.text,
       value: AircraftInSanFrancisco.value,
       onSelect: () => {
-        viewer.selectedEntity = aircraftInSanFrancisco;
         AircraftInSanFrancisco.flyTo(viewer);
       },
     }),
@@ -37,7 +38,6 @@ export function initDemo(viewer: Viewer) {
       text: DroneInNewYork.text,
       value: DroneInNewYork.value,
       onSelect: () => {
-        viewer.selectedEntity = droneInNewYork;
         DroneInNewYork.flyTo(viewer);
       },
     }),

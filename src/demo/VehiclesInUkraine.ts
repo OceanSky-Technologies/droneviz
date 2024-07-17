@@ -31,6 +31,8 @@ export function getEntities() {
       model: {
         uri: "../../../resources/GroundVehicle.glb",
         scale: 1.5,
+        minimumPixelSize: 50,
+        maximumScale: 20000,
       },
     },
     {
@@ -39,6 +41,8 @@ export function getEntities() {
       model: {
         uri: "../../../resources/GroundVehicle.glb",
         scale: 1.5,
+        minimumPixelSize: 50,
+        maximumScale: 20000,
       },
     },
     {
@@ -47,6 +51,8 @@ export function getEntities() {
       model: {
         uri: "../../../resources/GroundVehicle.glb",
         scale: 1.5,
+        minimumPixelSize: 50,
+        maximumScale: 20000,
       },
     },
     {
@@ -55,6 +61,8 @@ export function getEntities() {
       model: {
         uri: "../../../resources/GroundVehicle.glb",
         scale: 1.5,
+        minimumPixelSize: 50,
+        maximumScale: 20000,
       },
     },
     {

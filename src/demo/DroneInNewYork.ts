@@ -20,6 +20,8 @@ export function getEntity() {
     model: {
       uri: "../../../resources/PoliceDrone.glb",
       scale: 100,
+      minimumPixelSize: 50,
+      maximumScale: 20000,
     },
   };
 }

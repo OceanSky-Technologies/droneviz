@@ -10,7 +10,7 @@ import {
   Terrain,
 } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
-import "./css/main.css";
+
 import { initDemo } from "./demo/Demo";
 
 // CesiumJS has a default access token built in but it's not meant for active use.

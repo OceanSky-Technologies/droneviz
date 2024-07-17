@@ -56,3 +56,5 @@ yarn vitest --ui
 Install `nginx`/`litespeed` server and serve the contents of the `dist` folder.
 
 **Don't waste time on electron, vue and whatever... it's way too complicated and doesn't work properly.**
+
+In future use [Turbopack](https://turbo.build/pack/docs).

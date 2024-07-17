@@ -2,18 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <script type="module" src="/src/index.ts"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/src/assets/logo.svg" />
   </head>
   <body>
-    <div id="cesiumContainer"></div>
-    <div
-      id="toolbar"
-      style="background-color: #f0f9ff; border-radius: 5px; padding: 5px"
-    >
-      <div id="google-tiles">
-        <input type="checkbox" id="google-tiles-checkbox" checked />
-        <label for="google-tiles-checkbox">Show 3D Google tiles</label>
-      </div>
-    </div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
