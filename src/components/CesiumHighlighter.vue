@@ -48,6 +48,7 @@ export default class CesiumHighlighter {
     return this.getEntityIds().includes(entity.id);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   add(entity: any) {
     if (!defined(entity)) throw Error("Invalid entity");
 
@@ -63,6 +64,7 @@ export default class CesiumHighlighter {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setArray(entities: any[]) {
     if (!defined(entities)) throw Error("Invalid entity array");
 
@@ -82,6 +84,7 @@ export default class CesiumHighlighter {
     this.scene.requestRender();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   remove(entity: any) {
     if (!defined(entity)) throw Error("Invalid entity");
 
@@ -191,6 +194,8 @@ export default class CesiumHighlighter {
   private readonly scene: Scene;
   private readonly color: Color;
   private readonly silhouette: Silhouette | undefined;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private entities: any[] = [];
 }
 </script>

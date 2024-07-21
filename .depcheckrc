@@ -1,3 +1,4 @@
 ignores:
   - "depcheck"
   - "@vitest/coverage-istanbul"
+  - "@vue/eslint-config-prettier"

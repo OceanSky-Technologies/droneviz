@@ -16,6 +16,7 @@
     "**/tsconfig.tsbuildinfo": true,
     "**/node_modules": true
   },
+  "files.eol": "\n",
   "typescript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.importModuleSpecifier": "relative"
 }
