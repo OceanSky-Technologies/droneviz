@@ -52,6 +52,7 @@ import "cesium/Build/Cesium/Widgets/widgets.css";
 
 import { initDemo } from "../demo/Demo";
 import CesiumHighlighter from "./CesiumHighlighter.vue";
+import { BLUE, GOLD } from "../helpers/Colors";
 
 Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTJmM2RmYi0wMDI3LTQxYmMtYjY1NS00MzhmYzg4Njk1NTMiLCJpZCI6MjExMDU5LCJpYXQiOjE3MTM5OTExNTh9.cgvEwVgVgDQRqLsZzWCubdKnui9qoZAXTPCRbtVzZmo";
@@ -85,14 +86,13 @@ function initViewer() {
   viewer.scene.postProcessStages.fxaa.enabled = true;
   viewer.scene.debugShowFramesPerSecond = true;
 
-  selectedEntityHighlighter = new CesiumHighlighter(
-    viewer.scene,
-    new Color(0.0, 0.0, 1.0, 1.0),
-    { color: new Color(0.0, 0.0, 1.0, 1.0), size: 5 },
-  );
+  selectedEntityHighlighter = new CesiumHighlighter(viewer.scene, undefined, {
+    color: Color.fromCssColorString(GOLD),
+    size: 5,
+  });
   mouseOverHighlighter = new CesiumHighlighter(
     viewer.scene,
-    new Color(1.0, 0.0, 0.0, 1.0),
+    Color.fromCssColorString(BLUE),
   );
 
   // pre-select a base layer
@@ -166,10 +166,14 @@ function mouseClickListener(movement: { position: Cartesian2 }) {
   if (!(entity.primitive instanceof Model)) return;
 
   if (!selectedEntityHighlighter.contains(entity)) {
-    console.log("Selected entity: " + entity);
+    console.log("Selected entity:");
+    console.log(entity);
+
     selectedEntityHighlighter.add(entity);
   } else {
-    console.log("Unselected entity: " + entity);
+    console.log("Unselected entity:");
+    console.log(entity);
+
     selectedEntityHighlighter.remove(entity);
   }
 
@@ -191,11 +195,14 @@ function mouseDoubleClickListener(movement: { position: Cartesian2 }) {
     );
 
     if (entity.id instanceof Entity) {
-      viewer.flyTo(entity.id, {
+      const promise = viewer.flyTo(entity.id, {
         duration: 1.0,
         offset: headingPitchRange,
       });
-      updateRequestRenderMode();
+
+      promise.then(function () {
+        viewer.scene.requestRender();
+      });
     }
   }
 }
@@ -221,12 +228,10 @@ function mouseOverListener(movement: { endPosition: Cartesian2 }) {
   const entity = viewer.scene.pick(movement.endPosition);
 
   if (defined(entity)) {
-    console.log("entity.id " + entity.id);
-    console.log("empty: " + mouseOverHighlighter.empty());
-
     if (defined(entity.id) && entity.id instanceof Entity) {
       // add entities to the array
-      console.log("Mouse over entity:" + entity);
+      console.log("Mouse over entity:");
+      console.log(entity);
 
       mouseOverHighlighter.add(entity);
 

@@ -17,14 +17,15 @@ interface Silhouette {
 }
 
 export default class CesiumHighlighter {
-  constructor(scene: Scene, color: Color, silhouette?: Silhouette) {
+  constructor(scene: Scene, color?: Color, silhouette?: Silhouette) {
     if (!scene) throw Error("Invalid scene");
-    if (!color) throw Error("Invalid color");
 
-    if (color.red > 1.0) throw new Error("Red must be 0<=x<=1");
-    if (color.green > 1.0) throw new Error("Green must be 0<=x<=1");
-    if (color.blue > 1.0) throw new Error("Blue must be 0<=x<=1");
-    if (color.alpha > 1.0) throw new Error("Alpha must be 0<=x<=1");
+    if (color) {
+      if (color.red > 1.0) throw new Error("Red must be 0<=x<=1");
+      if (color.green > 1.0) throw new Error("Green must be 0<=x<=1");
+      if (color.blue > 1.0) throw new Error("Blue must be 0<=x<=1");
+      if (color.alpha > 1.0) throw new Error("Alpha must be 0<=x<=1");
+    }
 
     if (silhouette) {
       if (silhouette.color.red > 1.0)
@@ -101,7 +102,6 @@ export default class CesiumHighlighter {
 
   clear() {
     for (const entity of this.entities) {
-      console.log("clearing");
       if (defined(entity.id) && defined(entity.id.model))
         this.removeColor(entity.id.model);
       this.setSilhouette(entity.id.model, false);
@@ -138,6 +138,8 @@ export default class CesiumHighlighter {
   }
 
   private addColor(model: ModelGraphics) {
+    if (!this.color) return;
+
     if (defined(model)) {
       if (defined(model.color)) {
         const originalColor = model.color.getValue(new JulianDate());
@@ -164,6 +166,8 @@ export default class CesiumHighlighter {
   }
 
   private removeColor(model: ModelGraphics) {
+    if (!this.color) return;
+
     if (defined(model)) {
       if (defined(model.color)) {
         let tmpColor: Color = model.color.getValue(new JulianDate());
@@ -193,7 +197,7 @@ export default class CesiumHighlighter {
   }
 
   private readonly scene: Scene;
-  private readonly color: Color;
+  private readonly color: Color | undefined;
   private readonly silhouette: Silhouette | undefined;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
