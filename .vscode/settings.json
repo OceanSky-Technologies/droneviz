@@ -15,5 +15,7 @@
     "**/.yarn": true,
     "**/tsconfig.tsbuildinfo": true,
     "**/node_modules": true
-  }
+  },
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "javascript.preferences.importModuleSpecifier": "relative"
 }

@@ -9,7 +9,7 @@ import {
   ModelGraphics,
   Scene,
 } from "cesium";
-import { FuzzyCompare } from "../helpers/FuzzyCompare";
+import { almostEqual } from "../helpers/FuzzyCompare";
 
 interface Silhouette {
   color: Color;
@@ -172,9 +172,9 @@ export default class CesiumHighlighter {
         tmpColor.alpha = 1;
 
         if (
-          FuzzyCompare.equal(tmpColor.red, 0.0) &&
-          FuzzyCompare.equal(tmpColor.green, 0.0) &&
-          FuzzyCompare.equal(tmpColor.blue, 0.0)
+          almostEqual(tmpColor.red, 0.0) &&
+          almostEqual(tmpColor.green, 0.0) &&
+          almostEqual(tmpColor.blue, 0.0)
         ) {
           model.color = undefined;
           model.colorBlendMode = undefined;

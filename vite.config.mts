@@ -56,7 +56,8 @@ export default defineConfig({
   test: {
     root: ".",
     exclude: ["node_modules"],
-    environment: "jsdom",
+    globals: true, // enable jest-like global test APIs
+    environment: "happy-dom",
     coverage: {
       provider: "istanbul",
       reporter: ["text", "json", "html"],
