@@ -101,6 +101,7 @@ export default class CesiumHighlighter {
 
   clear() {
     for (const entity of this.entities) {
+      console.log("clearing");
       if (defined(entity.id) && defined(entity.id.model))
         this.removeColor(entity.id.model);
       this.setSilhouette(entity.id.model, false);

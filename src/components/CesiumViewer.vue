@@ -201,20 +201,42 @@ function mouseDoubleClickListener(movement: { position: Cartesian2 }) {
 }
 
 function mouseOverListener(movement: { endPosition: Cartesian2 }) {
-  const entities = viewer.scene.drillPick(movement.endPosition);
+  // drillpick prevents camera movement:
+  // https://community.cesium.com/t/drillpick-in-screenspaceeventtype-mouse-move-breaks-camera-movements-when-google3dtileset-is-enabled/33939
+  // const entities = viewer.scene.drillPick(movement.endPosition);
+  // let filteredEntities = entities.filter(
+  //   (entity) => defined(entity) && entity.id instanceof Entity,
+  // );
+  // if (filteredEntities.length > 0) {
+  //   // add entities to the array
+  //   console.log("Mouse over entities:" + filteredEntities);
+  //   mouseOverHighlighter.setArray(filteredEntities);
+  //   updateRequestRenderMode();
+  // } else if (!mouseOverHighlighter.empty()) {
+  //   // clear existing array
+  //   mouseOverHighlighter.clear();
+  //   updateRequestRenderMode();
+  // }
 
-  let filteredEntities = entities.filter(
-    (entity) => defined(entity) && entity.id instanceof Entity,
-  );
+  const entity = viewer.scene.pick(movement.endPosition);
 
-  if (filteredEntities.length > 0) {
-    // add entities to the array
-    console.log("Mouse over entities:" + filteredEntities);
+  if (defined(entity)) {
+    console.log("entity.id " + entity.id);
+    console.log("empty: " + mouseOverHighlighter.empty());
 
-    mouseOverHighlighter.setArray(filteredEntities);
+    if (defined(entity.id) && entity.id instanceof Entity) {
+      // add entities to the array
+      console.log("Mouse over entity:" + entity);
 
-    updateRequestRenderMode();
-  } else if (!mouseOverHighlighter.empty()) {
+      mouseOverHighlighter.add(entity);
+
+      updateRequestRenderMode();
+
+      return;
+    }
+  }
+
+  if (!mouseOverHighlighter.empty()) {
     // clear existing array
     mouseOverHighlighter.clear();
 
