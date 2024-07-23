@@ -53,7 +53,9 @@ yarn vitest --ui
 
 ## Deployment
 
-Install `nginx`/`litespeed` server and serve the contents of the `dist` folder.
+Use `gulp` similar to [this project](https://github.com/blheli-configurator/blheli-configurator/blob/master/gulpfile.js).
+
+Alternative: Install `nginx`/`litespeed` server and serve the contents of the `dist` folder.
 
 **Don't waste time on electron, vue and whatever... it's way too complicated and doesn't work properly.**
 
