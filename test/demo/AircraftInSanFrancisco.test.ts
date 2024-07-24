@@ -1,5 +1,8 @@
 import { Cartesian3 } from "cesium";
-import { getEntity } from "../../src/demo/AircraftInSanFrancisco";
+import {
+  getCameraPosition,
+  getEntity,
+} from "../../src/demo/AircraftInSanFrancisco";
 
 test("Entity position", () => {
   const entity = getEntity();
@@ -15,4 +18,9 @@ test("Entity orientation", () => {
 test("Entity model", () => {
   const entity = getEntity();
   expect(entity.model).toBeDefined();
+});
+
+test("Camera position", () => {
+  const pos = getCameraPosition();
+  expect(pos).toBeDefined();
 });

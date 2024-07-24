@@ -58,6 +58,13 @@ export default defineConfig({
     exclude: ["node_modules"],
     globals: true, // enable jest-like global test APIs
     environment: "happy-dom",
+    browser: {
+      name: "chromium",
+      provider: "playwright",
+      enabled: true,
+      headless: true,
+      ui: false,
+    },
     coverage: {
       provider: "istanbul",
       reporter: ["text", "json", "html"],

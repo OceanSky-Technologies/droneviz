@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Cartesian3, Rectangle } from "cesium";
-import { getEntities } from "../../src/demo/VehiclesInUkraine";
+import {
+  getCameraPosition,
+  getEntities,
+} from "../../src/demo/VehiclesInUkraine";
 
 test("Entity position", () => {
   const entities = getEntities();
@@ -34,4 +37,9 @@ test("Entity model", () => {
   expect(entities.at(1)!.model).toBeDefined();
   expect(entities.at(2)!.model).toBeDefined();
   expect(entities.at(3)!.model).toBeDefined();
+});
+
+test("Camera position", () => {
+  const pos = getCameraPosition();
+  expect(pos).toBeDefined();
 });

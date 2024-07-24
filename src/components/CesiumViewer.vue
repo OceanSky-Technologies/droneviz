@@ -1,5 +1,5 @@
 <template>
-  <div id="cesiumContainer"></div>
+  <div id="cesiumContainer" />
   <div
     id="toolbar"
     style="background-color: #f0f9ff; border-radius: 5px; padding: 5px"
@@ -62,8 +62,8 @@ let googleTileset: Cesium3DTileset;
 let selectedEntityHighlighter: CesiumHighlighter;
 let mouseOverHighlighter: CesiumHighlighter;
 
-function initViewer() {
-  viewer = new Viewer("cesiumContainer", {
+export function getViewerOptions(): Viewer.ConstructorOptions {
+  return {
     useBrowserRecommendedResolution: true,
     animation: false,
     timeline: false,
@@ -81,7 +81,14 @@ function initViewer() {
     terrain: Terrain.fromWorldTerrain({
       requestWaterMask: false,
     }),
-  });
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+function initViewer(mockWebGLFunction?: Function) {
+  if (mockWebGLFunction) {
+    viewer = new Viewer("cesiumContainer", mockWebGLFunction());
+  } else viewer = new Viewer("cesiumContainer", getViewerOptions());
 
   viewer.scene.postProcessStages.fxaa.enabled = true;
   viewer.scene.debugShowFramesPerSecond = true;
@@ -252,20 +259,46 @@ function mouseOverListener(movement: { endPosition: Cartesian2 }) {
 export default {
   name: "CesiumViewer",
 
+  props: {
+    mockWebGLFunction: {
+      type: Function,
+      required: false,
+    },
+    enableGoogle3DTiles: {
+      type: Boolean,
+      required: false,
+    },
+  },
+
   mounted() {
-    initViewer();
+    if (!this.mockWebGLFunction) initViewer();
+    else initViewer(this.mockWebGLFunction);
+
     initHandlers();
-    initGoogleTileset();
+
+    if (this.enableGoogle3DTiles) initGoogleTileset();
 
     initDemo(viewer);
 
     this.resetCamera();
   },
 
+  unmounted() {
+    viewer.entities.removeAll();
+    viewer.destroy();
+  },
+
   // only make parameters reactive that need to be changed from the outside:
   // https://stackoverflow.com/questions/60479946/local-variable-vs-data-huge-loss-in-performance
-  data() {
-    return { googleTilesEnabled: true };
+  setup(props) {
+    if (props.mockWebGLFunction !== undefined)
+      console.info("Cesium setup using webGL mock");
+    if (props.enableGoogle3DTiles !== undefined)
+      console.info("Google Tiles enabled: " + props.enableGoogle3DTiles);
+
+    if (props.enableGoogle3DTiles === false)
+      return { googleTilesEnabled: false };
+    else return { googleTilesEnabled: true };
   },
 
   methods: {

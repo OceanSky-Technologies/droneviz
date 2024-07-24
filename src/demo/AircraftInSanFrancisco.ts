@@ -25,12 +25,12 @@ export function getEntity() {
   };
 }
 
-export function flyTo(viewer: Viewer): void {
-  viewer.camera.flyTo({
+export function getCameraPosition() {
+  return {
     destination: Cartesian3.fromDegrees(-122.472436, 37.812481, 500),
     orientation: {
       heading: Math.toRadians(-45.0),
       pitch: Math.toRadians(-30.0),
     },
-  });
+  };
 }

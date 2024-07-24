@@ -26,3 +26,8 @@ runs:
       shell: bash
       run: |
         yarn install --immutable
+
+    - name: Install playwright
+      shell: bash
+      run: |
+        yarn playwright install

@@ -109,6 +109,12 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["**/*.ts", "**/*.tsx", "**/*.vue", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.js", "*.mjs"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.vue",
+    ".next/types/**/*.ts",
+    "test/helpers/getWebGLStub.js"
+  ],
+  "exclude": ["node_modules", "dist", "src/**/*.js", "*.mjs"]
 }

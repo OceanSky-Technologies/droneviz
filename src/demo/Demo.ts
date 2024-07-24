@@ -24,28 +24,28 @@ export function initDemo(viewer: Viewer) {
       text: ShipInHamburg.text,
       value: ShipInHamburg.value,
       onSelect: () => {
-        ShipInHamburg.flyTo(viewer);
+        viewer.camera.flyTo(ShipInHamburg.getCameraPosition());
       },
     }),
     new ToolbarOption({
       text: AircraftInSanFrancisco.text,
       value: AircraftInSanFrancisco.value,
       onSelect: () => {
-        AircraftInSanFrancisco.flyTo(viewer);
+        viewer.camera.flyTo(AircraftInSanFrancisco.getCameraPosition());
       },
     }),
     new ToolbarOption({
       text: DroneInNewYork.text,
       value: DroneInNewYork.value,
       onSelect: () => {
-        DroneInNewYork.flyTo(viewer);
+        viewer.camera.flyTo(DroneInNewYork.getCameraPosition());
       },
     }),
     new ToolbarOption({
       text: VehiclesInUkraine.text,
       value: VehiclesInUkraine.value,
       onSelect: () => {
-        VehiclesInUkraine.flyTo(viewer);
+        viewer.camera.flyTo(VehiclesInUkraine.getCameraPosition());
       },
     }),
   ]);
