@@ -5,6 +5,7 @@ import { fileURLToPath, URL } from "url";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import vue from "@vitejs/plugin-vue";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 const cesiumSource = "node_modules/cesium/Build/Cesium";
 // This is the base url for static files that CesiumJS needs to load.
@@ -30,6 +31,7 @@ export default defineConfig({
       ],
     }),
     vue(),
+    tsconfigPaths(),
   ],
   resolve: {
     alias: {
@@ -97,5 +99,8 @@ export default defineConfig({
       //   statements: 100,
       // },
     },
+  },
+  optimizeDeps: {
+    exclude: ["@vitest/coverage-istanbul"],
   },
 });

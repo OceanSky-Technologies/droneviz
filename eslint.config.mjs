@@ -11,7 +11,7 @@ export default [
   {
     languageOptions: {
       globals: {
-        // ...globals.browser,
+        ...globals.browser,
         ...globals.node,
       },
     },
@@ -26,6 +26,7 @@ export default [
       "coverage",
       "dist",
       "node_modules",
+      "**/test/helpers/getWebGLStub.js",
     ],
   },
 

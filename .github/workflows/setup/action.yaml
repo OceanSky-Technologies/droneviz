@@ -30,4 +30,5 @@ runs:
     - name: Install playwright
       shell: bash
       run: |
+        yarn playwright install-deps
         yarn playwright install
