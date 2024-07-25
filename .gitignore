@@ -100,6 +100,7 @@ typings/
 
 # Vite
 .vite/
+vite.config.mts.timestamp*
 
 # Electron-Forge
 out/

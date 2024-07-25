@@ -5,7 +5,6 @@ import {
   Math,
   Rectangle,
   Transforms,
-  Viewer,
 } from "cesium";
 
 import { getLatFromCartesian3, getLonFromCartesian3, move } from "../helpers";
@@ -18,6 +17,9 @@ const heading = Math.toRadians(180);
 const pitch = Math.toRadians(0);
 const roll = Math.toRadians(0);
 
+const modelPath = new URL("../assets/models/GroundVehicle.glb", import.meta.url)
+  .href;
+
 const orientation = Transforms.headingPitchRollQuaternion(
   position,
   new HeadingPitchRoll(heading, pitch, roll),
@@ -29,7 +31,7 @@ export function getEntities() {
       position: move(position, 50, 0, 0),
       orientation: orientation,
       model: {
-        uri: "../../../resources/GroundVehicle.glb",
+        uri: modelPath,
         scale: 1.5,
         minimumPixelSize: 50,
         maximumScale: 20000,
@@ -39,7 +41,7 @@ export function getEntities() {
       position: move(position, 22, 0, 0),
       orientation: orientation,
       model: {
-        uri: "../../../resources/GroundVehicle.glb",
+        uri: modelPath,
         scale: 1.5,
         minimumPixelSize: 50,
         maximumScale: 20000,
@@ -49,7 +51,7 @@ export function getEntities() {
       position: move(position, -10, 0, 0),
       orientation: orientation,
       model: {
-        uri: "../../../resources/GroundVehicle.glb",
+        uri: modelPath,
         scale: 1.5,
         minimumPixelSize: 50,
         maximumScale: 20000,
@@ -59,7 +61,7 @@ export function getEntities() {
       position: move(position, -45, 0, 0),
       orientation: orientation,
       model: {
-        uri: "../../../resources/GroundVehicle.glb",
+        uri: modelPath,
         scale: 1.5,
         minimumPixelSize: 50,
         maximumScale: 20000,

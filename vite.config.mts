@@ -28,6 +28,7 @@ export default defineConfig({
         { src: `${cesiumSource}/Workers`, dest: cesiumBaseUrl },
         { src: `${cesiumSource}/Assets`, dest: cesiumBaseUrl },
         { src: `${cesiumSource}/Widgets`, dest: cesiumBaseUrl },
+        { src: `src/assets/models`, dest: "assets" },
       ],
     }),
     vue(),
@@ -38,6 +39,7 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  assetsInclude: ["**/*.glb"],
   build: {
     chunkSizeWarningLimit: 4000,
     emptyOutDir: true, // also necessary
@@ -66,6 +68,12 @@ export default defineConfig({
       enabled: true,
       headless: true,
       ui: false,
+      screenshotFailures: false,
+      providerOptions: {
+        launch: {
+          args: ["--use-gl=egl", "--ignore-gpu-blocklist", "--use-gl=angle"],
+        },
+      },
     },
     coverage: {
       provider: "istanbul",

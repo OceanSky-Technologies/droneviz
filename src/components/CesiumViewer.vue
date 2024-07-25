@@ -118,6 +118,9 @@ async function initGoogleTileset() {
       showCreditsOnScreen: true,
     });
 
+    // silently drop out if the viewer is null/shutdown in the meantime. This can happen when the app is opened and closed immediately
+    if (viewer === undefined) return;
+
     googleTileset = viewer.scene.primitives.add(tmpTileset);
 
     // on high zoom levels the globe and 3D tiles overlap / get mixed -> disable globe if 3D tiles are enabled
@@ -267,6 +270,7 @@ export default {
     enableGoogle3DTiles: {
       type: Boolean,
       required: false,
+      default: true,
     },
   },
 

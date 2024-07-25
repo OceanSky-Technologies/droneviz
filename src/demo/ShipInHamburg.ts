@@ -1,11 +1,4 @@
-import {
-  Cartesian3,
-  Transforms,
-  HeadingPitchRoll,
-  Math,
-  Color,
-  Viewer,
-} from "cesium";
+import { Cartesian3, Transforms, HeadingPitchRoll, Math, Color } from "cesium";
 
 export const text = "Ship in Hamburg, Germany";
 export const value = "ship-in-hamburg-germany";
@@ -14,6 +7,9 @@ const position = Cartesian3.fromDegrees(9.981613, 53.540627, 65);
 const heading = Math.toRadians(115);
 const pitch = Math.toRadians(0);
 const roll = Math.toRadians(0);
+
+const modelPath = new URL("../assets/models/CargoShip.glb", import.meta.url)
+  .href;
 
 const orientation = Transforms.headingPitchRollQuaternion(
   position,
@@ -29,7 +25,7 @@ export function getEntity() {
       color: Color.YELLOW,
     },
     model: {
-      uri: "../../../resources/CargoShip.glb",
+      uri: modelPath,
       scale: 100,
       minimumPixelSize: 50,
       maximumScale: 20000,

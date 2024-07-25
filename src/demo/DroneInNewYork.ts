@@ -1,4 +1,4 @@
-import { Cartesian3, HeadingPitchRoll, Math, Transforms, Viewer } from "cesium";
+import { Cartesian3, HeadingPitchRoll, Math, Transforms } from "cesium";
 
 export const text = "Drone in New York, U.S.";
 export const value = "drone-in-new-york-us";
@@ -7,6 +7,9 @@ const position = Cartesian3.fromDegrees(-74.023996, 40.700533, 450);
 const heading = Math.toRadians(-270);
 const pitch = Math.toRadians(20);
 const roll = Math.toRadians(20);
+
+const modelPath = new URL("../assets/models/PoliceDrone.glb", import.meta.url)
+  .href;
 
 const orientation = Transforms.headingPitchRollQuaternion(
   position,
@@ -18,7 +21,7 @@ export function getEntity() {
     position: position,
     orientation: orientation,
     model: {
-      uri: "../../../resources/PoliceDrone.glb",
+      uri: modelPath,
       scale: 100,
       minimumPixelSize: 50,
       maximumScale: 20000,

@@ -2,3 +2,5 @@ ignores:
   - "depcheck"
   - "@vitest/coverage-istanbul"
   - "@vue/eslint-config-prettier"
+  - "@cesium/engine" # getWebGLStub.js
+  - "playwright" # vitest
