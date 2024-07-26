@@ -6,13 +6,34 @@ import vue from "eslint-plugin-vue";
 import globals from "globals";
 import ts from "typescript-eslint";
 import prettier from "eslint-plugin-prettier/recommended";
+import jsdoc from "eslint-plugin-jsdoc";
 
-export default [
+const config = [
+  eslint.configs.recommended,
+  ...tseslint.configs.strict,
+  ...tseslint.configs.stylistic,
+  prettier,
+  ...vue.configs["flat/recommended"],
+  jsdoc.configs["flat/recommended"],
+
   {
+    rules: {
+      "prettier/prettier": "warn",
+      "vue/html-self-closing": "off",
+      "vue/max-attributes-per-line": "off",
+      "vue/no-parsing-error": "off",
+    },
+    files: ["src/**/*", "packages/**/*"],
+    plugins: {
+      jsdoc,
+    },
     languageOptions: {
       globals: {
         ...globals.browser,
         ...globals.node,
+      },
+      parserOptions: {
+        parser: ts.parser,
       },
     },
   },
@@ -29,25 +50,6 @@ export default [
       "**/test/helpers/getWebGLStub.js",
     ],
   },
-
-  eslint.configs.recommended,
-  ...tseslint.configs.strict,
-  ...tseslint.configs.stylistic,
-  ...vue.configs["flat/essential"],
-  {
-    files: ["*.vue", "**/*.vue"],
-    languageOptions: {
-      parserOptions: {
-        parser: ts.parser,
-      },
-    },
-  },
-
-  // prettier
-  prettier,
-  {
-    rules: {
-      "prettier/prettier": "warn",
-    },
-  },
 ];
+
+export default config;

@@ -43,6 +43,7 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 4000,
     emptyOutDir: true, // also necessary
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -99,13 +100,12 @@ export default defineConfig({
         "**/.{eslint,mocha,prettier}rc.{?(c|m)js,yml}",
         "**/forge.config.js",
       ],
-      // disabled because webgl mocking not yet possible in tests
-      // thresholds: {
-      //   lines: 100,
-      //   functions: 100,
-      //   branches: 100,
-      //   statements: 100,
-      // },
+      thresholds: {
+        lines: 75,
+        functions: 85,
+        branches: 60,
+        statements: 70,
+      },
     },
   },
   optimizeDeps: {

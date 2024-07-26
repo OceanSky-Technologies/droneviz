@@ -1,13 +1,14 @@
 import {
   Cartesian3,
   Color,
+  Entity,
   HeadingPitchRoll,
   Math,
   Rectangle,
   Transforms,
 } from "cesium";
 
-import { getLatFromCartesian3, getLonFromCartesian3, move } from "../helpers";
+import { getLatLonFromCartesian3, move } from "../helpers";
 
 export const text = "Vehicles in Crimea, Ukraine";
 export const value = "vehicles-in-crimea-ukraine";
@@ -24,12 +25,20 @@ const orientation = Transforms.headingPitchRollQuaternion(
   position,
   new HeadingPitchRoll(heading, pitch, roll),
 );
+/**
+ * Creates new demo entities.
+ * @returns {Entity.ConstructorOptions[]} New entities
+ */
+export function getEntities(): Entity.ConstructorOptions[] {
+  const rectWest = getLatLonFromCartesian3(move(position, -65, 0, 0)).lon;
+  const rectSouth = getLatLonFromCartesian3(move(position, 0, -20, 0)).lat;
+  const rectEast = getLatLonFromCartesian3(move(position, 70, 0, 0)).lon;
+  const rectNorth = getLatLonFromCartesian3(move(position, 0, 20, 0)).lat;
 
-export function getEntities() {
   return [
     {
       position: move(position, 50, 0, 0),
-      orientation: orientation,
+      orientation,
       model: {
         uri: modelPath,
         scale: 1.5,
@@ -39,7 +48,7 @@ export function getEntities() {
     },
     {
       position: move(position, 22, 0, 0),
-      orientation: orientation,
+      orientation,
       model: {
         uri: modelPath,
         scale: 1.5,
@@ -49,7 +58,7 @@ export function getEntities() {
     },
     {
       position: move(position, -10, 0, 0),
-      orientation: orientation,
+      orientation,
       model: {
         uri: modelPath,
         scale: 1.5,
@@ -59,7 +68,7 @@ export function getEntities() {
     },
     {
       position: move(position, -45, 0, 0),
-      orientation: orientation,
+      orientation,
       model: {
         uri: modelPath,
         scale: 1.5,
@@ -70,10 +79,10 @@ export function getEntities() {
     {
       rectangle: {
         coordinates: Rectangle.fromDegrees(
-          getLonFromCartesian3(move(position, -65, 0, 0)),
-          getLatFromCartesian3(move(position, 0, -20, 0)),
-          getLonFromCartesian3(move(position, 70, 0, 0)),
-          getLatFromCartesian3(move(position, 0, 20, 0)),
+          rectWest,
+          rectSouth,
+          rectEast,
+          rectNorth,
         ),
         height: 38,
         material: Color.RED.withAlpha(0.2),
@@ -84,6 +93,10 @@ export function getEntities() {
   ];
 }
 
+/**
+ * Returns a camera position for this demo entity.
+ * @returns {object} Camera position
+ */
 export function getCameraPosition() {
   return {
     destination: Cartesian3.fromDegrees(33.588049, 45.089763, 200),

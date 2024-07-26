@@ -6,27 +6,20 @@
   >
     <div id="google-tiles">
       <input
-        type="checkbox"
         id="google-tiles-checkbox"
         v-model="googleTilesEnabled"
+        type="checkbox"
         @change="toggleGoogleTiles"
       />
-      <label for="google-tiles-checkbox" style="padding: 5px"
-        >Show 3D Google tiles</label
-      >
+
+      <label for="google-tiles-checkbox" style="padding: 5px">
+        Show 3D Google tiles
+      </label>
     </div>
+
+    <IconCommunity />
   </div>
 </template>
-
-<style scoped>
-#cesiumContainer {
-  height: 100vh;
-  width: 100vw;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-</style>
 
 <script lang="ts">
 import {
@@ -40,7 +33,6 @@ import {
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   defined,
-  Cartesian2,
   Entity,
   SceneMode,
   Color,
@@ -53,15 +45,20 @@ import "cesium/Build/Cesium/Widgets/widgets.css";
 import { initDemo } from "../demo/Demo";
 import CesiumHighlighter from "./CesiumHighlighter.vue";
 import { BLUE, GOLD } from "../helpers/Colors";
+import IconCommunity from "./icons/IconCommunity.vue";
 
 Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTJmM2RmYi0wMDI3LTQxYmMtYjY1NS00MzhmYzg4Njk1NTMiLCJpZCI6MjExMDU5LCJpYXQiOjE3MTM5OTExNTh9.cgvEwVgVgDQRqLsZzWCubdKnui9qoZAXTPCRbtVzZmo";
 
 let viewer: Viewer;
-let googleTileset: Cesium3DTileset;
+let googleTileset: Cesium3DTileset | undefined;
 let selectedEntityHighlighter: CesiumHighlighter;
 let mouseOverHighlighter: CesiumHighlighter;
 
+/**
+ * Create Cesium Viewer default options.
+ * @returns {Viewer.ConstructorOptions} Default options
+ */
 export function getViewerOptions(): Viewer.ConstructorOptions {
   return {
     useBrowserRecommendedResolution: true,
@@ -84,10 +81,13 @@ export function getViewerOptions(): Viewer.ConstructorOptions {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-function initViewer(mockWebGLFunction?: Function) {
-  if (mockWebGLFunction) {
-    viewer = new Viewer("cesiumContainer", mockWebGLFunction());
+/**
+ * Initialize the cesium viewer.
+ * @param {Function} viewerOptionsGenerator Function that generates (test) Viewer.ConstructorOptions
+ */
+function initViewer(viewerOptionsGenerator?: () => Viewer.ConstructorOptions) {
+  if (viewerOptionsGenerator) {
+    viewer = new Viewer("cesiumContainer", viewerOptionsGenerator());
   } else viewer = new Viewer("cesiumContainer", getViewerOptions());
 
   viewer.scene.postProcessStages.fxaa.enabled = true;
@@ -103,34 +103,38 @@ function initViewer(mockWebGLFunction?: Function) {
   );
 
   // pre-select a base layer
-  const baseLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
-  const defaultImagery = baseLayerPickerViewModel.imageryProviderViewModels[2];
-  if (defaultImagery) {
-    baseLayerPickerViewModel.selectedImagery = defaultImagery;
-  } else throw new Error("Default imageProviderViewModel out of bounds!");
-}
-
-async function initGoogleTileset() {
-  try {
-    const tmpTileset = await createGooglePhotorealistic3DTileset(undefined, {
-      //maximumScreenSpaceError: 8, // quality
-      preloadFlightDestinations: true,
-      showCreditsOnScreen: true,
-    });
-
-    // silently drop out if the viewer is null/shutdown in the meantime. This can happen when the app is opened and closed immediately
-    if (viewer === undefined) return;
-
-    googleTileset = viewer.scene.primitives.add(tmpTileset);
-
-    // on high zoom levels the globe and 3D tiles overlap / get mixed -> disable globe if 3D tiles are enabled
-    viewer.scene.globe.show = false;
-  } catch (error) {
-    console.log(`Error loading Google Photorealistic 3D tileset: ${error}`);
+  if (viewer.baseLayerPicker) {
+    const baseLayerPickerViewModel = viewer.baseLayerPicker.viewModel;
+    if (baseLayerPickerViewModel.imageryProviderViewModels.length > 2) {
+      const defaultImagery =
+        baseLayerPickerViewModel.imageryProviderViewModels[2];
+      if (defaultImagery) {
+        baseLayerPickerViewModel.selectedImagery = defaultImagery;
+      } else throw new Error("Default imageProviderViewModel out of bounds!");
+    }
   }
 }
 
-function initHandlers() {
+/**
+ * Initialize Google 3D Tileset.
+ */
+export async function initGoogleTileset() {
+  const tmpTileset = await createGooglePhotorealistic3DTileset(undefined, {
+    //maximumScreenSpaceError: 8, // quality
+    preloadFlightDestinations: true,
+    showCreditsOnScreen: true,
+  });
+
+  googleTileset = viewer.scene.primitives.add(tmpTileset);
+
+  // on high zoom levels the globe and 3D tiles overlap / get mixed -> disable globe if 3D tiles are enabled
+  viewer.scene.globe.show = false;
+}
+
+/**
+ * Initialize mouse handlers.
+ */
+function initMouseHandlers() {
   // single click: select
   const mouseClickHandler = new ScreenSpaceEventHandler(viewer.scene.canvas);
   mouseClickHandler.setInputAction(
@@ -158,6 +162,9 @@ function initHandlers() {
   );
 }
 
+/**
+ * Update requestRenderMode if an entity is currently highlighted/selected and render the scene.
+ */
 function updateRequestRenderMode() {
   // If an entity is selected or mouse is over an entity the animation shall be rendered.
   if (!selectedEntityHighlighter.empty() || !mouseOverHighlighter.empty()) {
@@ -168,8 +175,14 @@ function updateRequestRenderMode() {
   viewer.scene.requestRender();
 }
 
-function mouseClickListener(movement: { position: Cartesian2 }) {
-  const entity = viewer.scene.pick(movement.position);
+/**
+ * Handles mouse clicks on. If an entity is selected it gets selected/unselected.
+ * @param {ScreenSpaceEventHandler.PositionedEvent} positionEvent Mouse position event
+ */
+export async function mouseClickListener(
+  positionEvent: ScreenSpaceEventHandler.PositionedEvent,
+) {
+  const entity = await viewer.scene.pick(positionEvent.position);
 
   if (!defined(entity)) return;
   if (!defined(entity.primitive)) return;
@@ -191,51 +204,44 @@ function mouseClickListener(movement: { position: Cartesian2 }) {
   updateRequestRenderMode();
 }
 
-function mouseDoubleClickListener(movement: { position: Cartesian2 }) {
-  const entity = viewer.scene.pick(movement.position);
+/**
+ * Handles mouse double clicks on. If an entity is selected the camera is moved towards it.
+ * @param {ScreenSpaceEventHandler.PositionedEvent} positionEvent Mouse position event
+ */
+export async function mouseDoubleClickListener(
+  positionEvent: ScreenSpaceEventHandler.PositionedEvent,
+) {
+  const entity = await viewer.scene.pick(positionEvent.position);
 
   if (defined(entity)) {
     console.log("Double click on entity:");
     console.log(entity);
 
-    const headingPitchRange = new HeadingPitchRange(
-      viewer.camera.heading,
-      viewer.camera.pitch,
-      50,
-    );
-
     if (entity.id instanceof Entity) {
-      const promise = viewer.flyTo(entity.id, {
+      const headingPitchRange = new HeadingPitchRange(
+        viewer.camera.heading,
+        viewer.camera.pitch,
+        50,
+      );
+
+      await viewer.flyTo(entity.id, {
         duration: 1.0,
         offset: headingPitchRange,
       });
 
-      promise.then(function () {
-        viewer.scene.requestRender();
-      });
+      viewer.scene.requestRender();
     }
   }
 }
 
-function mouseOverListener(movement: { endPosition: Cartesian2 }) {
-  // drillpick prevents camera movement:
-  // https://community.cesium.com/t/drillpick-in-screenspaceeventtype-mouse-move-breaks-camera-movements-when-google3dtileset-is-enabled/33939
-  // const entities = viewer.scene.drillPick(movement.endPosition);
-  // let filteredEntities = entities.filter(
-  //   (entity) => defined(entity) && entity.id instanceof Entity,
-  // );
-  // if (filteredEntities.length > 0) {
-  //   // add entities to the array
-  //   console.log("Mouse over entities:" + filteredEntities);
-  //   mouseOverHighlighter.setArray(filteredEntities);
-  //   updateRequestRenderMode();
-  // } else if (!mouseOverHighlighter.empty()) {
-  //   // clear existing array
-  //   mouseOverHighlighter.clear();
-  //   updateRequestRenderMode();
-  // }
-
-  const entity = viewer.scene.pick(movement.endPosition);
+/**
+ * Handles mouse movements. If the mouse is over an entity it gets highlighted / unhighlighted.
+ * @param {ScreenSpaceEventHandler.MotionEvent} motionEvent Mouse motion event
+ */
+export async function mouseOverListener(
+  motionEvent: ScreenSpaceEventHandler.MotionEvent,
+) {
+  const entity = await viewer.scene.pick(motionEvent.endPosition);
 
   if (defined(entity)) {
     if (defined(entity.id) && entity.id instanceof Entity) {
@@ -261,26 +267,44 @@ function mouseOverListener(movement: { endPosition: Cartesian2 }) {
 
 export default {
   name: "CesiumViewer",
+  components: {
+    IconCommunity,
+  },
 
   props: {
-    mockWebGLFunction: {
+    mockWebGLFunctionProp: {
       type: Function,
       required: false,
+      default: undefined,
     },
-    enableGoogle3DTiles: {
+    enableGoogle3DTilesProp: {
       type: Boolean,
       required: false,
       default: true,
     },
   },
 
+  // only make parameters reactive that need to be changed from the outside:
+  // https://stackoverflow.com/questions/60479946/local-variable-vs-data-huge-loss-in-performance
+  setup(props) {
+    if (props.mockWebGLFunctionProp !== undefined)
+      console.info("Cesium setup using webGL mock");
+    if (props.enableGoogle3DTilesProp === true)
+      console.info("Google Tiles enabled: " + props.enableGoogle3DTilesProp);
+
+    return {
+      googleTilesEnabled: props.enableGoogle3DTilesProp ? true : false,
+      mockWebGLFunction: props.mockWebGLFunctionProp,
+    };
+  },
+
   mounted() {
     if (!this.mockWebGLFunction) initViewer();
-    else initViewer(this.mockWebGLFunction);
+    else initViewer(this.mockWebGLFunction as () => Viewer.ConstructorOptions);
 
-    initHandlers();
+    initMouseHandlers();
 
-    if (this.enableGoogle3DTiles) initGoogleTileset();
+    if (this.googleTilesEnabled) initGoogleTileset();
 
     initDemo(viewer);
 
@@ -290,19 +314,6 @@ export default {
   unmounted() {
     viewer.entities.removeAll();
     viewer.destroy();
-  },
-
-  // only make parameters reactive that need to be changed from the outside:
-  // https://stackoverflow.com/questions/60479946/local-variable-vs-data-huge-loss-in-performance
-  setup(props) {
-    if (props.mockWebGLFunction !== undefined)
-      console.info("Cesium setup using webGL mock");
-    if (props.enableGoogle3DTiles !== undefined)
-      console.info("Google Tiles enabled: " + props.enableGoogle3DTiles);
-
-    if (props.enableGoogle3DTiles === false)
-      return { googleTilesEnabled: false };
-    else return { googleTilesEnabled: true };
   },
 
   methods: {
@@ -317,6 +328,16 @@ export default {
           pitch: Math.toRadians(-15.0),
         },
       });
+    },
+
+    setGoogleTileSet(tileset: Cesium3DTileset | undefined) {
+      googleTileset = tileset;
+      if (tileset) this.googleTilesEnabled = true;
+      else this.googleTilesEnabled = false;
+    },
+
+    getViewer() {
+      return viewer;
     },
 
     toggleGoogleTiles() {
@@ -339,3 +360,13 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+#cesiumContainer {
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+</style>

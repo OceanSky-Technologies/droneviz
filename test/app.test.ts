@@ -1,15 +1,20 @@
 import { render } from "@testing-library/vue";
 import App from "../src/App.vue";
+import { enableAutoUnmount } from "@vue/test-utils";
+
+import "../src/main";
+
+enableAutoUnmount(afterEach);
 
 describe("App", () => {
   test("App startup", () => {
-    try {
-      render(App);
-    } catch (error) {
-      // expect a webGL exception
-      if (String(error).includes("The browser does not support WebGL")) {
-        return;
-      } else throw error;
-    }
+    // mock CesiumViewer so it doesn't throw "WebGL not supported" error
+    vi.mock("../src/components/CesiumViewer.vue", () => {
+      return {
+        default: vi.fn(),
+      };
+    });
+
+    render(App);
   });
 });

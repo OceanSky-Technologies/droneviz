@@ -1,4 +1,4 @@
-import { Cartesian3, HeadingPitchRoll, Math, Transforms } from "cesium";
+import { Cartesian3, Entity, HeadingPitchRoll, Math, Transforms } from "cesium";
 
 export const text = "Aircraft in San Francisco, U.S.";
 export const value = "aircraft-in-san-francisco-us";
@@ -15,10 +15,14 @@ const orientation = Transforms.headingPitchRollQuaternion(
   new HeadingPitchRoll(heading, pitch, roll),
 );
 
-export function getEntity() {
+/**
+ * Creates a new demo entity.
+ * @returns {Entity.ConstructorOptions} New entity
+ */
+export function getEntity(): Entity.ConstructorOptions {
   return {
-    position: position,
-    orientation: orientation,
+    position,
+    orientation,
     model: {
       uri: modelPath,
       minimumPixelSize: 50,
@@ -27,6 +31,10 @@ export function getEntity() {
   };
 }
 
+/**
+ * Returns a camera position for this demo entity.
+ * @returns {object} Camera position
+ */
 export function getCameraPosition() {
   return {
     destination: Cartesian3.fromDegrees(-122.472436, 37.812481, 500),

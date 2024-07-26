@@ -4,6 +4,10 @@ import * as AircraftInSanFrancisco from "./AircraftInSanFrancisco";
 import * as VehiclesInUkraine from "./VehiclesInUkraine";
 import * as DroneInNewYork from "./DroneInNewYork";
 
+/**
+ * Initializes demo functionalities.
+ * @param {Viewer} viewer Cesium viewer instance.
+ */
 export function initDemo(viewer: Viewer) {
   if (!viewer) {
     console.error("Cesium viewer isn't initialized");
@@ -51,7 +55,7 @@ export function initDemo(viewer: Viewer) {
   ]);
 }
 
-class ToolbarOption {
+export class ToolbarOption {
   text!: string;
   value!: string;
   onSelect!: () => undefined;
@@ -61,17 +65,21 @@ class ToolbarOption {
   }
 }
 
+/**
+ * Adds an option to the toolbar.
+ * @param {ToolbarOption[]} options New toolbar option to add
+ */
 function addToolbarMenu(options: ToolbarOption[]) {
   const menu = document.createElement("select");
   menu.className = "cesium-button";
+  menu.id = "demo-entity-selection";
 
-  menu.onchange = function () {
-    // reset();
+  // if an element was selected reset the selection back to default
+  menu.onchange = () => {
     const item = options[menu.selectedIndex];
     if (item && typeof item.onSelect === "function") {
       item.onSelect();
 
-      // reset back to default
       menu.selectedIndex = 0;
     }
   };

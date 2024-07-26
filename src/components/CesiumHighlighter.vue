@@ -11,7 +11,7 @@ import {
 } from "cesium";
 import { almostEqual } from "../helpers/FuzzyCompare";
 
-interface Silhouette {
+export interface Silhouette {
   color: Color;
   size: number;
 }
@@ -21,21 +21,26 @@ export default class CesiumHighlighter {
     if (!scene) throw Error("Invalid scene");
 
     if (color) {
-      if (color.red > 1.0) throw new Error("Red must be 0<=x<=1");
-      if (color.green > 1.0) throw new Error("Green must be 0<=x<=1");
-      if (color.blue > 1.0) throw new Error("Blue must be 0<=x<=1");
-      if (color.alpha > 1.0) throw new Error("Alpha must be 0<=x<=1");
+      if (color.red > 1.0 || color.red < 0.0)
+        throw new Error("Red must be 0<=x<=1");
+      if (color.green > 1.0 || color.green < 0.0)
+        throw new Error("Green must be 0<=x<=1");
+      if (color.blue > 1.0 || color.blue < 0.0)
+        throw new Error("Blue must be 0<=x<=1");
+      if (color.alpha > 1.0 || color.alpha < 0.0)
+        throw new Error("Alpha must be 0<=x<=1");
     }
 
     if (silhouette) {
-      if (silhouette.color.red > 1.0)
+      if (silhouette.color.red > 1.0 || silhouette.color.red < 0.0)
         throw new Error("Silhouette red must be 0<=x<=1");
-      if (silhouette.color.green > 1.0)
+      if (silhouette.color.green > 1.0 || silhouette.color.green < 0.0)
         throw new Error("Silhouette green must be 0<=x<=1");
-      if (silhouette.color.blue > 1.0)
+      if (silhouette.color.blue > 1.0 || silhouette.color.blue < 0.0)
         throw new Error("Silhouette blue must be 0<=x<=1");
-      if (silhouette.color.alpha > 1.0)
+      if (silhouette.color.alpha > 1.0 || silhouette.color.alpha < 0.0)
         throw new Error("Silhouette alpha must be 0<=x<=1");
+      if (silhouette.size < 0.0) throw new Error("Silhouette size must be >=0");
     }
 
     this.scene = scene;
@@ -102,9 +107,10 @@ export default class CesiumHighlighter {
 
   clear() {
     for (const entity of this.entities) {
-      if (defined(entity.id) && defined(entity.id.model))
+      if (defined(entity.id) && defined(entity.id.model)) {
         this.removeColor(entity.id.model);
-      this.setSilhouette(entity.id.model, false);
+        this.setSilhouette(entity.id.model, false);
+      }
     }
 
     this.entities = [];
