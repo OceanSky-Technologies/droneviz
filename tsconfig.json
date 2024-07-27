@@ -40,7 +40,8 @@
     // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
     "types": [
       "node",
-      "vitest/globals"
+      "vitest/globals",
+      "vite-plugin-pwa/client"
     ] /* Specify type package names to be included without being referenced in a source file. */,
     // "allowUmdGlobalAccess": true,                     /* Allow accessing UMD globals from modules. */
     // "moduleSuffixes": [],                             /* List of file name suffixes to search when resolving a module. */
@@ -113,10 +114,11 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "**/*.mts",
     "**/*.vue",
     "**/*.glb",
     ".next/types/**/*.ts",
     "test/helpers/getWebGLStub.js"
   ],
-  "exclude": ["node_modules", "dist", "src/**/*.js", "*.mjs"]
+  "exclude": ["node_modules", "dist", "dev-dist", "src/**/*.js", "*.mjs"]
 }

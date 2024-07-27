@@ -6,8 +6,8 @@ import CesiumViewer, {
   mouseOverListener,
 } from "../../src/components/CesiumViewer.vue";
 import { createTestViewerOptions } from "../helpers/MockDOMUtils";
-import { Entity, Model } from "cesium";
-import { createGooglePhotorealistic3DTileset, Cartesian2 } from "cesium";
+import { Cesium3DTileset, Entity, Model } from "cesium";
+import { Cartesian2 } from "cesium";
 
 enableAutoUnmount(afterEach);
 
@@ -67,18 +67,14 @@ describe("CesiumViewer", () => {
     wrapper.vm.googleTilesEnabled = false;
     wrapper.vm.toggleGoogleTiles();
 
-    wrapper.vm.setGoogleTileSet(
-      await createGooglePhotorealistic3DTileset(undefined, {
-        maximumScreenSpaceError: 10000000000, // high error allowed -> low data quota
-      }),
-    );
+    wrapper.vm.setGoogleTileSet(new Cesium3DTileset({}));
     wrapper.vm.googleTilesEnabled = false;
     wrapper.vm.toggleGoogleTiles();
     expect(wrapper.vm.getViewer().scene.globe.show).toBeTruthy();
 
-    // wrapper.vm.googleTilesEnabled = true;
-    // wrapper.vm.toggleGoogleTiles();
-    // expect(wrapper.vm.getViewer().scene.globe.show).toBeFalsy();
+    wrapper.vm.googleTilesEnabled = true;
+    wrapper.vm.toggleGoogleTiles();
+    expect(wrapper.vm.getViewer().scene.globe.show).toBeFalsy();
   });
 
   test("Click feature", async () => {

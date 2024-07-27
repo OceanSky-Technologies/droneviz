@@ -1,6 +1,8 @@
 ignores:
-  - "depcheck"
-  - "@vitest/coverage-istanbul"
-  - "@vue/eslint-config-prettier"
-  - "@cesium/engine" # getWebGLStub.js
-  - "playwright" # vitest
+
+- "depcheck"
+- "@vitest/coverage-istanbul"
+- "@vue/eslint-config-prettier"
+- "@cesium/engine" # getWebGLStub.js
+- "playwright" # vitest
+- "virtual:pwa-register" # pwa.ts

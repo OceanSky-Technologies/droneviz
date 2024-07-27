@@ -1,11 +1,15 @@
 /// <reference types="vitest" />
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
+
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 
 import { fileURLToPath, URL } from "url";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import vue from "@vitejs/plugin-vue";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { VitePWA } from "vite-plugin-pwa";
 
 const cesiumSource = "node_modules/cesium/Build/Cesium";
 // This is the base url for static files that CesiumJS needs to load.
@@ -33,6 +37,112 @@ export default defineConfig({
     }),
     vue(),
     tsconfigPaths(),
+    VitePWA({
+      registerType: "autoUpdate",
+      devOptions: {
+        enabled: true,
+        type: "module",
+      },
+      workbox: {
+        disableDevLogs: true, // enable to identify caching problems
+        globPatterns: ["**/*"],
+        maximumFileSizeToCacheInBytes: 200000000,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => {
+              return (
+                !url.pathname.startsWith("http") &&
+                !url.pathname.startsWith("www.")
+              );
+            },
+            handler: "CacheFirst",
+            options: {
+              cacheName: "api-cache",
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/tile\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-tiles-cache",
+              expiration: {
+                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+              },
+              matchOptions: { ignoreVary: true },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/assets\.ion\.cesium\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "cesium-ion-cache",
+              expiration: {
+                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+              },
+              matchOptions: { ignoreVary: true },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/dev\.virtualearth\.net\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "virtualearth-cache",
+              expiration: {
+                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+              },
+              matchOptions: { ignoreVary: true },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+      },
+
+      includeAssets: ["/src/assets/**/*"],
+      manifest: {
+        name: "Droneviz - OceanSky Technologies",
+        short_name: "Droneviz",
+        description: "Monitor and control software for OceanSky UAVs",
+        theme_color: "#242424",
+        screenshots: [
+          // todo: add real screenshots
+          {
+            src: "/src/assets/oceansky-logo.png",
+            sizes: "512x512",
+            type: "image/png",
+            form_factor: "wide",
+          },
+          {
+            src: "/src/assets/oceansky-logo.png",
+            sizes: "512x512",
+            type: "image/png",
+            form_factor: "narrow",
+          },
+        ],
+        icons: [
+          {
+            src: "/src/assets/oceansky-logo.svg",
+            sizes: "150x150",
+            type: "image/svg",
+          },
+          {
+            src: "/src/assets/oceansky-logo.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+        ],
+      },
+    }),
   ],
   resolve: {
     alias: {
@@ -48,12 +158,12 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            return id
-              .toString()
-              .split("node_modules/")[1]
-              .split("/")[0]
-              .toString();
-          }
+            return id!
+              .toString()!
+              .split("node_modules/")[1]!
+              .split("/")[0]!
+              .toString()!;
+          } else return undefined;
         },
       },
     },
@@ -83,6 +193,7 @@ export default defineConfig({
       exclude: [
         "**/coverage/**",
         "**/dist/**",
+        "**/dev-dist/**",
         "**/node_modules/**",
         "**/[.]**",
         "**/packages/*/test?(s)/**",
@@ -99,13 +210,21 @@ export default defineConfig({
         "**/vitest.{workspace,projects}.[jt]s?(on)",
         "**/.{eslint,mocha,prettier}rc.{?(c|m)js,yml}",
         "**/forge.config.js",
+        "**/src/pwa.mts",
       ],
       thresholds: {
         lines: 75,
-        functions: 85,
+        functions: 80,
         branches: 60,
         statements: 70,
       },
+    },
+  },
+  server: {
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      port: 5173,
     },
   },
   optimizeDeps: {

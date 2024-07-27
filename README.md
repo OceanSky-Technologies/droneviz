@@ -1,5 +1,7 @@
 # droneviz
 
+## Setup
+
 First, install `yarn` using these commands:
 
 ```bash
@@ -11,6 +13,8 @@ yarn set version 4.1.1
 yarn install
 ```
 
+## Build and test
+
 To build the project use turbo:
 
 ```bash
@@ -18,45 +22,48 @@ yarn turbo build
 yarn turbo test
 ```
 
-To run it with auto-refreshing use
+To run a live web application with auto-refreshing use
 
 ```bash
 yarn turbo dev
 ```
 
-Turbo uses vite.
-
-Alternatively, you can also run every command without turbo and only use vite:
+Turbo is configured to use `vite`. To run vite commands only you can also use
 
 ```bash
 yarn build
 yarn test
-yarn dev
-yarn preview
+```
+
+In addition the following commands are supported to lint the project:
+
+```bash
+yarn lint
+yarn depcheck
+yarn format-check
 ```
 
 ## Update dependencies
 
-Run this command to update all dependencies to their latest version:
+Dependabot is set up to automatically update library dependencies. This can also be done manually using
 
 ```bash
 yarn up "*" "@*/*"
 ```
 
-## Vitest dashboard
+## Test overview
 
-Run
+To show the `vitest` dashboard run
 
 ```bash
 yarn vitest --ui
 ```
 
+Alternatively, the `vscode` configuration comes with the `Testing` tab fully set up from where tests can also be run.
+
 ## Deployment
 
-Use `gulp` similar to [this project](https://github.com/blheli-configurator/blheli-configurator/blob/master/gulpfile.js).
+VitePWA is used to create standalone apps. It is set up using a service worker and caching of all requests for offline usage (and to reduce API quota usage).
+See [this page](https://wildermuth.com/2023/02/09/vite-plugin-for-progressive-web-apps/) for more information.
 
-Alternative: Install `nginx`/`litespeed` server and serve the contents of the `dist` folder.
-
-**Don't waste time on electron, vue and whatever... it's way too complicated and doesn't work properly.**
-
-In future use [Turbopack](https://turbo.build/pack/docs).
+In future add [action-gh-release](https://github.com/softprops/action-gh-release) for release artifact creation.

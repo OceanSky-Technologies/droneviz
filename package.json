@@ -9,7 +9,7 @@
     "dev": "vite",
     "test": "vitest run --dom",
     "preview": "vite preview",
-    "clean": "del-cli --force dist coverage",
+    "clean": "del-cli --force dist dev-dist coverage",
     "check-types": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier . --write",
@@ -37,6 +37,7 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^7.16.1",
     "vite": "^5.3.4",
+    "vite-plugin-pwa": "^0.20.1",
     "vite-plugin-static-copy": "^1.0.6",
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^2.0.3"

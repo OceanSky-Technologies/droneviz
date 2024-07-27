@@ -69,7 +69,7 @@ export function getViewerOptions(): Viewer.ConstructorOptions {
     selectionIndicator: false,
     sceneMode: SceneMode.SCENE3D,
     shouldAnimate: true,
-    shadows: true,
+    shadows: false,
     blurActiveElementOnCanvasFocus: false,
     msaaSamples: 4,
     requestRenderMode: true,

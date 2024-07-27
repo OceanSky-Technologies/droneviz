@@ -46,6 +46,7 @@ const config = [
       ".vscode",
       "coverage",
       "dist",
+      "dev-dist",
       "node_modules",
       "**/test/helpers/getWebGLStub.js",
     ],
