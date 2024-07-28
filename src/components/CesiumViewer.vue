@@ -93,6 +93,9 @@ function initViewer(viewerOptionsGenerator?: () => Viewer.ConstructorOptions) {
   viewer.scene.postProcessStages.fxaa.enabled = true;
   viewer.scene.debugShowFramesPerSecond = true;
 
+  // improve rendering speed
+  viewer.scene.globe.tileCacheSize = 1000;
+
   selectedEntityHighlighter = new CesiumHighlighter(viewer.scene, undefined, {
     color: Color.fromCssColorString(GOLD),
     size: 5,
