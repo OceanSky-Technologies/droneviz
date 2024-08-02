@@ -117,8 +117,9 @@
     "**/*.mts",
     "**/*.vue",
     "**/*.glb",
+    "src/presets/**/*.js",
     ".next/types/**/*.ts",
     "test/helpers/getWebGLStub.js"
   ],
-  "exclude": ["node_modules", "dist", "dev-dist", "src/**/*.js", "*.mjs"]
+  "exclude": ["node_modules", "dist", "dev-dist"]
 }

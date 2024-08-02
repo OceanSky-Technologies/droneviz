@@ -5,6 +5,7 @@
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
     "george-alisson.html-preview-vscode",
-    "vitest.explorer"
+    "vitest.explorer",
+    "bradlc.vscode-tailwindcss"
   ]
 }

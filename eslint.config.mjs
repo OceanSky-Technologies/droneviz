@@ -22,6 +22,7 @@ const config = [
       "vue/html-self-closing": "off",
       "vue/max-attributes-per-line": "off",
       "vue/no-parsing-error": "off",
+      "vue/singleline-html-element-content-newline": "off",
     },
     files: ["src/**/*", "packages/**/*"],
     plugins: {

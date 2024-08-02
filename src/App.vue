@@ -8,6 +8,6 @@ import CesiumViewer from "./components/CesiumViewer.vue";
   </body>
 </template>
 
-<style>
-@import "./assets/base.css";
+<style lang="postcss">
+@import "./assets/style.css";
 </style>

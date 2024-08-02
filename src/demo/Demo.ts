@@ -84,11 +84,11 @@ function addToolbarMenu(options: ToolbarOption[]) {
     }
   };
 
-  const toolbar = document.getElementById("toolbar");
+  const toolbar = document.getElementById("demoMenu");
   if (toolbar) {
     toolbar.appendChild(menu);
   } else {
-    console.error("No toolbar element found!");
+    console.error("No demoMenu element found!");
   }
 
   for (const option of options) {
