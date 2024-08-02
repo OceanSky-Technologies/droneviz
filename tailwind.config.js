@@ -7,10 +7,13 @@ module.exports = {
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
     "./presets/**/*.{js,vue,ts}",
-    // other paths
   ],
   theme: {
     extend: {},
   },
+  corePlugins: {
+    // preflight: false,
+  },
+  darkMode: ["selector", '[class*="dark"]'],
   plugins: [require("tailwindcss-primeui")],
 };

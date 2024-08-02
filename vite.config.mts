@@ -210,7 +210,10 @@ export default defineConfig({
         "**/vitest.{workspace,projects}.[jt]s?(on)",
         "**/.{eslint,mocha,prettier}rc.{?(c|m)js,yml}",
         "**/forge.config.js",
+        "**/postcss.config.js",
+        "**/tailwind.config.js",
         "**/src/pwa.mts",
+        "**/src/presets/*",
       ],
       thresholds: {
         lines: 75,

@@ -53,6 +53,7 @@
     "cssnano": "^7.0.4",
     "eslint-plugin-prettier": "^5.2.1",
     "globals": "^15.8.0",
+    "primeicons": "^7.0.0",
     "primevue": "^4.0.4",
     "tailwindcss-primeui": "^0.3.4",
     "turbo": "^2.0.11",

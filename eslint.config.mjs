@@ -49,7 +49,8 @@ const config = [
       "dist",
       "dev-dist",
       "node_modules",
-      "**/test/helpers/getWebGLStub.js",
+      "test/helpers/getWebGLStub.js",
+      "src/presets",
     ],
   },
 ];

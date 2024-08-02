@@ -3,6 +3,7 @@ import IconCommunity from "./icons/IconCommunity.vue";
 import { onMounted, onUnmounted, Ref, ref } from "vue";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";
+import InputText from "primevue/inputtext";
 import { Viewer } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import {
@@ -113,9 +114,10 @@ onUnmounted(() => {
       header="Edit Profile"
       :style="{ width: '25rem' }"
     >
-      <span class="text-surface-500 dark:text-surface-400 mb-8 block"
-        >Update your information.</span
-      >
+      <span class="mb-8·block·text-surface-500·dark:text-surface-400">
+        Update your information.
+      </span>
+
       <div class="mb-4 flex items-center gap-4">
         <label for="username" class="w-24 font-semibold">Username</label>
         <InputText id="username" class="flex-auto" autocomplete="off" />
