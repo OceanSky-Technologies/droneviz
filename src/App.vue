@@ -4,7 +4,7 @@ import CesiumViewer from "./components/CesiumViewer.vue";
 
 <template>
   <body>
-    <CesiumViewer />
+    <CesiumViewer google-tiles-enabled-initial />
   </body>
 </template>
 

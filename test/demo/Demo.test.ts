@@ -25,8 +25,8 @@ describe("Demo mode", () => {
   test("Invalid toolbar", () => {
     mount(CesiumViewer, {
       props: {
-        mockWebGLFunctionProp: createTestViewerOptions,
-        enableGoogle3DTilesProp: false, // stay below cesium quota
+        webGLMock: createTestViewerOptions,
+        googleTilesEnabledInitial: false, // stay below cesium quota
       },
     });
 
@@ -40,8 +40,8 @@ describe("Demo mode", () => {
 
     mount(CesiumViewer, {
       props: {
-        mockWebGLFunctionProp: createTestViewerOptions,
-        enableGoogle3DTilesProp: false, // stay below cesium quota
+        webGLMock: createTestViewerOptions,
+        googleTilesEnabledInitial: false, // stay below cesium quota
       },
       attachTo: div,
     });

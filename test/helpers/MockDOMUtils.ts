@@ -1,6 +1,6 @@
 import { Viewer } from "cesium";
-import { getViewerOptions } from "../../src/components/CesiumViewer.vue";
 import getWebGLStub from "./getWebGLStub";
+import { getViewerOptions } from "../../src/components/CesiumViewer";
 
 /**
  * Provides Cesium Viewer.ConstructorOptions for usage in unit tests.

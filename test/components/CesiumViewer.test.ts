@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { enableAutoUnmount, mount } from "@vue/test-utils";
-import CesiumViewer, {
-  mouseClickListener,
-  mouseDoubleClickListener,
-  mouseOverListener,
-} from "../../src/components/CesiumViewer.vue";
+import CesiumViewer from "../../src/components/CesiumViewer.vue";
 import { createTestViewerOptions } from "../helpers/MockDOMUtils";
 import { Cesium3DTileset, Entity, Model } from "cesium";
 import { Cartesian2 } from "cesium";
+import {
+  viewer,
+  mouseClickListener,
+  mouseDoubleClickListener,
+  mouseOverListener,
+  setGoogleTileSet,
+} from "../../src/components/CesiumViewer";
 
 enableAutoUnmount(afterEach);
 
@@ -27,11 +30,10 @@ describe("CesiumViewer", () => {
     root = document.createElement("div");
     root.id = "root";
     document.body.appendChild(root);
-
     return mount(CesiumViewer, {
       props: {
-        mockWebGLFunctionProp: createTestViewerOptions,
-        enableGoogle3DTilesProp: false, // stay below cesium quota
+        webGLMock: createTestViewerOptions,
+        googleTilesEnabledInitial: false, // stay below cesium quota
       },
       attachTo: root,
     });
@@ -63,23 +65,22 @@ describe("CesiumViewer", () => {
   test("Toggle Google 3D Tiles", async () => {
     const wrapper = mountCesiumViewer();
 
-    wrapper.vm.setGoogleTileSet(undefined);
+    setGoogleTileSet(undefined);
     wrapper.vm.googleTilesEnabled = false;
     wrapper.vm.toggleGoogleTiles();
 
-    wrapper.vm.setGoogleTileSet(new Cesium3DTileset({}));
+    setGoogleTileSet(new Cesium3DTileset({}));
     wrapper.vm.googleTilesEnabled = false;
     wrapper.vm.toggleGoogleTiles();
-    expect(wrapper.vm.getViewer().scene.globe.show).toBeTruthy();
+    expect(viewer.scene.globe.show).toBeTruthy();
 
     wrapper.vm.googleTilesEnabled = true;
     wrapper.vm.toggleGoogleTiles();
-    expect(wrapper.vm.getViewer().scene.globe.show).toBeFalsy();
+    expect(viewer.scene.globe.show).toBeFalsy();
   });
 
   test("Click feature", async () => {
-    const wrapper = mountCesiumViewer();
-    const viewer = wrapper.vm.getViewer();
+    mountCesiumViewer();
 
     const modelPath = new URL("../../assets/models/Plane.glb", import.meta.url)
       .href;
@@ -110,8 +111,7 @@ describe("CesiumViewer", () => {
   });
 
   test("Double click feature", async () => {
-    const wrapper = mountCesiumViewer();
-    const viewer = wrapper.vm.getViewer();
+    mountCesiumViewer();
 
     const modelPath = new URL("../../assets/models/Plane.glb", import.meta.url)
       .href;
@@ -142,8 +142,7 @@ describe("CesiumViewer", () => {
   });
 
   test("Mouse move", async () => {
-    const wrapper = mountCesiumViewer();
-    const viewer = wrapper.vm.getViewer();
+    mountCesiumViewer();
 
     const modelPath = new URL("../../assets/models/Plane.glb", import.meta.url)
       .href;
