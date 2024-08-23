@@ -2,53 +2,57 @@
 
 ## Setup
 
-First, install `yarn` using these commands:
+Clone this repository and update the [mavlink-ts](https://github.com/OceanSky-Technologies/mavlink-ts) submodule:
 
 ```bash
-nvm install stable
-nvm use stable
+git submodule update --init --recursive
+```
 
-corepack enable
-yarn set version 4.1.1
-yarn install
+Use [nvm](https://github.com/nvm-sh/nvm) to install the latest `node` LTS version:
+
+```bash
+# Linux:
+nvm install --lts
+nvm use --lts
+
+# Windows:
+nvm install lts
+nvm use lts
+```
+
+Also install [pnpm](https://pnpm.io/installation) or [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
+Then run
+
+```bash
+pnpm install
+```
+
+Also install playwright:
+
+```bash
+pnpm exec playwright install
 ```
 
 ## Build and test
 
-To build the project for production use turbo:
+To build the project for production with `vite` use:
 
 ```bash
-yarn turbo build
-
-# run it with
-yarn preview
+pnpm build
 ```
 
-For running tests use
+Run tests with:
 
 ```bash
-yarn turbo test
-```
-
-To run a development live web application with auto-refreshing use
-
-```bash
-yarn turbo dev
-```
-
-Turbo is configured to use `vite`. To run vite commands only you can also use
-
-```bash
-yarn build
-yarn test
+pnpm test
 ```
 
 In addition the following commands are supported to lint the project:
 
 ```bash
-yarn lint
-yarn depcheck
-yarn format-check
+pnpm lint
+pnpm depcheck
+pnpm format-check
 ```
 
 ## Update dependencies
@@ -56,7 +60,7 @@ yarn format-check
 Dependabot is set up to automatically update library dependencies. This can also be done manually using
 
 ```bash
-yarn up "*" "@*/*"
+pnpm up "*" "@*/*"
 ```
 
 ## Test overview
@@ -64,7 +68,7 @@ yarn up "*" "@*/*"
 To show the `vitest` dashboard run
 
 ```bash
-yarn vitest --ui
+pnpm vitest --ui
 ```
 
 Alternatively, the `vscode` configuration comes with the `Testing` tab fully set up from where tests can also be run.
@@ -75,3 +79,9 @@ VitePWA is used to create standalone apps. It is set up using a service worker a
 See [this page](https://wildermuth.com/2023/02/09/vite-plugin-for-progressive-web-apps/) for more information.
 
 In future add [action-gh-release](https://github.com/softprops/action-gh-release) for release artifact creation.
+
+## MAVLINK communication
+
+The [MAVSDK-JavaScript](https://github.com/mavlink/MAVSDK-JavaScript) library is not used because it's using an architecture that's very difficult to
+ship with releases to customers. It's based on envoy and mavsdk-server and requires `podman` running aside to host envoy and mavsdk-server.
+Also this library is highly incomplete and therefore not a long-term solution.

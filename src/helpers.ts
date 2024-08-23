@@ -1,4 +1,4 @@
-import { Cartesian3, Ellipsoid, Matrix4, Transforms, Math } from "cesium";
+import { Cartesian3, Ellipsoid, Math, Matrix4, Transforms } from "cesium";
 
 /**
  * Moves a 3D coordinate by a vector.

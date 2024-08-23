@@ -4,31 +4,24 @@ description: "Reusable action to setup the entire build environment"
 runs:
   using: "composite"
   steps:
-    - name: Enable Corepack
-      shell: bash
-      run: |
-        corepack enable
-
-    - name: Fix yarn on Windows
-      shell: bash
-      run: |
-        npm install -g yarn@1.22.19 --force
-        yarn set version 4.1.1
-        # see https://github.com/yarnpkg/yarn/issues/9015#issuecomment-1831229617
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
 
     - name: Installing Node.js
       uses: actions/setup-node@v4
       with:
         node-version-file: "package.json"
-        cache: yarn
+        cache: pnpm
 
-    - name: Install packages with yarn
+    - name: Install packages
       shell: bash
       run: |
-        yarn install --immutable
+        pnpm install --no-frozen-lockfile
 
     - name: Install playwright
       shell: bash
       run: |
-        yarn playwright install-deps
-        yarn playwright install
+        pnpm playwright install-deps
+        pnpm playwright install

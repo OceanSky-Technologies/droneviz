@@ -6,6 +6,8 @@
     "dbaeumer.vscode-eslint",
     "george-alisson.html-preview-vscode",
     "vitest.explorer",
-    "bradlc.vscode-tailwindcss"
+    "bradlc.vscode-tailwindcss",
+    "vunguyentuan.vscode-postcss",
+    "vue.volar"
   ]
 }

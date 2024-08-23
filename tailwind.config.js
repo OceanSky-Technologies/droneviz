@@ -1,6 +1,8 @@
 /* eslint-disable no-undef */
 /** @type {import('tailwindcss').Config} */
 
+import * as tailwindcss_primeui from "tailwindcss-primeui";
+
 module.exports = {
   // ...
   content: [
@@ -15,5 +17,5 @@ module.exports = {
     // preflight: false,
   },
   darkMode: ["selector", '[class*="dark"]'],
-  plugins: [require("tailwindcss-primeui")],
+  plugins: [tailwindcss_primeui],
 };

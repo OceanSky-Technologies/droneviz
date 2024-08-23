@@ -1,5 +1,5 @@
 import { render } from "@testing-library/vue";
-import App from "../src/App.vue";
+import App from "../app.vue";
 
 import "../src/main";
 

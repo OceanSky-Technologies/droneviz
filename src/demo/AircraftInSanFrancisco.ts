@@ -21,6 +21,7 @@ const orientation = Transforms.headingPitchRollQuaternion(
  */
 export function getEntity(): Entity.ConstructorOptions {
   return {
+    id: "aircraft-in-san-francisco",
     position,
     orientation,
     model: {

@@ -72,6 +72,7 @@ export function initViewer(
  */
 export function getViewerOptions(): Viewer.ConstructorOptions {
   return {
+    useBrowserRecommendedResolution: true,
     animation: false,
     timeline: false,
     infoBox: false,

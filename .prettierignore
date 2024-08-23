@@ -1,6 +1,6 @@
-# Ignore artifacts:
 build
 coverage
-.yarn
 .turbo
 node_modules
+presets
+mavlink-ts

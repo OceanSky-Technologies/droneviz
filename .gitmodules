@@ -1,0 +1,3 @@
+[submodule "mavlink-ts"]
+	path = mavlink-ts
+	url = git@github.com:OceanSky-Technologies/mavlink-ts.git

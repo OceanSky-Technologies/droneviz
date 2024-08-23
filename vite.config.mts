@@ -23,6 +23,7 @@ export default defineConfig({
     // Define relative base path in cesium for loading assets
     // https://vitejs.dev/config/shared-options.html#define
     CESIUM_BASE_URL: JSON.stringify(`/${cesiumBaseUrl}`),
+    "process.env": {},
   },
   plugins: [
     // Copy Cesium Assets, Widgets, and Workers to a static directory.
@@ -48,7 +49,8 @@ export default defineConfig({
       },
       workbox: {
         disableDevLogs: true, // enable to identify caching problems
-        globPatterns: ["**/*"],
+        // globPatterns: ["**/*"], # enable again if dev-dist has subfolders
+        globPatterns: ["*"],
         maximumFileSizeToCacheInBytes: 200000000,
         runtimeCaching: [
           {
@@ -159,7 +161,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks(id: string | string[]) {
           if (id.includes("node_modules")) {
             return id!
               .toString()!
@@ -173,7 +175,7 @@ export default defineConfig({
   },
   test: {
     root: ".",
-    exclude: ["node_modules"],
+    exclude: ["node_modules", "mavlink-ts"],
     globals: true, // enable jest-like global test APIs
     environment: "happy-dom",
     setupFiles: ["./vitest.setup.ts"],
@@ -195,28 +197,29 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       enabled: true,
       exclude: [
-        "**/coverage/**",
-        "**/dist/**",
-        "**/dev-dist/**",
-        "**/node_modules/**",
-        "**/[.]**",
-        "**/packages/*/test?(s)/**",
-        "**/*.d.ts",
-        "**/virtual:*",
-        "**/__x00__*",
-        "**/\x00*",
-        "**/cypress/**",
-        "**/test?(s)/**",
-        "**/test?(-*).?(c|m)[jt]s?(x)",
-        "**/*{.,-}{test,spec,bench,benchmark}?(-d).?(c|m)[jt]s?(x)",
         "**/__tests__/**",
-        "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*",
-        "**/vitest.{workspace,projects}.[jt]s?(on)",
+        "**/__x00__*",
         "**/.{eslint,mocha,prettier}rc.{?(c|m)js,yml}",
+        "**/[.]**",
+        "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*",
+        "**/*.d.ts",
+        "**/*{.,-}{test,spec,bench,benchmark}?(-d).?(c|m)[jt]s?(x)",
+        "**/\x00*",
+        "**/coverage/**",
+        "**/cypress/**",
+        "**/dev-dist/**",
+        "**/dist/**",
         "**/forge.config.js",
+        "**/node_modules/**",
+        "**/packages/*/test?(s)/**",
         "**/postcss.config.js",
+        "**/presets/*",
         "**/tailwind.config.js",
-        "**/src/presets/*",
+        "**/test?(-*).?(c|m)[jt]s?(x)",
+        "**/test?(s)/**",
+        "**/virtual:*",
+        "**/vitest.{workspace,projects}.[jt]s?(on)",
+        "mavlink-ts/**/*",
       ],
       thresholds: {
         lines: 75,

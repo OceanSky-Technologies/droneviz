@@ -4,7 +4,7 @@ import { onMounted, onUnmounted, Ref, ref } from "vue";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
-import { Viewer } from "cesium";
+import { Cartesian3, Viewer } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import {
   googleTileset,
@@ -15,6 +15,69 @@ import {
   viewer,
 } from "./CesiumViewer";
 import { initDemo } from "../demo/Demo";
+import { System } from "/mavlink-ts/src/System";
+
+// async function run() {
+//   // create a new drone instance
+//   console.log("Establishing connection");
+
+//   const drone = new System("http://172.27.96.1", 8080);
+
+//   await new Promise((rrr) => {
+//     setTimeout(rrr, 1000);
+//   });
+
+//   drone.telemetry.connect();
+
+//   await new Promise((rrr) => {
+//     setTimeout(rrr, 1000);
+//   });
+
+//   console.log("Reading data");
+
+//   // subscribe to telemetry/position data
+//   console.log("Subscribing to position data");
+//   for await (let position of drone.telemetry.position.responses) {
+//     console.log("New data received:\n" + JSON.stringify(position));
+
+//     console.log(position.position.longitudeDeg);
+
+//     console.log("now1");
+//     if (position.position.longitudeDeg) {
+//       console.log("now2");
+
+//       viewer.entities!.getById("aircraft-in-san-francisco")!.position = {
+//         ...Cartesian3.fromDegrees(
+//           position.position.longitudeDeg,
+//           position.position.latitudeDeg,
+//           position.position.absoluteAltitudeM,
+//         ),
+//       };
+
+//       viewer.scene.requestRender();
+//     }
+//   }
+// drone.telemetry.subscribePosition({
+//   dataCallback: (position: any) => {
+//     console.log("New data received:\n" + JSON.stringify(position));
+//   },
+//   statusCallback: (status: any) => {
+//     console.log("Connection status changed:\n" + JSON.stringify(status));
+//   },
+//   errorCallback: (error: any) => {
+//     console.error("Connection error occurred:" + JSON.stringify(error));
+//   },
+//   autoReconnect: true, // automatically reconnect if connection was lost
+// });
+// wait some time
+// await new Promise((rrr) => {
+//   setTimeout(rrr, 10000);
+// });
+// console.log("shutdown");
+// drone.disconnectAll();
+// }
+
+// run();
 
 interface Props {
   googleTilesEnabledInitial: boolean;
@@ -73,6 +136,8 @@ onMounted(() => {
   initDemo(viewer);
 
   resetCamera();
+
+  // run();
 });
 
 onUnmounted(() => {

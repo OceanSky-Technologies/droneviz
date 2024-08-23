@@ -1,5 +1,5 @@
 {
-  "name": "pathfinder",
+  "name": "backend",
   "devDependencies": {
     "@types/node": "^20.14.10",
     "vitest": "^2.0.2"

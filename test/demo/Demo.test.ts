@@ -17,7 +17,10 @@ describe("Demo mode", () => {
   });
 
   test("Invalid viewer", () => {
-    initDemo(undefined as unknown as Viewer);
+    const div = document.createElement("viewer-div");
+
+    const viewer = new Viewer(div);
+    initDemo(viewer);
   });
 
   test("Invalid toolbar", () => {
@@ -49,7 +52,7 @@ describe("Demo mode", () => {
     )! as HTMLSelectElement;
 
     // fire event to select each option
-    for (let i = 0; i < toolbar.options.length; i++) {
+    for (let i = 0; i < toolbar.options.length; i += 1) {
       toolbar.options.selectedIndex = i;
       fireEvent.update(toolbar, toolbar.options[i]!.value);
     }

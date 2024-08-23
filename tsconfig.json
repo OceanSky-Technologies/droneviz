@@ -1,4 +1,11 @@
 {
+  "ts-node": {
+    // these options are overrides used only by ts-node
+    // same as the --compilerOptions flag and the TS_NODE_COMPILER_OPTIONS environment variable
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
     /* Projects */
@@ -40,6 +47,8 @@
     // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
     "types": [
       "node",
+      "vue",
+      "vitest",
       "vitest/globals",
       "vite-plugin-pwa/client"
     ] /* Specify type package names to be included without being referenced in a source file. */,
@@ -117,8 +126,9 @@
     "**/*.mts",
     "**/*.vue",
     "**/*.glb",
-    "src/presets/**/*.js",
+    "presets/**/*.js",
     ".next/types/**/*.ts",
+    "mavlink-ts/**/*.ts",
     "test/helpers/getWebGLStub.js"
   ],
   "exclude": ["node_modules", "dist", "dev-dist"]

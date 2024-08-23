@@ -12,13 +12,11 @@
     "**/CVS": true,
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
-    "**/.yarn": true,
     "**/tsconfig.tsbuildinfo": true,
     "**/node_modules": true
   },
   "files.eol": "\n",
   "typescript.preferences.importModuleSpecifier": "relative",
-  "javascript.preferences.importModuleSpecifier": "relative",
   "vitest.disableWorkspaceWarning": true,
   "files.associations": {
     "*.css": "tailwindcss"
