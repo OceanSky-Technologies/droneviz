@@ -41,6 +41,11 @@ const toggleDarkMode = () => {
 </template>
 
 <style scoped>
+button {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+}
+
 .toggle-icon:before {
   content: "\e9c8";
 }

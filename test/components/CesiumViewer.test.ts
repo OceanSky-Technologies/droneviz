@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { enableAutoUnmount, mount } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import CesiumViewer from "../../src/components/CesiumViewer.vue";
 import { createTestViewerOptions } from "../helpers/MockDOMUtils";
 import { Cesium3DTileset, Entity, Model } from "cesium";
@@ -11,8 +11,6 @@ import {
   mouseOverListener,
   setGoogleTileSet,
 } from "../../src/components/CesiumViewer";
-
-enableAutoUnmount(afterEach);
 
 describe("CesiumViewer", () => {
   /**

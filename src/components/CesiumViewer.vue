@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const googleTilesEnabled: Ref<boolean> = ref(props.googleTilesEnabledInitial);
-const visible = ref(false); // TEST
+const visible = ref(false); // TEST DIALOG
 defineExpose({
   googleTilesEnabled,
   toggleGoogleTiles,

@@ -2,7 +2,12 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import PrimeVue from "primevue/config";
 import Lara from "./presets/primevue-tailwind-presets-4.0.0.rc.1/presets/lara";
-import "./pwa";
+
+import { registerSW } from "virtual:pwa-register";
+
+registerSW({
+  immediate: true,
+});
 
 const app = createApp(App);
 

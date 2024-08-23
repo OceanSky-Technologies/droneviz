@@ -10,6 +10,8 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 import vue from "@vitejs/plugin-vue";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
+// @ts-expect-error no declared types at this time
+import primeui from "tailwindcss-primeui";
 
 const cesiumSource = "node_modules/cesium/Build/Cesium";
 // This is the base url for static files that CesiumJS needs to load.
@@ -36,6 +38,7 @@ export default defineConfig({
       ],
     }),
     vue(),
+    primeui,
     tsconfigPaths(),
     VitePWA({
       registerType: "autoUpdate",
@@ -173,6 +176,7 @@ export default defineConfig({
     exclude: ["node_modules"],
     globals: true, // enable jest-like global test APIs
     environment: "happy-dom",
+    setupFiles: ["./vitest.setup.ts"],
     browser: {
       name: "chromium",
       provider: "playwright",
@@ -212,7 +216,6 @@ export default defineConfig({
         "**/forge.config.js",
         "**/postcss.config.js",
         "**/tailwind.config.js",
-        "**/src/pwa.mts",
         "**/src/presets/*",
       ],
       thresholds: {
@@ -231,6 +234,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ["@vitest/coverage-istanbul"],
+    exclude: ["@vitest/coverage-istanbul", "*/deps/workbox-window.js"],
   },
 });

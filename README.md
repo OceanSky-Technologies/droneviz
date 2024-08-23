@@ -15,14 +15,22 @@ yarn install
 
 ## Build and test
 
-To build the project use turbo:
+To build the project for production use turbo:
 
 ```bash
 yarn turbo build
+
+# run it with
+yarn preview
+```
+
+For running tests use
+
+```bash
 yarn turbo test
 ```
 
-To run a live web application with auto-refreshing use
+To run a development live web application with auto-refreshing use
 
 ```bash
 yarn turbo dev

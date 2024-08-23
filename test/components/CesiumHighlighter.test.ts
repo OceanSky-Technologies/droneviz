@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { enableAutoUnmount } from "@vue/test-utils";
 import CesiumHighlighter from "../../src/components/CesiumHighlighter.vue";
 import { Color, Entity, Scene } from "cesium";
 import { GOLD } from "../../src/helpers/Colors";
-
-enableAutoUnmount(afterEach);
 
 describe("CesiumHighlighter", () => {
   test("Create CesiumHighlighter", () => {

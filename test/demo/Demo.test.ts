@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { createTestViewerOptions } from "../helpers/MockDOMUtils";
-import { enableAutoUnmount, mount } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import CesiumViewer from "../../src/components/CesiumViewer.vue";
 import { Viewer } from "cesium";
 import { fireEvent } from "@testing-library/vue";
 import { initDemo } from "../../src/demo/Demo";
-
-enableAutoUnmount(afterEach);
 
 describe("Demo mode", () => {
   test("Init demo", () => {

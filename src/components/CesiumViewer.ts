@@ -46,7 +46,7 @@ export function initViewer(
 
   selectedEntityHighlighter = new CesiumHighlighter(viewer.scene, undefined, {
     color: Color.fromCssColorString(GOLD),
-    size: 5,
+    size: 8,
   });
   mouseOverHighlighter = new CesiumHighlighter(
     viewer.scene,
@@ -72,7 +72,6 @@ export function initViewer(
  */
 export function getViewerOptions(): Viewer.ConstructorOptions {
   return {
-    useBrowserRecommendedResolution: true,
     animation: false,
     timeline: false,
     infoBox: false,
