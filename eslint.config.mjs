@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 import vue from "eslint-plugin-vue";
 
 const config = [
-  eslint.configs.all,
+  eslint.configs.recommended,
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
   prettier,
@@ -48,6 +48,8 @@ const config = [
       "no-console": "off",
       "no-inline-comments": "off",
       "no-magic-numbers": "off",
+      "no-ternary": "off",
+      "no-undefined": "off",
       "no-use-before-define": "off",
       "one-var": "off",
       "prefer-template": "off",
