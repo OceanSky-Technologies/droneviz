@@ -23,7 +23,6 @@ export default defineConfig({
     // Define relative base path in cesium for loading assets
     // https://vitejs.dev/config/shared-options.html#define
     CESIUM_BASE_URL: JSON.stringify(`/${cesiumBaseUrl}`),
-    "process.env": {},
   },
   plugins: [
     // Copy Cesium Assets, Widgets, and Workers to a static directory.
@@ -35,7 +34,7 @@ export default defineConfig({
         { src: `${cesiumSource}/Workers`, dest: cesiumBaseUrl },
         { src: `${cesiumSource}/Assets`, dest: cesiumBaseUrl },
         { src: `${cesiumSource}/Widgets`, dest: cesiumBaseUrl },
-        { src: `src/assets/models`, dest: "assets" },
+        { src: `images`, dest: `` },
       ],
     }),
     vue(),
@@ -49,8 +48,7 @@ export default defineConfig({
       },
       workbox: {
         disableDevLogs: true, // enable to identify caching problems
-        // globPatterns: ["**/*"], # enable again if dev-dist has subfolders
-        globPatterns: ["*"],
+        globPatterns: ["**/*"],
         maximumFileSizeToCacheInBytes: 200000000,
         runtimeCaching: [
           {
@@ -63,6 +61,9 @@ export default defineConfig({
             handler: "CacheFirst",
             options: {
               cacheName: "api-cache",
+              expiration: {
+                maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
+              },
               cacheableResponse: {
                 statuses: [0, 200],
               },
@@ -74,7 +75,7 @@ export default defineConfig({
             options: {
               cacheName: "google-tiles-cache",
               expiration: {
-                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
               },
               matchOptions: { ignoreVary: true },
               cacheableResponse: {
@@ -88,7 +89,7 @@ export default defineConfig({
             options: {
               cacheName: "cesium-ion-cache",
               expiration: {
-                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
               },
               matchOptions: { ignoreVary: true },
               cacheableResponse: {
@@ -102,7 +103,7 @@ export default defineConfig({
             options: {
               cacheName: "virtualearth-cache",
               expiration: {
-                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
               },
               matchOptions: { ignoreVary: true },
               cacheableResponse: {
@@ -113,7 +114,7 @@ export default defineConfig({
         ],
       },
 
-      includeAssets: ["/src/assets/**/*"],
+      includeAssets: ["images/**/*"],
       manifest: {
         name: "Droneviz - OceanSky Technologies",
         short_name: "Droneviz",
@@ -122,13 +123,13 @@ export default defineConfig({
         screenshots: [
           // todo: add real screenshots
           {
-            src: "/src/assets/oceansky-logo.png",
+            src: "/images/oceansky-logo.png",
             sizes: "512x512",
             type: "image/png",
             form_factor: "wide",
           },
           {
-            src: "/src/assets/oceansky-logo.png",
+            src: "/images/oceansky-logo.png",
             sizes: "512x512",
             type: "image/png",
             form_factor: "narrow",
@@ -136,12 +137,12 @@ export default defineConfig({
         ],
         icons: [
           {
-            src: "/src/assets/oceansky-logo.svg",
+            src: "/images/oceansky-logo.svg",
             sizes: "150x150",
             type: "image/svg",
           },
           {
-            src: "/src/assets/oceansky-logo.png",
+            src: "/images/oceansky-logo.png",
             sizes: "512x512",
             type: "image/png",
           },
@@ -161,15 +162,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks(id: string | string[]) {
-          if (id.includes("node_modules")) {
-            return id!
-              .toString()!
-              .split("node_modules/")[1]!
-              .split("/")[0]!
-              .toString()!;
-          } else return undefined;
-        },
+        assetFileNames: `assets/[name].[ext]`,
       },
     },
   },
@@ -213,7 +206,7 @@ export default defineConfig({
         "**/node_modules/**",
         "**/packages/*/test?(s)/**",
         "**/postcss.config.js",
-        "**/presets/*",
+        "**/src/presets/*",
         "**/tailwind.config.js",
         "**/test?(-*).?(c|m)[jt]s?(x)",
         "**/test?(s)/**",
