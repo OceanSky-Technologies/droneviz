@@ -49,3 +49,7 @@ jobs:
       - name: Check dependencies
         run: |
           pnpm depcheck
+
+      - name: Build package with tauri
+        run: |
+          pnpm tauri build

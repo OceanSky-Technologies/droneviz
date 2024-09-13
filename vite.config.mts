@@ -19,6 +19,8 @@ const cesiumSource = "node_modules/cesium/Build/Cesium";
 const cesiumBaseUrl = "cesiumStatic";
 
 export default defineConfig({
+  // prevent vite from obscuring rust errors
+  clearScreen: false,
   define: {
     // Define relative base path in cesium for loading assets
     // https://vitejs.dev/config/shared-options.html#define
@@ -41,7 +43,6 @@ export default defineConfig({
     primeui,
     tsconfigPaths(),
     VitePWA({
-      registerType: "autoUpdate",
       devOptions: {
         enabled: true,
         type: "module",
@@ -51,24 +52,6 @@ export default defineConfig({
         globPatterns: ["**/*"],
         maximumFileSizeToCacheInBytes: 200000000,
         runtimeCaching: [
-          {
-            urlPattern: ({ url }) => {
-              return (
-                !url.pathname.startsWith("http") &&
-                !url.pathname.startsWith("www.")
-              );
-            },
-            handler: "CacheFirst",
-            options: {
-              cacheName: "api-cache",
-              expiration: {
-                maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
           {
             urlPattern: /^https:\/\/tile\.googleapis\.com\/.*/i,
             handler: "CacheFirst",
@@ -155,11 +138,27 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  // to access the Tauri environment variables set by the CLI with information about the current target
+  envPrefix: [
+    "VITE_",
+    "TAURI_PLATFORM",
+    "TAURI_ARCH",
+    "TAURI_FAMILY",
+    "TAURI_PLATFORM_VERSION",
+    "TAURI_PLATFORM_TYPE",
+    "TAURI_DEBUG",
+  ],
   assetsInclude: ["**/*.glb"],
   build: {
     chunkSizeWarningLimit: 4000,
-    emptyOutDir: true, // also necessary
-    sourcemap: true,
+    emptyOutDir: false,
+    target: process.env.TAURI_PLATFORM
+      ? process.env.TAURI_PLATFORM == "windows"
+        ? "chrome105"
+        : "safari13"
+      : "modules", // Tauri uses Chromium on Windows and WebKit on macOS and Linux
+    minify: !process.env.TAURI_DEBUG ? true : false, // don't minify for debug builds
+    sourcemap: !!process.env.TAURI_DEBUG, // produce sourcemaps for debug builds
     rollupOptions: {
       output: {
         assetFileNames: `assets/[name].[ext]`,

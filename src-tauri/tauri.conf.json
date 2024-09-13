@@ -1,0 +1,38 @@
+{
+  "productName": "droneviz",
+  "version": "1.0.0",
+  "identifier": "com.oceansky.droneviz",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "droneviz",
+        "width": 800,
+        "height": 600,
+        "resizable": true,
+        "maximized": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "../images/oceansky-logo30x30.png",
+      "../images/oceansky-logo100x100.png",
+      "../images/oceansky-logo.png",
+      "../images/oceansky-logo.icns",
+      "../images/oceansky-logo.ico"
+    ],
+    "resources": ["../dist/backend/**/*"]
+  },
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json"
+}

@@ -78,6 +78,8 @@ Alternatively, the `vscode` configuration comes with the `Testing` tab fully set
 VitePWA is used to create standalone apps. It is set up using a service worker and caching of all requests for offline usage (and to reduce API quota usage).
 See [this page](https://wildermuth.com/2023/02/09/vite-plugin-for-progressive-web-apps/) for more information.
 
+In addition, [tauri](https://tauri.app/) is used to create cross-platform bundles with installers.
+
 In future add [action-gh-release](https://github.com/softprops/action-gh-release) for release artifact creation.
 
 ## MAVLINK communication

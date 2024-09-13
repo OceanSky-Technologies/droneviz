@@ -8,6 +8,8 @@
     "vitest.explorer",
     "bradlc.vscode-tailwindcss",
     "vunguyentuan.vscode-postcss",
-    "vue.volar"
+    "vue.volar",
+    "tauri-apps.tauri-vscode",
+    "swellaby.rust-pack"
   ]
 }
