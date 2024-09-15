@@ -57,6 +57,7 @@
     "cesium": "^1.121.1",
     "concurrently": "^9.0.1",
     "cssnano": "^7.0.6",
+    "egm96-universal": "^1.1.0",
     "globals": "^15.9.0",
     "primeicons": "^7.0.0",
     "primevue": "^4.0.5",

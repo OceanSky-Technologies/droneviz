@@ -17,15 +17,27 @@ import {
   HeadingPitchRange,
   ScreenSpaceEventType,
   Cartesian3,
+  Cartographic,
+  HorizontalOrigin,
+  VerticalOrigin,
+  Cartesian2,
+  ConstantProperty,
+  Label,
+  sampleTerrainMostDetailed,
+  ConstantPositionProperty,
 } from "cesium";
+import * as egm96 from "egm96-universal";
 
 Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTJmM2RmYi0wMDI3LTQxYmMtYjY1NS00MzhmYzg4Njk1NTMiLCJpZCI6MjExMDU5LCJpYXQiOjE3MTM5OTExNTh9.cgvEwVgVgDQRqLsZzWCubdKnui9qoZAXTPCRbtVzZmo";
 
 export let viewer: Viewer;
 export let googleTileset: Cesium3DTileset | undefined;
+
 let selectedEntityHighlighter: CesiumHighlighter;
+
 let mouseOverHighlighter: CesiumHighlighter;
+let showPositionEntity: Entity;
 
 /**
  * Initialize the cesium viewer.
@@ -41,6 +53,9 @@ export function initViewer(
   viewer.scene.postProcessStages.fxaa.enabled = true;
   viewer.scene.debugShowFramesPerSecond = true;
 
+  // fix unprecise height values on mouse over: https://github.com/CesiumGS/cesium/issues/8707#issuecomment-606778413
+  viewer.scene.globe.depthTestAgainstTerrain = true;
+
   // improve rendering speed
   viewer.scene.globe.tileCacheSize = 1000;
 
@@ -52,6 +67,18 @@ export function initViewer(
     viewer.scene,
     Color.fromCssColorString(BLUE),
   );
+
+  showPositionEntity = viewer.entities.add({
+    label: {
+      show: false,
+      showBackground: true,
+      font: "14px monospace",
+      horizontalOrigin: HorizontalOrigin.LEFT,
+      verticalOrigin: VerticalOrigin.TOP,
+      pixelOffset: new Cartesian2(15, 0),
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+    },
+  });
 
   // pre-select a base layer
   if (viewer.baseLayerPicker) {
@@ -174,27 +201,110 @@ export async function mouseDoubleClickListener(
 export async function mouseOverListener(
   motionEvent: ScreenSpaceEventHandler.MotionEvent,
 ) {
-  const entity = await viewer.scene.pick(motionEvent.endPosition);
+  // pick the entity below the mouse and highlight
+  const entity = viewer.scene.pick(motionEvent.endPosition);
+
+  mouseOverHighlighter.clear();
 
   if (defined(entity)) {
-    if (defined(entity.id) && entity.id instanceof Entity) {
+    if (
+      defined(entity.id) &&
+      entity.id instanceof Entity &&
+      !(entity.primitive instanceof Label)
+    ) {
       // add entities to the array
       console.log("Mouse over entity:");
       console.log(entity);
 
       mouseOverHighlighter.add(entity);
-
-      updateRequestRenderMode();
-
-      return;
     }
   }
 
-  if (!mouseOverHighlighter.empty()) {
-    // clear existing array
-    mouseOverHighlighter.clear();
+  updateRequestRenderMode();
 
-    updateRequestRenderMode();
+  // show a position data text box next to the mouse cursor
+  try {
+    // get the position below the mouse
+    const cartesian = viewer.scene.pickPosition(motionEvent.endPosition);
+    const cartographic = Cartographic.fromCartesian(cartesian);
+    const latitudeDegrees = Math.toDegrees(cartographic.latitude);
+    const longitudeDegrees = Math.toDegrees(cartographic.longitude);
+
+    showPositionEntity!.position = new ConstantPositionProperty(cartesian);
+
+    // 6 decimal places equal 10 cm resolution.
+    // 12 digits are maximum.
+    const longitudeString = longitudeDegrees.toFixed(6).padStart(12, " ") + "°";
+    const latitudeString = latitudeDegrees.toFixed(6).padStart(12, " ") + "°";
+
+    const heightMSLString =
+      egm96
+        .meanSeaLevel(latitudeDegrees, longitudeDegrees)
+        .toFixed(2)
+        .padStart(12, " ") + "m";
+
+    // TODO: change to googleTileset.show after refactoring
+    if (!viewer.scene.globe.show) {
+      let height3DString = "";
+      if (viewer.scene.clampToHeightSupported) {
+        const updatedCartesians = await viewer.scene.clampToHeightMostDetailed([
+          cartesian,
+        ]);
+
+        if (updatedCartesians && updatedCartesians.length > 0) {
+          height3DString =
+            Cartographic.fromCartesian(updatedCartesians[0]!)
+              .height.toFixed(2)
+              .padStart(12, " ") + "m";
+        } else {
+          height3DString =
+            viewer.scene
+              .sampleHeight(cartographic)
+              .toFixed(2)
+              .padStart(12, " ") + "m";
+        }
+      } else {
+        height3DString =
+          viewer.scene.sampleHeight(cartographic).toFixed(2).padStart(12, " ") +
+          "m";
+      }
+
+      showPositionEntity!.label!.text = new ConstantProperty(
+        `Lat:     ${latitudeString}` +
+          `\nLon:     ${longitudeString}` +
+          `\nMSL:     ${heightMSLString}` +
+          `\n3D:      ${height3DString}`,
+      );
+    } else {
+      // Query the terrain height at the mouse position using sampleTerrainMostDetailed
+      const updatedCartographics = await sampleTerrainMostDetailed(
+        viewer.terrainProvider,
+        [cartographic],
+      );
+
+      if (updatedCartographics && updatedCartographics.length > 0) {
+        const heightTerrainString =
+          updatedCartographics[0].height.toFixed(2).padStart(12, " ") + "m";
+
+        showPositionEntity!.label!.text = new ConstantProperty(
+          `Lat:     ${latitudeString}` +
+            `\nLon:     ${longitudeString}` +
+            `\nMSL:     ${heightMSLString}` +
+            `\nTerrain: ${heightTerrainString}`,
+        );
+      } else {
+        showPositionEntity!.label!.text = new ConstantProperty(
+          `Lat:    ${latitudeString}` +
+            `\nLon:    ${longitudeString}` +
+            `\nHeight: ${heightMSLString}`,
+        );
+      }
+    }
+
+    showPositionEntity!.label!.show = new ConstantProperty(true);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e: unknown) {
+    /* empty */
   }
 }
 
