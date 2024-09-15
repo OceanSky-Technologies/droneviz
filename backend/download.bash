@@ -44,8 +44,8 @@ fi
 
 # copy scripts
 echo "Copying scripts..."
-cp "$ROOT/backend/run.cmd" "$ROOT/dist/backend"
+cp "$ROOT/backend/start.bat" "$ROOT/dist/backend"
+cp "$ROOT/backend/stop.bat" "$ROOT/dist/backend"
 cp "$ROOT/backend/versions.cfg" "$ROOT/dist/backend"
-cp "$ROOT/backend/firewallAllow.cmd" "$ROOT/dist/backend"
 
 echo "Finished"
