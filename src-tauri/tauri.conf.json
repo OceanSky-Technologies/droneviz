@@ -23,7 +23,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "rpm", "appimage", "nsis", "app", "dmg"],
     "icon": [
       "../images/oceansky-logo30x30.png",
       "../images/oceansky-logo100x100.png",
