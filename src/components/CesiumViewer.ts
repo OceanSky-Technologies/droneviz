@@ -60,12 +60,12 @@ export function initViewer(
   viewer.scene.globe.tileCacheSize = 1000;
 
   selectedEntityHighlighter = new CesiumHighlighter(viewer.scene, undefined, {
-    color: Color.fromCssColorString(GOLD),
+    color: Color.fromCssColorString(BLUE),
     size: 8,
   });
   mouseOverHighlighter = new CesiumHighlighter(
     viewer.scene,
-    Color.fromCssColorString(BLUE),
+    Color.fromCssColorString(GOLD),
   );
 
   showPositionEntity = viewer.entities.add({

@@ -4,7 +4,7 @@ import { onMounted, onUnmounted, Ref, ref } from "vue";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
-import { Cartesian3, HeadingPitchRoll, Transforms, Viewer } from "cesium";
+import { Cartesian3, HeadingPitchRoll, Transforms, Viewer, Math } from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import {
   googleTileset,
@@ -18,7 +18,10 @@ import * as egm96 from "egm96-universal";
 import { initDemo } from "../demo/Demo";
 import { System } from "../../mavlink-ts/src/System";
 import {
+  AltitudeResponse,
   AttitudeAngularVelocityBodyResponse,
+  DistanceSensorResponse,
+  HeadingResponse,
   PositionResponse,
 } from "mavlink-ts/protobuf-gen/telemetry/telemetry";
 
@@ -26,21 +29,48 @@ async function run() {
   // create a new drone instance
   console.log("Establishing connection");
 
+  viewer.entities!.getById("aircraft-in-san-francisco")!.model!.scale = 0.1;
+
   const drone = new System("http://127.0.0.1", 60000);
   drone.telemetry.connect();
 
   console.log("Reading data");
+
+  let lastAltitudeLocalM = 0;
+
+  let lastHeading = 0;
+
+  drone.telemetry.altitude?.responses.onMessage(
+    (altitude: AltitudeResponse) => {
+      console.log("New altitude received:\n" + JSON.stringify(altitude));
+
+      lastAltitudeLocalM = altitude!.altitude!.altitudeLocalM!;
+    },
+  );
 
   drone.telemetry.position?.responses.onMessage(
     (position: PositionResponse) => {
       // console.log("New position received:\n" + JSON.stringify(position));
 
       if (position.position) {
+        const altitude =
+          lastAltitudeLocalM +
+          egm96.meanSeaLevel(
+            position.position.latitudeDeg,
+            position.position.longitudeDeg,
+          ) +
+          egm96.egm96ToEllipsoid(
+            position.position.latitudeDeg,
+            position.position.longitudeDeg,
+            0,
+          );
+        console.log(altitude);
+
         viewer.entities!.getById("aircraft-in-san-francisco")!.position = {
           ...Cartesian3.fromDegrees(
             position.position.longitudeDeg,
             position.position.latitudeDeg,
-            position.position.absoluteAltitudeM,
+            altitude,
           ),
         };
 
@@ -49,12 +79,16 @@ async function run() {
     },
   );
 
+  drone.telemetry.heading?.responses.onMessage((heading: HeadingResponse) => {
+    lastHeading = heading.headingDeg!.headingDeg;
+  });
+
   drone.telemetry.attitudeAngularVelocityBody?.responses.onMessage(
     (attitudeAngularVelocityBody: AttitudeAngularVelocityBodyResponse) => {
-      console.log(
-        "New attitudeAngularVelocityBody received:\n" +
-          JSON.stringify(attitudeAngularVelocityBody),
-      );
+      // console.log(
+      //   "New attitudeAngularVelocityBody received:\n" +
+      //     JSON.stringify(attitudeAngularVelocityBody),
+      // );
 
       if (
         attitudeAngularVelocityBody.attitudeAngularVelocityBody &&
@@ -66,7 +100,8 @@ async function run() {
               .entities!.getById("aircraft-in-san-francisco")!
               .position!.getValue()!,
             new HeadingPitchRoll(
-              attitudeAngularVelocityBody.attitudeAngularVelocityBody.yawRadS,
+              Math.toRadians(lastHeading + 270),
+              // attitudeAngularVelocityBody.attitudeAngularVelocityBody.yawRadS,
               attitudeAngularVelocityBody.attitudeAngularVelocityBody.pitchRadS,
               attitudeAngularVelocityBody.attitudeAngularVelocityBody.rollRadS,
             ),
