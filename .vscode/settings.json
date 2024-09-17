@@ -13,7 +13,12 @@
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
     "**/tsconfig.tsbuildinfo": true,
-    "**/node_modules": true
+    "**/node_modules": true,
+    "**/target/**/.fingerprint": true,
+    "**/target/**/build": true,
+    "**/target/**/deps": true,
+    "**/target/**/examples": true,
+    "**/target/**/incremental": true
   },
   "files.eol": "\n",
   "typescript.preferences.importModuleSpecifier": "relative",
