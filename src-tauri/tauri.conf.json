@@ -12,9 +12,17 @@
     "windows": [
       {
         "title": "droneviz",
+        "label": "main",
         "width": 1280,
         "height": 720,
         "resizable": true
+      },
+      {
+        "title": "Video window",
+        "label": "video",
+        "width": 640,
+        "height": 480,
+        "visible": false
       }
     ],
     "security": {

@@ -158,9 +158,11 @@ if %errorLevel% neq 0 (
 	exit /B
 
 :startBackend
+    REM Simulator: udp://:14550
+    REM QGroundControl mavlink forwarding: udp://:14445
     echo Starting mavsdk-server-%MAVSDK_SERVER_VERSION%
     START "" /B "%PROGRAM_MAVSDK_SERVER%" ^
-        -p 50051 ^
+        -p 50055 ^
         udp://:14550
     for /f "tokens=2" %%a in ('tasklist /FI "IMAGENAME eq mavsdk_server_bin.exe"') do set MAVSDK_SERVER_PID=%%a
 
@@ -172,7 +174,7 @@ if %errorLevel% neq 0 (
 
     echo Starting grpcwebproxy-%GRPC_WEB_PROXY_VERSION%
     START "" /B "%PROGRAM_GRPC_WEB_PROXY%" ^
-        --backend_addr=127.0.0.1:50051 ^
+        --backend_addr=127.0.0.1:50055 ^
         --server_http_debug_port 60000 ^
         --run_tls_server=false ^
         --allow_all_origins ^

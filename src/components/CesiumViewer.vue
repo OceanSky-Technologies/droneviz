@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import IconCommunity from "./icons/IconCommunity.vue";
+import CameraWindow from "./CameraWindow.vue";
 import { onMounted, onUnmounted, Ref, ref } from "vue";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";
@@ -20,7 +21,7 @@ import { System } from "../../mavlink-ts/src/System";
 import {
   AltitudeResponse,
   AttitudeAngularVelocityBodyResponse,
-  DistanceSensorResponse,
+  AttitudeEulerResponse,
   HeadingResponse,
   PositionResponse,
 } from "mavlink-ts/protobuf-gen/telemetry/telemetry";
@@ -83,15 +84,15 @@ async function run() {
     lastHeading = heading.headingDeg!.headingDeg;
   });
 
-  drone.telemetry.attitudeAngularVelocityBody?.responses.onMessage(
-    (attitudeAngularVelocityBody: AttitudeAngularVelocityBodyResponse) => {
+  drone.telemetry.attitudeEuler?.responses.onMessage(
+    (attitudeEulerResponse: AttitudeEulerResponse) => {
       // console.log(
       //   "New attitudeAngularVelocityBody received:\n" +
       //     JSON.stringify(attitudeAngularVelocityBody),
       // );
 
       if (
-        attitudeAngularVelocityBody.attitudeAngularVelocityBody &&
+        attitudeEulerResponse.attitudeEuler &&
         viewer.entities?.getById("aircraft-in-san-francisco")?.position
       ) {
         viewer.entities!.getById("aircraft-in-san-francisco")!.orientation =
@@ -99,11 +100,10 @@ async function run() {
             viewer
               .entities!.getById("aircraft-in-san-francisco")!
               .position!.getValue()!,
-            new HeadingPitchRoll(
-              Math.toRadians(lastHeading + 270),
-              // attitudeAngularVelocityBody.attitudeAngularVelocityBody.yawRadS,
-              attitudeAngularVelocityBody.attitudeAngularVelocityBody.pitchRadS,
-              attitudeAngularVelocityBody.attitudeAngularVelocityBody.rollRadS,
+            HeadingPitchRoll.fromDegrees(
+              lastHeading + 270,
+              attitudeEulerResponse.attitudeEuler.pitchDeg,
+              attitudeEulerResponse.attitudeEuler.rollDeg,
             ),
           );
 
@@ -207,13 +207,10 @@ onUnmounted(() => {
       </label>
     </div>
 
-    <h1 class="text-3xl font-bold underline">Hello world!</h1>
-
-    <IconCommunity />
     <div id="demoMenu" />
 
     <!-- TEST -->
-    <Button label="Show" @click="visible = true" />
+    <Button label="dummyDialog" @click="visible = true" />
 
     <Dialog
       v-model:visible="visible"
@@ -243,6 +240,12 @@ onUnmounted(() => {
         <Button type="button" label="Save" @click="visible = false"></Button>
       </div>
     </Dialog>
+
+    <br />
+
+    <br />
+
+    <CameraWindow />
   </div>
 </template>
 
