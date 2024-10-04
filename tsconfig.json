@@ -50,7 +50,8 @@
       "vue",
       "vitest",
       "vitest/globals",
-      "vite-plugin-pwa/client"
+      "vite-plugin-pwa/client",
+      "@vitest/browser/providers/webdriverio"
     ] /* Specify type package names to be included without being referenced in a source file. */,
     // "allowUmdGlobalAccess": true,                     /* Allow accessing UMD globals from modules. */
     // "moduleSuffixes": [],                             /* List of file name suffixes to search when resolving a module. */
@@ -126,8 +127,6 @@
     "**/*.mts",
     "**/*.vue",
     "**/*.glb",
-    "presets/**/*.js",
-    ".next/types/**/*.ts",
     "mavlink-ts/**/*.ts",
     "test/helpers/getWebGLStub.js"
   ],

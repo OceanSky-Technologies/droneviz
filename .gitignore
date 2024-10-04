@@ -88,6 +88,3 @@ vite.config.mts.timestamp*
 
 # Electron-Forge
 out/
-
-# Turbo
-.turbo

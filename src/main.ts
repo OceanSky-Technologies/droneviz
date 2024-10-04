@@ -1,26 +1,41 @@
-import { createApp } from "vue";
-import App from "./app.vue";
+import { App, createApp } from "vue";
+import MainApp from "./MainApp.vue";
 import PrimeVue from "primevue/config";
-import Lara from "../presets/primevue-tailwind-presets-4.0.0.rc.1/presets/lara";
+import Lara from "@primevue/themes/lara";
 
 import { registerSW } from "virtual:pwa-register";
 
-registerSW({
-  immediate: true,
-});
+export let app: App<Element>;
 
-const app = createApp(App);
+/**
+ * Start the app.
+ */
+export function main() {
+  registerSW({
+    immediate: true,
+  });
 
-app.use(PrimeVue, {
-  unstyled: true,
-  pt: Lara,
-  options: {
-    darkModeSelector: "system",
-  },
-});
+  app = createApp(MainApp);
 
-app.config.errorHandler = (err) => {
-  console.error("Caught error: " + err);
-};
+  app.use(PrimeVue, {
+    unstyled: true,
+    pt: Lara,
+    options: {
+      darkModeSelector: "system",
+    },
+  });
 
-app.mount("#app");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.config.errorHandler = (error: any) => {
+    if (error instanceof Error) {
+      console.error("Caught error:", error.message);
+      console.error("Stack trace:", error.stack);
+    } else {
+      console.error("Unknown error:", error);
+    }
+  };
+
+  app.mount("#app");
+}
+
+main();

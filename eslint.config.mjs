@@ -66,15 +66,13 @@ const config = [
   {
     ignores: [
       ".github",
-      ".next",
-      ".turbo",
       ".vscode",
       "coverage",
       "dist",
       "dev-dist",
       "node_modules",
       "test/helpers/getWebGLStub.js",
-      "presets",
+      "tauri-app",
       "mavlink-ts",
     ],
   },

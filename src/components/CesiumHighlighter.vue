@@ -16,7 +16,16 @@ export interface Silhouette {
   size: number;
 }
 
+/**
+ * Highlights cesium entities.
+ */
 export default class CesiumHighlighter {
+  /**
+   * Creates a new object from a set of parameters.
+   * @param {Scene} scene Cesium scene.
+   * @param {Color} color Optional color to apply.
+   * @param {Silhouette} silhouette Optional silhouette to apply.
+   */
   constructor(scene: Scene, color?: Color, silhouette?: Silhouette) {
     if (!scene) throw Error("Invalid scene");
 
@@ -48,12 +57,21 @@ export default class CesiumHighlighter {
     this.silhouette = silhouette;
   }
 
-  contains(entity: Entity) {
+  /**
+   * Check if a given entity is already highlighted by this CesiumHighlighter.
+   * @param {Entity} entity Entity to check.
+   * @returns {boolean} true if the entity was already added, false otherwise.
+   */
+  contains(entity: Entity): boolean {
     if (!defined(entity)) throw Error("Invalid entity");
 
     return this.getEntityIds().includes(entity.id);
   }
 
+  /**
+   * Adds a new entity to be highlighted.
+   * @param {any} entity New entity to highlight.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   add(entity: any) {
     if (!defined(entity)) throw Error("Invalid entity");
@@ -63,13 +81,16 @@ export default class CesiumHighlighter {
 
       if (defined(entity.id.model)) {
         this.addColor(entity.id.model);
-        this.setSilhouette(entity.id.model, true);
+        this.addSilhouette(entity.id.model);
       }
 
       this.scene.requestRender();
     }
   }
-
+  /**
+   * Adds new entities to be highlighted.
+   * @param {any} entities New entitites to highlight.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setArray(entities: any[]) {
     if (!defined(entities)) throw Error("Invalid entity array");
@@ -81,7 +102,7 @@ export default class CesiumHighlighter {
       if (!currentEntityIds.includes(entity.id))
         if (defined(entity.id.model)) {
           this.addColor(entity.id.model);
-          this.setSilhouette(entity.id.model, true);
+          this.addSilhouette(entity.id.model);
         }
     }
 
@@ -89,7 +110,10 @@ export default class CesiumHighlighter {
 
     this.scene.requestRender();
   }
-
+  /**
+   * Removes an entity from the highlighter.
+   * @param {any} entity Entity that shall not be highlighted anymore.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   remove(entity: any) {
     if (!defined(entity)) throw Error("Invalid entity");
@@ -100,26 +124,37 @@ export default class CesiumHighlighter {
       this.entities.splice(index, 1);
       if (defined(entity.id.model)) {
         this.removeColor(entity.id.model);
-        this.setSilhouette(entity.id.model, false);
+        this.removeSilhouette(entity.id.model);
       }
     }
   }
 
+  /**
+   * Remove all entities from this highlighter so they aren't highlighted anymore.
+   */
   clear() {
     for (const entity of this.entities) {
       if (defined(entity.id) && defined(entity.id.model)) {
         this.removeColor(entity.id.model);
-        this.setSilhouette(entity.id.model, false);
+        this.removeSilhouette(entity.id.model);
       }
     }
 
     this.entities = [];
   }
 
+  /**
+   * Gets the list of all entities that are being highlighted.
+   * @returns {Entity[]} Array of entities that are highlighted.
+   */
   getEntities(): Entity[] {
     return this.entities;
   }
 
+  /**
+   * Gets the list of all entity IDs that are being highlighted.
+   * @returns {string[]} Array of entity IDs that are highlighted.
+   */
   getEntityIds(): string[] {
     const entityIds: string[] = [];
     for (const storedEntity of this.entities) entityIds.push(storedEntity.id);
@@ -127,22 +162,40 @@ export default class CesiumHighlighter {
     return entityIds;
   }
 
+  /**
+   * Checks if one or more entities are highlighted.
+   * @returns {boolean} true if one or more entities are highlighted, false if not.
+   */
   empty(): boolean {
     return this.entities.length == 0;
   }
 
-  private setSilhouette(model: ModelGraphics, enable: boolean) {
+  /**
+   * Enables the silhouette for a given model.
+   * @param {ModelGraphics} model Model for which the silhouette shall be enabled.
+   */
+  private addSilhouette(model: ModelGraphics) {
     if (this.silhouette) {
-      if (enable) {
-        model.silhouetteColor = new ConstantProperty(this.silhouette.color);
-        model.silhouetteSize = new ConstantProperty(this.silhouette.size);
-      } else {
-        model.silhouetteColor = undefined;
-        model.silhouetteSize = undefined;
-      }
+      model.silhouetteColor = new ConstantProperty(this.silhouette.color);
+      model.silhouetteSize = new ConstantProperty(this.silhouette.size);
     }
   }
 
+  /**
+   * Disables the silhouette for a given model.
+   * @param {ModelGraphics} model Model for which the silhouette shall be disabled.
+   */
+  private removeSilhouette(model: ModelGraphics) {
+    if (this.silhouette) {
+      model.silhouetteColor = undefined;
+      model.silhouetteSize = undefined;
+    }
+  }
+
+  /**
+   * Enables the color for a given model.
+   * @param {ModelGraphics} model Model for which the color shall be enabled.
+   */
   private addColor(model: ModelGraphics) {
     if (!this.color) return;
 
@@ -171,6 +224,10 @@ export default class CesiumHighlighter {
     } else console.warn("Entity has no model");
   }
 
+  /**
+   * Disables the color for a given model.
+   * @param {ModelGraphics} model Model for which the color shall be disabled.
+   */
   private removeColor(model: ModelGraphics) {
     if (!this.color) return;
 
@@ -206,6 +263,7 @@ export default class CesiumHighlighter {
   private readonly color: Color | undefined;
   private readonly silhouette: Silhouette | undefined;
 
+  // List of all entities that are highlighted.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private entities: any[] = [];
 }

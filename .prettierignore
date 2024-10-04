@@ -1,6 +1,6 @@
 build
 coverage
-.turbo
 node_modules
-presets
 mavlink-ts
+pnpm-lock.yaml
+tauri-app

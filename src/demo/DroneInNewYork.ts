@@ -1,7 +1,7 @@
 import { Cartesian3, Entity, HeadingPitchRoll, Math, Transforms } from "cesium";
 
 export const text = "Drone in New York, U.S.";
-export const value = "drone-in-new-york-us";
+export const id = "drone-in-new-york-us";
 
 const position = Cartesian3.fromDegrees(-74.023996, 40.700533, 450);
 const heading = Math.toRadians(-270);
@@ -21,6 +21,7 @@ const orientation = Transforms.headingPitchRollQuaternion(
  */
 export function getEntity(): Entity.ConstructorOptions {
   return {
+    id: id,
     position,
     orientation,
     model: {

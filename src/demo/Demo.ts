@@ -1,4 +1,5 @@
 import { Viewer } from "cesium";
+import * as LiveDrone from "./LiveDrone";
 import * as ShipInHamburg from "./ShipInHamburg";
 import * as AircraftInSanFrancisco from "./AircraftInSanFrancisco";
 import * as VehiclesInUkraine from "./VehiclesInUkraine";
@@ -9,11 +10,7 @@ import * as DroneInNewYork from "./DroneInNewYork";
  * @param {Viewer} viewer Cesium viewer instance.
  */
 export function initDemo(viewer: Viewer) {
-  if (!viewer) {
-    console.error("Cesium viewer isn't initialized");
-    return;
-  }
-
+  viewer.entities.add(LiveDrone.getEntity());
   viewer.entities.add(ShipInHamburg.getEntity());
   viewer.entities.add(AircraftInSanFrancisco.getEntity());
   viewer.entities.add(DroneInNewYork.getEntity());
@@ -23,31 +20,39 @@ export function initDemo(viewer: Viewer) {
   }
 
   addToolbarMenu([
-    new ToolbarOption({ text: "[Demo Menu]", value: "demo-menu" }),
+    new ToolbarOption({ text: "[Menu]", value: "demo-menu" }),
+    new ToolbarOption({
+      text: LiveDrone.text,
+      value: LiveDrone.id,
+      onSelect: () => {
+        const destination = LiveDrone.getCameraPosition(viewer)?.destination;
+        if (destination) viewer.camera.flyTo({ destination: destination });
+      },
+    }),
     new ToolbarOption({
       text: ShipInHamburg.text,
-      value: ShipInHamburg.value,
+      value: ShipInHamburg.id,
       onSelect: () => {
         viewer.camera.flyTo(ShipInHamburg.getCameraPosition());
       },
     }),
     new ToolbarOption({
       text: AircraftInSanFrancisco.text,
-      value: AircraftInSanFrancisco.value,
+      value: AircraftInSanFrancisco.id,
       onSelect: () => {
         viewer.camera.flyTo(AircraftInSanFrancisco.getCameraPosition());
       },
     }),
     new ToolbarOption({
       text: DroneInNewYork.text,
-      value: DroneInNewYork.value,
+      value: DroneInNewYork.id,
       onSelect: () => {
         viewer.camera.flyTo(DroneInNewYork.getCameraPosition());
       },
     }),
     new ToolbarOption({
       text: VehiclesInUkraine.text,
-      value: VehiclesInUkraine.value,
+      value: VehiclesInUkraine.id,
       onSelect: () => {
         viewer.camera.flyTo(VehiclesInUkraine.getCameraPosition());
       },
@@ -55,11 +60,18 @@ export function initDemo(viewer: Viewer) {
   ]);
 }
 
+/**
+ * Toolbar option class.
+ */
 export class ToolbarOption {
   text!: string;
   value!: string;
   onSelect!: () => undefined;
 
+  /**
+   * Creates a new toolbar option.
+   * @param {Partial<ToolbarOption>} init Toolbar option to use.
+   */
   public constructor(init?: Partial<ToolbarOption>) {
     Object.assign(this, init);
   }

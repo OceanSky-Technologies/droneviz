@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { createTestViewerOptions } from "../helpers/MockDOMUtils";
+import {
+  createCesiumContainer,
+  createTestViewerOptions,
+} from "../helpers/MockUtils";
 import { mount } from "@vue/test-utils";
 import CesiumViewer from "../../src/components/CesiumViewer.vue";
-import { Viewer } from "cesium";
+import { Cesium3DTileset, Viewer } from "cesium";
 import { fireEvent } from "@testing-library/vue";
 import { initDemo } from "../../src/demo/Demo";
 
@@ -24,10 +27,12 @@ describe("Demo mode", () => {
   });
 
   test("Invalid toolbar", () => {
+    createCesiumContainer();
+
     mount(CesiumViewer, {
       props: {
         webGLMock: createTestViewerOptions,
-        googleTilesEnabledInitial: false, // stay below cesium quota
+        tilesetMock: new Cesium3DTileset({}), // stay below cesium quota
       },
     });
 
@@ -42,7 +47,7 @@ describe("Demo mode", () => {
     mount(CesiumViewer, {
       props: {
         webGLMock: createTestViewerOptions,
-        googleTilesEnabledInitial: false, // stay below cesium quota
+        tilesetMock: new Cesium3DTileset({}), // stay below cesium quota
       },
       attachTo: div,
     });

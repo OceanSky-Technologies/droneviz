@@ -163,7 +163,7 @@ if %errorLevel% neq 0 (
     echo Starting mavsdk-server-%MAVSDK_SERVER_VERSION%
     START "" /B "%PROGRAM_MAVSDK_SERVER%" ^
         -p 50055 ^
-        udp://:14550
+        udp://:14445
     for /f "tokens=2" %%a in ('tasklist /FI "IMAGENAME eq mavsdk_server_bin.exe"') do set MAVSDK_SERVER_PID=%%a
 
     REM Make sure the mavsdk-server process was identified

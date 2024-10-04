@@ -1,21 +1,26 @@
 import {
   Cartesian3,
-  Transforms,
+  Entity,
   HeadingPitchRoll,
   Math,
-  Color,
-  Entity,
+  Transforms,
+  Viewer,
 } from "cesium";
+import { move } from "../helpers";
 
-export const text = "Ship in Hamburg, Germany";
-export const id = "ship-in-hamburg-germany";
+export const text = "Live";
+export const id = "live-drone";
 
-const position = Cartesian3.fromDegrees(9.981613, 53.540627, 65);
-const heading = Math.toRadians(115);
+const position = Cartesian3.fromDegrees(
+  12.492676729145881,
+  41.890097155559324,
+  71.5,
+);
+const heading = Math.toRadians(-270);
 const pitch = Math.toRadians(0);
 const roll = Math.toRadians(0);
 
-const modelPath = new URL("../assets/models/CargoShip.glb", import.meta.url)
+const modelPath = new URL("../assets/models/Skywinger.glb", import.meta.url)
   .href;
 
 const orientation = Transforms.headingPitchRollQuaternion(
@@ -31,13 +36,9 @@ export function getEntity(): Entity.ConstructorOptions {
     id: id,
     position,
     orientation,
-    point: {
-      pixelSize: 10,
-      color: Color.YELLOW,
-    },
     model: {
       uri: modelPath,
-      scale: 100,
+      scale: 1,
       minimumPixelSize: 50,
       maximumScale: 20000,
     },
@@ -46,13 +47,16 @@ export function getEntity(): Entity.ConstructorOptions {
 
 /**
  * Returns a camera position for this demo entity.
+ * @param {Viewer} viewer Cesium viewer to get entity position from.
  * @returns {object} Camera position
  */
-export function getCameraPosition() {
+export function getCameraPosition(viewer: Viewer) {
+  const droneEntity = viewer?.entities?.getById("live-drone");
+  if (!droneEntity) return {};
   return {
-    destination: Cartesian3.fromDegrees(9.979694, 53.540596, 300),
+    destination: move(droneEntity.position?.getValue() as Cartesian3, 0, -5, 5),
     orientation: {
-      heading: Math.toRadians(70.0),
+      heading: Math.toRadians(0.0),
       pitch: Math.toRadians(-45.0),
     },
   };

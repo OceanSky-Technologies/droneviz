@@ -1,8 +1,7 @@
 /// <reference types="vitest" />
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-pwa/client" />
-
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/// <reference types="@vitest/browser/providers/webdriverio" />
 
 import { fileURLToPath, URL } from "url";
 import { defineConfig } from "vite";
@@ -167,7 +166,7 @@ export default defineConfig({
   },
   test: {
     root: ".",
-    exclude: ["node_modules", "mavlink-ts"],
+    exclude: ["node_modules", "mavlink-ts", "src-tauri"],
     globals: true, // enable jest-like global test APIs
     environment: "happy-dom",
     setupFiles: ["./vitest.setup.ts"],
@@ -179,8 +178,14 @@ export default defineConfig({
       ui: false,
       screenshotFailures: false,
       providerOptions: {
+        offline: true,
         launch: {
-          args: ["--use-gl=egl", "--ignore-gpu-blocklist", "--use-gl=angle"],
+          args: [
+            "--headless",
+            "--disable-gpu",
+            "--disable-web-security",
+            "--offline",
+          ],
         },
       },
     },
@@ -205,13 +210,15 @@ export default defineConfig({
         "**/node_modules/**",
         "**/packages/*/test?(s)/**",
         "**/postcss.config.js",
-        "**/src/presets/*",
+        "**/src-tauri/**",
         "**/tailwind.config.js",
         "**/test?(-*).?(c|m)[jt]s?(x)",
         "**/test?(s)/**",
         "**/virtual:*",
         "**/vitest.{workspace,projects}.[jt]s?(on)",
+        "**/tauri-app/**",
         "mavlink-ts/**/*",
+        "postcss.config.cjs",
       ],
       thresholds: {
         lines: 75,
@@ -229,6 +236,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    include: ["@vue/test-utils"],
     exclude: ["@vitest/coverage-istanbul", "*/deps/workbox-window.js"],
   },
 });

@@ -11,3 +11,4 @@ ignores:
   - "postcss-import" # postcss.config.js
   - "postcss-nesting" # postcss.config.js
   - "prettier-plugin-tailwindcss" # .prettierrc
+  - "@tauri-apps/cli" # package.json

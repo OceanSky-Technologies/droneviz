@@ -11,7 +11,7 @@ import {
 import { getLatLonFromCartesian3, move } from "../helpers";
 
 export const text = "Vehicles in Crimea, Ukraine";
-export const value = "vehicles-in-crimea-ukraine";
+export const id = "vehicles-in-crimea-ukraine";
 
 const position = Cartesian3.fromDegrees(33.588049, 45.089763, 37);
 const heading = Math.toRadians(180);
@@ -57,6 +57,7 @@ export function getEntities(): Entity.ConstructorOptions[] {
       },
     },
     {
+      id: id,
       position: move(position, -10, 0, 0),
       orientation,
       model: {

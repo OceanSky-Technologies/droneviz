@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import CesiumHighlighter from "../../src/components/CesiumHighlighter.vue";
 import { Color, Entity, Scene } from "cesium";
-import { GOLD } from "../../src/helpers/Colors";
+import { Colors } from "../../src/helpers/Colors";
+import { createEntityWithModel } from "../helpers/MockUtils";
 
 describe("CesiumHighlighter", () => {
   test("Create CesiumHighlighter", () => {
@@ -99,7 +100,7 @@ describe("CesiumHighlighter", () => {
     document.body.appendChild(canvasElement);
     const scene = new Scene({ canvas: canvasElement });
     new CesiumHighlighter(scene, undefined, {
-      color: Color.fromCssColorString(GOLD),
+      color: Color.fromCssColorString(Colors.GOLD),
       size: 5,
     });
   });
@@ -113,7 +114,7 @@ describe("CesiumHighlighter", () => {
       size: 2,
     });
 
-    const entity = new Entity();
+    const entity = await createEntityWithModel();
 
     expect(highlighter.contains(entity)).toBeFalsy();
 
@@ -139,7 +140,7 @@ describe("CesiumHighlighter", () => {
     expect(() => highlighter.remove(undefined)).toThrowError();
   });
 
-  test("Empty / clear / setArray", () => {
+  test("Empty / clear / setArray", async () => {
     const canvasElement = document.createElement("canvas") as HTMLCanvasElement;
     document.body.appendChild(canvasElement);
     const scene = new Scene({ canvas: canvasElement });
@@ -147,11 +148,8 @@ describe("CesiumHighlighter", () => {
 
     expect(highlighter.empty()).toBeTruthy();
 
-    const modelPath = new URL("../../assets/models/Plane.glb", import.meta.url)
-      .href;
-
     const entities = [
-      new Entity({ model: { uri: modelPath } }),
+      await createEntityWithModel(),
       new Entity(),
       new Entity(),
     ];
