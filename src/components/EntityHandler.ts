@@ -1,10 +1,10 @@
-import { System } from "../../mavlink-ts/src/System";
+import { System } from "@mavlink-ts/System";
 import {
   AltitudeResponse,
   AttitudeEulerResponse,
   HeadingResponse,
   PositionResponse,
-} from "mavlink-ts/protobuf-gen/telemetry/telemetry";
+} from "@mavlink-ts-proto/telemetry/telemetry";
 import * as egm96 from "egm96-universal";
 import { Cartesian3, Viewer } from "cesium";
 

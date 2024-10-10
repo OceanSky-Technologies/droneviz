@@ -1,7 +1,6 @@
 /// <reference types="vitest" />
 /// <reference types="vite/client" />
 /// <reference types="vite-plugin-pwa/client" />
-/// <reference types="@vitest/browser/providers/webdriverio" />
 
 import { fileURLToPath, URL } from "url";
 import { defineConfig } from "vite";
@@ -135,6 +134,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@presets": fileURLToPath(new URL("./presets", import.meta.url)),
+      "@mavlink-ts": fileURLToPath(
+        new URL("./mavlink-ts/src", import.meta.url),
+      ),
+      "@mavlink-ts-proto": fileURLToPath(
+        new URL("./mavlink-ts/protobuf-gen", import.meta.url),
+      ),
     },
   },
   // to access the Tauri environment variables set by the CLI with information about the current target
@@ -166,7 +172,7 @@ export default defineConfig({
   },
   test: {
     root: ".",
-    exclude: ["node_modules", "mavlink-ts", "src-tauri"],
+    exclude: ["node_modules", "mavlink-ts", "src-tauri", "presets"],
     globals: true, // enable jest-like global test APIs
     environment: "happy-dom",
     setupFiles: ["./vitest.setup.ts"],
@@ -217,6 +223,7 @@ export default defineConfig({
         "**/virtual:*",
         "**/vitest.{workspace,projects}.[jt]s?(on)",
         "**/tauri-app/**",
+        "**/src/presets/*",
         "mavlink-ts/**/*",
         "postcss.config.cjs",
       ],

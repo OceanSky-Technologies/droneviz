@@ -1,8 +1,9 @@
 <script lang="ts" setup>
 import CameraWindow from "./CameraWindow.vue";
+import MainToolbar from "./MainToolbar.vue";
 import { onMounted, onUnmounted, watch } from "vue";
 import "cesium/Build/Cesium/Widgets/widgets.css";
-import { settings } from "./Settings";
+import { settings } from "@/components/Settings";
 import { CesiumViewerImpl, Props } from "./CesiumViewerImpl";
 
 let cesiumViewer: CesiumViewerImpl | undefined;
@@ -36,26 +37,31 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="cesiumContainer" />
-  <div
-    id="toolbar"
-    style="background-color: #f0f9ff; border-radius: 5px; padding: 5px"
-  >
-    <div id="google-tiles">
-      <input
-        id="google-tiles-checkbox"
-        v-model="settings.google3DTilesEnabled.value"
-        type="checkbox"
-      />
+  <div class="relative h-full w-full bg-black">
+    <MainToolbar />
 
-      <label for="google-tiles-checkbox" style="padding: 5px">
-        Show 3D Google tiles
-      </label>
+    <div id="cesiumContainer" />
+
+    <div
+      id="toolbar"
+      style="background-color: #f0f9ff; border-radius: 5px; padding: 5px"
+    >
+      <div id="google-tiles">
+        <input
+          id="google-tiles-checkbox"
+          v-model="settings.google3DTilesEnabled.value"
+          type="checkbox"
+        />
+
+        <label for="google-tiles-checkbox" style="padding: 5px">
+          Show 3D Google tiles
+        </label>
+      </div>
+
+      <div id="demoMenu" />
+
+      <CameraWindow />
     </div>
-
-    <div id="demoMenu" />
-
-    <CameraWindow />
   </div>
 </template>
 

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import "primeicons/primeicons.css";
-
 import Button from "primevue/button";
 import { ref } from "vue";
 

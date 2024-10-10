@@ -8,7 +8,7 @@ import {
   Transforms,
 } from "cesium";
 
-import { getLatLonFromCartesian3, move } from "../helpers";
+import { getLatLonFromCartesian3, move } from "@/helpers";
 
 export const text = "Vehicles in Crimea, Ukraine";
 export const id = "vehicles-in-crimea-ukraine";
@@ -18,7 +18,7 @@ const heading = Math.toRadians(180);
 const pitch = Math.toRadians(0);
 const roll = Math.toRadians(0);
 
-const modelPath = new URL("../assets/models/GroundVehicle.glb", import.meta.url)
+const modelPath = new URL("@/assets/models/GroundVehicle.glb", import.meta.url)
   .href;
 
 const orientation = Transforms.headingPitchRollQuaternion(

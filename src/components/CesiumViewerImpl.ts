@@ -6,11 +6,11 @@ import {
   Math,
   Cartesian3,
 } from "cesium";
-import { initDemo } from "../demo/Demo";
-import { getViewerOptions } from "../helpers/CesiumViewerOptions";
+import { initDemo } from "@/demo/Demo";
+import { getViewerOptions } from "@/helpers/CesiumViewerOptions";
 import CesiumMouseHandler from "./CesiumMouseHandler";
 import { run } from "./EntityHandler";
-import { settings } from "./Settings";
+import { settings } from "@/components/Settings";
 
 Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTJmM2RmYi0wMDI3LTQxYmMtYjY1NS00MzhmYzg4Njk1NTMiLCJpZCI6MjExMDU5LCJpYXQiOjE3MTM5OTExNTh9.cgvEwVgVgDQRqLsZzWCubdKnui9qoZAXTPCRbtVzZmo";
@@ -62,7 +62,6 @@ export class CesiumViewerImpl {
 
     if (settings.google3DTilesEnabled.value) {
       this.initGoogleTileset();
-      this.enableGoogleTiles();
     }
 
     this.mouseHandlers = new CesiumMouseHandler(this.viewer);
@@ -122,7 +121,6 @@ export class CesiumViewerImpl {
    */
   async enableGoogleTiles() {
     if (settings.google3DTilesEnabled.value) {
-      if (!this.googleTileset) await this.initGoogleTileset();
       if (!this.googleTileset) return;
 
       this.googleTileset.show = true;

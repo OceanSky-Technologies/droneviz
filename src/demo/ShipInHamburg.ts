@@ -15,7 +15,7 @@ const heading = Math.toRadians(115);
 const pitch = Math.toRadians(0);
 const roll = Math.toRadians(0);
 
-const modelPath = new URL("../assets/models/CargoShip.glb", import.meta.url)
+const modelPath = new URL("@/assets/models/CargoShip.glb", import.meta.url)
   .href;
 
 const orientation = Transforms.headingPitchRollQuaternion(

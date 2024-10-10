@@ -9,7 +9,7 @@ import {
   ModelGraphics,
   Scene,
 } from "cesium";
-import { almostEqual } from "../helpers/FuzzyCompare";
+import { almostEqual } from "@/helpers/FuzzyCompare";
 
 export interface Silhouette {
   color: Color;

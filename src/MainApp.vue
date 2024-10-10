@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import CesiumViewer from "./components/CesiumViewer.vue";
-import DarkToggle from "./components/DarkToggle.vue";
+import CesiumViewer from "@/components/CesiumViewer.vue";
+import DarkToggle from "@/components/DarkToggle.vue";
 </script>
 
 <template>

@@ -8,7 +8,7 @@ const heading = Math.toRadians(-270);
 const pitch = Math.toRadians(20);
 const roll = Math.toRadians(20);
 
-const modelPath = new URL("../assets/models/PoliceDrone.glb", import.meta.url)
+const modelPath = new URL("@/assets/models/PoliceDrone.glb", import.meta.url)
   .href;
 
 const orientation = Transforms.headingPitchRollQuaternion(

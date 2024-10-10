@@ -1,7 +1,7 @@
-import { App, createApp } from "vue";
-import MainApp from "./MainApp.vue";
+import MainApp from "@/MainApp.vue";
+import Lara from "@presets/primevue-tailwind-presets-0.4.0/lara";
 import PrimeVue from "primevue/config";
-import Lara from "@primevue/themes/lara";
+import { App, createApp } from "vue";
 
 import { registerSW } from "virtual:pwa-register";
 

@@ -1,5 +1,5 @@
 import { SkyAtmosphere, Terrain, Viewer } from "cesium";
-import { settings } from "../components/Settings";
+import { settings } from "@/components/Settings";
 
 /**
  * Create Cesium Viewer default options.

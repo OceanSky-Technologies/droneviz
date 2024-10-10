@@ -6,7 +6,7 @@ import {
   Transforms,
   Viewer,
 } from "cesium";
-import { move } from "../helpers";
+import { move } from "@/helpers";
 
 export const text = "Live";
 export const id = "live-drone";
@@ -20,7 +20,7 @@ const heading = Math.toRadians(-270);
 const pitch = Math.toRadians(0);
 const roll = Math.toRadians(0);
 
-const modelPath = new URL("../assets/models/Skywinger.glb", import.meta.url)
+const modelPath = new URL("@/assets/models/Skywinger.glb", import.meta.url)
   .href;
 
 const orientation = Transforms.headingPitchRollQuaternion(
