@@ -10,6 +10,8 @@
     "vunguyentuan.vscode-postcss",
     "vue.volar",
     "tauri-apps.tauri-vscode",
-    "swellaby.rust-pack"
+    "swellaby.rust-pack",
+    "github.copilot",
+    "davidanson.vscode-markdownlint"
   ]
 }

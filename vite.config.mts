@@ -134,7 +134,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "@presets": fileURLToPath(new URL("./presets", import.meta.url)),
+      "@theme": fileURLToPath(new URL("./theme", import.meta.url)),
       "@mavlink-ts": fileURLToPath(
         new URL("./mavlink-ts/src", import.meta.url),
       ),
@@ -172,7 +172,7 @@ export default defineConfig({
   },
   test: {
     root: ".",
-    exclude: ["node_modules", "mavlink-ts", "src-tauri", "presets"],
+    exclude: ["node_modules", "mavlink-ts", "src-tauri", "theme"],
     globals: true, // enable jest-like global test APIs
     environment: "happy-dom",
     setupFiles: ["./vitest.setup.ts"],
@@ -223,7 +223,7 @@ export default defineConfig({
         "**/virtual:*",
         "**/vitest.{workspace,projects}.[jt]s?(on)",
         "**/tauri-app/**",
-        "**/src/presets/*",
+        "**/src/theme/*",
         "mavlink-ts/**/*",
         "postcss.config.cjs",
       ],

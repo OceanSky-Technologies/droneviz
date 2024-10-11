@@ -44,7 +44,15 @@ onUnmounted(() => {
 
     <div
       id="toolbar"
-      style="background-color: #f0f9ff; border-radius: 5px; padding: 5px"
+      style="
+        background-color: #f0f9ff;
+        border-radius: 5px;
+        padding: 5px;
+        display: block;
+        position: absolute;
+        top: 5px;
+        left: 5px;
+      "
     >
       <div id="google-tiles">
         <input

@@ -44,7 +44,7 @@
     "baseUrl": "./" /* Specify the base directory to resolve non-relative module names. */,
     "paths": {
       "@/*": ["./src/*"],
-      "@presets/*": ["./presets/*"],
+      "@theme": ["./theme"],
       "@mavlink-ts/*": ["./mavlink-ts/src/*"],
       "@mavlink-ts-proto/*": ["./mavlink-ts/protobuf-gen/*"]
     },
@@ -133,7 +133,8 @@
     "**/*.glb",
     "mavlink-ts/src/**/*.ts",
     "test/helpers/getWebGLStub.js",
-    "presets/**/*.js"
+    "theme/**/*.js",
+    "postcss.config.js"
   ],
   "exclude": ["node_modules", "dist", "dev-dist"]
 }

@@ -12,7 +12,3 @@ import DarkToggle from "@/components/DarkToggle.vue";
     </div>
   </body>
 </template>
-
-<style lang="postcss">
-@import "./assets/style.css";
-</style>

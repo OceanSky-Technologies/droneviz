@@ -1,21 +1,17 @@
-/* eslint-disable no-undef */
 /** @type {import('tailwindcss').Config} */
 
 import * as tailwindcss_primeui from "tailwindcss-primeui";
 
-module.exports = {
-  // ...
+export default {
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
-    "./presets/**/*.{js,vue,ts}",
+    "./theme/**/*.{js,vue,ts}",
   ],
-  theme: {
-    extend: {},
-  },
+  theme: {},
   corePlugins: {
     // preflight: false,
   },
-  darkMode: ["selector", '[class*="dark"]'],
+  darkMode: ["selector"],
   plugins: [tailwindcss_primeui],
 };

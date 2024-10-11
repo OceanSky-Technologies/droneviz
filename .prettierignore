@@ -4,4 +4,4 @@ node_modules
 mavlink-ts
 pnpm-lock.yaml
 tauri-app
-presets
+theme

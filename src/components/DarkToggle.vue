@@ -5,13 +5,8 @@ import { ref } from "vue";
 
 let darkMode = ref(false);
 
-// identify if system has dark mode enabled
-if (
-  window.matchMedia &&
-  window.matchMedia("(prefers-color-scheme: dark)").matches
-) {
-  darkMode.value = true;
-} else {
+// get system scheme
+if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
   darkMode.value = true;
 }
 

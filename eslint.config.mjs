@@ -74,7 +74,7 @@ const config = [
       "test/helpers/getWebGLStub.js",
       "tauri-app",
       "mavlink-ts",
-      "presets",
+      "theme",
     ],
   },
 ];
