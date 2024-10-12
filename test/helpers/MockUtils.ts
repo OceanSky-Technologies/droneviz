@@ -3,14 +3,13 @@
 import {
   Cesium3DTileset,
   ColorMaterialProperty,
-  DataSourceCollection,
   Entity,
   Model,
   Viewer,
 } from "cesium";
 import getWebGLStub from "./getWebGLStub";
 import CesiumViewer from "../../src/components/CesiumViewer.vue";
-import { getViewerOptions } from "../../src/helpers/CesiumViewerOptions";
+import { createViewerOptions } from "../../src/helpers/CesiumViewerOptions";
 import { mount } from "@vue/test-utils";
 
 /**
@@ -22,14 +21,8 @@ import { mount } from "@vue/test-utils";
  */
 export function createTestViewerOptions(): Viewer.ConstructorOptions {
   return {
-    ...getViewerOptions(),
+    ...createViewerOptions(),
     contextOptions: { getWebGLStub },
-
-    // reduce Bing Map quota
-    imageryProviderViewModels: [],
-    geocoder: false,
-    baseLayerPicker: false,
-    dataSources: new DataSourceCollection(),
   };
 }
 
@@ -37,7 +30,7 @@ export function createTestViewerOptions(): Viewer.ConstructorOptions {
  * Create and mount a CesiumViewer object.
  * @returns {object} wrapper of mounted CesiumViewer
  */
-export function mountCesiumViewer() {
+export async function mountCesiumViewerMock() {
   let root = document.getElementById("root");
   while (root?.firstChild) {
     root.removeChild(root.lastChild!);
@@ -48,13 +41,19 @@ export function mountCesiumViewer() {
   root = document.createElement("div");
   root.id = "root";
   document.body.appendChild(root);
-  return mount(CesiumViewer, {
+  createCesiumContainer();
+
+  const wrapper = mount(CesiumViewer, {
     props: {
-      webGLMock: createTestViewerOptions,
-      tilesetMock: new Cesium3DTileset({}), // stay below cesium quota by disabling tileset
+      mockViewerOptions: createTestViewerOptions(),
+      googleTilesetMock: new Cesium3DTileset({}), // stay below cesium quota by disabling tileset
     },
     attachTo: root,
   });
+
+  await wrapper.vm.$nextTick();
+
+  return wrapper;
 }
 
 /**
@@ -68,15 +67,18 @@ export function createCesiumContainer() {
 
 /**
  * Silences all console log outputs.
+ * @param {boolean} silenceStdErr If true, also silences console.error
  */
-export function silenceConsole() {
+export function silenceConsole(silenceStdErr?: boolean) {
   vi.spyOn(console, "log").mockImplementation(() => {
     /* do nothing */
   });
 
-  vi.spyOn(console, "error").mockImplementation(() => {
-    /* do nothing */
-  });
+  if (silenceStdErr) {
+    vi.spyOn(console, "error").mockImplementation(() => {
+      /* do nothing */
+    });
+  }
 }
 
 /**

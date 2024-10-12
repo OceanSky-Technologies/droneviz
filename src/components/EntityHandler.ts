@@ -6,13 +6,14 @@ import {
   PositionResponse,
 } from "@mavlink-ts-proto/telemetry/telemetry";
 import * as egm96 from "egm96-universal";
-import { Cartesian3, Viewer } from "cesium";
+import { Cartesian3, HeadingPitchRoll, Transforms } from "cesium";
+import { getCesiumViewer } from "./CesiumViewerWrapper";
 
 // THIS FILE GETS REFACTORED ANYWAY!!
 /* eslint-disable */
 
-export async function run(viewer: Viewer) {
-  const droneEntity = viewer.entities!.getById("live-drone")!;
+export async function run() {
+  const droneEntity = getCesiumViewer().entities!.getById("live-drone")!;
 
   // create a new drone instance
   console.log("Establishing connection");
@@ -59,7 +60,7 @@ export async function run(viewer: Viewer) {
           ),
         };
 
-        viewer.scene.requestRender();
+        getCesiumViewer().scene.requestRender();
       }
     },
   );
@@ -92,7 +93,7 @@ export async function run(viewer: Viewer) {
           ),
         };
 
-        viewer.scene.requestRender();
+        getCesiumViewer().scene.requestRender();
       }
     },
   );

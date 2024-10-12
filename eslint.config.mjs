@@ -75,6 +75,8 @@ const config = [
       "tauri-app",
       "mavlink-ts",
       "theme",
+      "src-tauri",
+      "vite.config.mts.*",
     ],
   },
 ];

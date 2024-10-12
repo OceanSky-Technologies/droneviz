@@ -10,6 +10,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
 // @ts-expect-error no declared types at this time
 import primeui from "tailwindcss-primeui";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 const cesiumSource = "node_modules/cesium/Build/Cesium";
 // This is the base url for static files that CesiumJS needs to load.
@@ -36,6 +37,16 @@ export default defineConfig({
         { src: `${cesiumSource}/Widgets`, dest: cesiumBaseUrl },
         { src: `images`, dest: `` },
       ],
+    }),
+    nodePolyfills({
+      // Whether to polyfill specific globals.
+      globals: {
+        Buffer: true, // can also be 'build', 'dev', or false
+        global: true,
+        process: true,
+      },
+      // Whether to polyfill `node:` protocol imports.
+      protocolImports: true,
     }),
     vue(),
     primeui,
@@ -141,6 +152,7 @@ export default defineConfig({
       "@mavlink-ts-proto": fileURLToPath(
         new URL("./mavlink-ts/protobuf-gen", import.meta.url),
       ),
+      // util: "rollup-plugin-node-polyfills/polyfills/util",
     },
   },
   // to access the Tauri environment variables set by the CLI with information about the current target
@@ -175,7 +187,7 @@ export default defineConfig({
     exclude: ["node_modules", "mavlink-ts", "src-tauri", "theme"],
     globals: true, // enable jest-like global test APIs
     environment: "happy-dom",
-    setupFiles: ["./vitest.setup.ts"],
+    setupFiles: "./vitest.setup.ts",
     browser: {
       name: "chromium",
       provider: "playwright",
@@ -241,6 +253,7 @@ export default defineConfig({
     hmr: {
       port: 5173,
     },
+    cors: false,
   },
   optimizeDeps: {
     include: ["@vue/test-utils"],

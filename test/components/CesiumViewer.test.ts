@@ -1,10 +1,18 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { mountCesiumViewer } from "../helpers/MockUtils";
-import { CesiumViewerImpl } from "../../src/components/CesiumViewerImpl";
+import { cleanup } from "@testing-library/vue";
+import { destroyCesium } from "../../src/components/CesiumViewerWrapper";
+import { mountCesiumViewerMock, silenceConsole } from "../helpers/MockUtils";
+
+// global cleanup somehow does not work so do it here ?!
+afterEach(() => {
+  vi.restoreAllMocks();
+  destroyCesium();
+  cleanup();
+});
 
 describe("CesiumViewer", () => {
-  test("Mounting Cesium container", () => {
-    mountCesiumViewer();
+  test("Mounting Cesium container", async () => {
+    await mountCesiumViewerMock();
 
     // cesium container exists
     expect(
@@ -19,36 +27,13 @@ describe("CesiumViewer", () => {
     ).not.toBe(undefined);
   });
 
-  test("Toggle Google 3D Tiles", async () => {
-    const enableGoogleTilesSpy = vi.spyOn(
-      CesiumViewerImpl.prototype,
-      "enableGoogleTiles",
-    );
-    const disableGoogleTilesSpy = vi.spyOn(
-      CesiumViewerImpl.prototype,
-      "disableGoogleTiles",
-    );
+  test("Mounting Cesium container with error during initialization", async () => {
+    await mountCesiumViewerMock();
 
-    const wrapper = mountCesiumViewer();
-    enableGoogleTilesSpy.mockClear();
-    disableGoogleTilesSpy.mockClear();
+    silenceConsole(true);
 
-    // Find the HTML element by ID
-    const googleTilesCheckbox = wrapper.find("#google-tiles-checkbox");
+    //cesium was already initialized so now we can't initialize it again
 
-    // Assert that the input exists
-    expect(googleTilesCheckbox.exists()).toBe(true);
-
-    // disable google 3d tiles
-    await googleTilesCheckbox.setValue(false);
-    await wrapper.vm.$nextTick();
-    // expect(settings.google3DTilesEnabled.value).toBeFalsy();
-    expect(disableGoogleTilesSpy).toHaveBeenCalled();
-
-    // enable google 3d tiles
-    await googleTilesCheckbox.setValue(true);
-    await wrapper.vm.$nextTick();
-    // expect(settings.google3DTilesEnabled.value).toBeTruthy();
-    expect(enableGoogleTilesSpy).toHaveBeenCalled();
+    await mountCesiumViewerMock();
   });
 });

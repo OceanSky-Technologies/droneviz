@@ -1,21 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  createCesiumContainer,
-  createTestViewerOptions,
-  silenceConsole,
-} from "../helpers/MockUtils";
-import { Cartesian2, Cartesian3, Entity, Model, Viewer } from "cesium";
+import { mountCesiumViewerMock, silenceConsole } from "../helpers/MockUtils";
+import { Cartesian2, Cartesian3, Entity, Model } from "cesium";
 import CesiumMouseHandler from "../../src/components/CesiumMouseHandler";
 import { settings } from "../../src/components/Settings";
+import {
+  destroyCesium,
+  getCesiumViewer,
+} from "../../src/components/CesiumViewerWrapper";
+import { cleanup } from "@testing-library/vue";
+
+// global cleanup somehow does not work so do it here ?!
+afterEach(() => {
+  vi.restoreAllMocks();
+  destroyCesium();
+  cleanup();
+});
 
 describe("CesiumMouseHandler", () => {
   test("Left click", async () => {
+    await mountCesiumViewerMock();
+
     silenceConsole();
 
-    createCesiumContainer();
-
-    const viewer = new Viewer("cesiumContainer", createTestViewerOptions());
-    const mouseHandler = new CesiumMouseHandler(viewer);
+    const mouseHandler = new CesiumMouseHandler();
 
     const modelPath = new URL("/src/assets/models/Plane.glb", import.meta.url)
       .href;
@@ -23,7 +30,7 @@ describe("CesiumMouseHandler", () => {
     const model = await Model.fromGltfAsync({ url: modelPath });
     const entity = new Entity();
 
-    const spyPick = vi.spyOn(viewer.scene, "pick");
+    const spyPick = vi.spyOn(getCesiumViewer().scene, "pick");
     spyPick.mockImplementation(() => {
       const result = { id: entity, primitive: model };
       return result;
@@ -40,12 +47,11 @@ describe("CesiumMouseHandler", () => {
   });
 
   test("Double left click", async () => {
+    await mountCesiumViewerMock();
+
     silenceConsole();
 
-    createCesiumContainer();
-
-    const viewer = new Viewer("cesiumContainer", createTestViewerOptions());
-    const mouseHandler = new CesiumMouseHandler(viewer);
+    const mouseHandler = new CesiumMouseHandler();
 
     const modelPath = new URL("/src/assets/models/Plane.glb", import.meta.url)
       .href;
@@ -53,13 +59,13 @@ describe("CesiumMouseHandler", () => {
     const model = await Model.fromGltfAsync({ url: modelPath });
     const entity = new Entity();
 
-    const spyPick = vi.spyOn(viewer.scene, "pick");
+    const spyPick = vi.spyOn(getCesiumViewer().scene, "pick");
     spyPick.mockImplementation(async () => {
       const result = { id: entity, primitive: model };
       return result;
     });
 
-    const spyFlyTo = vi.spyOn(viewer, "flyTo");
+    const spyFlyTo = vi.spyOn(getCesiumViewer(), "flyTo");
     spyFlyTo.mockImplementation(vi.fn());
 
     const mousePosition = new Cartesian2(648, 910);
@@ -69,12 +75,11 @@ describe("CesiumMouseHandler", () => {
   });
 
   test("Right click", async () => {
+    await mountCesiumViewerMock();
+
     silenceConsole();
 
-    createCesiumContainer();
-
-    const viewer = new Viewer("cesiumContainer", createTestViewerOptions());
-    const mouseHandler = new CesiumMouseHandler(viewer);
+    const mouseHandler = new CesiumMouseHandler();
 
     const modelPath = new URL("/src/assets/models/Plane.glb", import.meta.url)
       .href;
@@ -82,13 +87,13 @@ describe("CesiumMouseHandler", () => {
     const model = await Model.fromGltfAsync({ url: modelPath });
     const entity = new Entity();
 
-    const spyPick = vi.spyOn(viewer.scene, "pick");
+    const spyPick = vi.spyOn(getCesiumViewer().scene, "pick");
     spyPick.mockImplementation(() => {
       const result = { id: entity, primitive: model };
       return result;
     });
 
-    const spyFlyTo = vi.spyOn(viewer, "flyTo");
+    const spyFlyTo = vi.spyOn(getCesiumViewer(), "flyTo");
     spyFlyTo.mockImplementation(() => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       return new Promise<boolean>((resolve, _reject) => {
@@ -100,23 +105,22 @@ describe("CesiumMouseHandler", () => {
     const mousePosition = new Cartesian2(648, 910);
     await mouseHandler.mouseRightClickListener({ position: mousePosition }); // first click: select
     expect((mouseHandler as any).trackedEntityHighlighter.empty()).toBeFalsy();
-    expect(viewer.trackedEntity).toBeDefined();
+    expect(getCesiumViewer().trackedEntity).toBeDefined();
 
     await mouseHandler.mouseRightClickListener({ position: mousePosition }); // second click: unselect
     expect((mouseHandler as any).trackedEntityHighlighter.empty()).toBeTruthy();
-    expect(viewer.trackedEntity).toBeUndefined();
+    expect(getCesiumViewer().trackedEntity).toBeUndefined();
   });
 
   test("Right click on area without entity", async () => {
+    await mountCesiumViewerMock();
+
     silenceConsole();
 
-    createCesiumContainer();
-
-    const viewer = new Viewer("cesiumContainer", createTestViewerOptions());
-    const mouseHandler = new CesiumMouseHandler(viewer);
+    const mouseHandler = new CesiumMouseHandler();
 
     // picking an object shall never return anything
-    const spyPick = vi.spyOn(viewer.scene, "pick");
+    const spyPick = vi.spyOn(getCesiumViewer().scene, "pick");
     spyPick.mockImplementation(() => {
       return undefined;
     });
@@ -124,16 +128,15 @@ describe("CesiumMouseHandler", () => {
     const mousePosition = new Cartesian2(648, 910);
     await mouseHandler.mouseRightClickListener({ position: mousePosition });
     expect((mouseHandler as any).trackedEntityHighlighter.empty()).toBeTruthy();
-    expect(viewer.trackedEntity).toBeUndefined();
+    expect(getCesiumViewer().trackedEntity).toBeUndefined();
   });
 
   test("Highlight entity on mouse over", async () => {
+    await mountCesiumViewerMock();
+
     silenceConsole();
 
-    createCesiumContainer();
-
-    const viewer = new Viewer("cesiumContainer", createTestViewerOptions());
-    const mouseHandler = new CesiumMouseHandler(viewer);
+    const mouseHandler = new CesiumMouseHandler();
 
     const modelPath = new URL("/src/assets/models/Plane.glb", import.meta.url)
       .href;
@@ -142,7 +145,7 @@ describe("CesiumMouseHandler", () => {
     const entity = new Entity();
 
     // Mock viewer.scene.pick so it always returns the entity
-    const spyPick = vi.spyOn(viewer.scene, "pick");
+    const spyPick = vi.spyOn(getCesiumViewer().scene, "pick");
     spyPick.mockImplementation(() => {
       const result = { id: entity, primitive: model };
       return result;
@@ -170,15 +173,14 @@ describe("CesiumMouseHandler", () => {
   });
 
   test("Show position info for mouse position (google3DTiles enabled)", async () => {
-    createCesiumContainer();
-
     settings.google3DTilesEnabled.value = true;
 
-    const viewer = new Viewer("cesiumContainer", createTestViewerOptions());
-    const mouseHandler = new CesiumMouseHandler(viewer);
+    await mountCesiumViewerMock();
+
+    const mouseHandler = new CesiumMouseHandler();
 
     // Mock viewer.scene.pick so it always returns the entity
-    const spyPick = vi.spyOn(viewer.scene, "pickPosition");
+    const spyPick = vi.spyOn(getCesiumViewer().scene, "pickPosition");
     spyPick.mockImplementation(() => {
       return new Cartesian3(
         -2710229.528815032,
@@ -187,7 +189,7 @@ describe("CesiumMouseHandler", () => {
       );
     });
 
-    const spySampleHeight = vi.spyOn(viewer.scene, "sampleHeight");
+    const spySampleHeight = vi.spyOn(getCesiumViewer().scene, "sampleHeight");
     spySampleHeight.mockImplementation(() => {
       return 100.111;
     });
@@ -206,15 +208,14 @@ describe("CesiumMouseHandler", () => {
   });
 
   test("Show position info for mouse position (google3DTiles disabled)", async () => {
-    createCesiumContainer();
-
     settings.google3DTilesEnabled.value = false;
 
-    const viewer = new Viewer("cesiumContainer", createTestViewerOptions());
-    const mouseHandler = new CesiumMouseHandler(viewer);
+    await mountCesiumViewerMock();
+
+    const mouseHandler = new CesiumMouseHandler();
 
     // Mock viewer.scene.pick so it always returns the entity
-    const spyPick = vi.spyOn(viewer.scene, "pickPosition");
+    const spyPick = vi.spyOn(getCesiumViewer().scene, "pickPosition");
     spyPick.mockImplementation(() => {
       return new Cartesian3(
         -2710229.528815032,

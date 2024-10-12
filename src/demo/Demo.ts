@@ -1,22 +1,21 @@
-import { Viewer } from "cesium";
 import * as LiveDrone from "./LiveDrone";
 import * as ShipInHamburg from "./ShipInHamburg";
 import * as AircraftInSanFrancisco from "./AircraftInSanFrancisco";
 import * as VehiclesInUkraine from "./VehiclesInUkraine";
 import * as DroneInNewYork from "./DroneInNewYork";
+import { getCesiumViewer } from "../components/CesiumViewerWrapper";
 
 /**
  * Initializes demo functionalities.
- * @param {Viewer} viewer Cesium viewer instance.
  */
-export function initDemo(viewer: Viewer) {
-  viewer.entities.add(LiveDrone.getEntity());
-  viewer.entities.add(ShipInHamburg.getEntity());
-  viewer.entities.add(AircraftInSanFrancisco.getEntity());
-  viewer.entities.add(DroneInNewYork.getEntity());
+export function initDemo() {
+  getCesiumViewer().entities.add(LiveDrone.getEntity());
+  getCesiumViewer().entities.add(ShipInHamburg.getEntity());
+  getCesiumViewer().entities.add(AircraftInSanFrancisco.getEntity());
+  getCesiumViewer().entities.add(DroneInNewYork.getEntity());
 
   for (const entity of VehiclesInUkraine.getEntities()) {
-    viewer.entities.add(entity);
+    getCesiumViewer().entities.add(entity);
   }
 
   addToolbarMenu([
@@ -25,36 +24,39 @@ export function initDemo(viewer: Viewer) {
       text: LiveDrone.text,
       value: LiveDrone.id,
       onSelect: () => {
-        const destination = LiveDrone.getCameraPosition(viewer)?.destination;
-        if (destination) viewer.camera.flyTo({ destination: destination });
+        const destination = LiveDrone.getCameraPosition()?.destination;
+        if (destination)
+          getCesiumViewer().camera.flyTo({ destination: destination });
       },
     }),
     new ToolbarOption({
       text: ShipInHamburg.text,
       value: ShipInHamburg.id,
       onSelect: () => {
-        viewer.camera.flyTo(ShipInHamburg.getCameraPosition());
+        getCesiumViewer().camera.flyTo(ShipInHamburg.getCameraPosition());
       },
     }),
     new ToolbarOption({
       text: AircraftInSanFrancisco.text,
       value: AircraftInSanFrancisco.id,
       onSelect: () => {
-        viewer.camera.flyTo(AircraftInSanFrancisco.getCameraPosition());
+        getCesiumViewer().camera.flyTo(
+          AircraftInSanFrancisco.getCameraPosition(),
+        );
       },
     }),
     new ToolbarOption({
       text: DroneInNewYork.text,
       value: DroneInNewYork.id,
       onSelect: () => {
-        viewer.camera.flyTo(DroneInNewYork.getCameraPosition());
+        getCesiumViewer().camera.flyTo(DroneInNewYork.getCameraPosition());
       },
     }),
     new ToolbarOption({
       text: VehiclesInUkraine.text,
       value: VehiclesInUkraine.id,
       onSelect: () => {
-        viewer.camera.flyTo(VehiclesInUkraine.getCameraPosition());
+        getCesiumViewer().camera.flyTo(VehiclesInUkraine.getCameraPosition());
       },
     }),
   ]);

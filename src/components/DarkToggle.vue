@@ -5,6 +5,7 @@ import { ref } from "vue";
 
 let darkMode = ref(false);
 
+// only on client side
 // get system scheme
 if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
   darkMode.value = true;

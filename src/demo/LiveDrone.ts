@@ -1,12 +1,6 @@
-import {
-  Cartesian3,
-  Entity,
-  HeadingPitchRoll,
-  Math,
-  Transforms,
-  Viewer,
-} from "cesium";
+import { Cartesian3, Entity, HeadingPitchRoll, Math, Transforms } from "cesium";
 import { move } from "@/helpers";
+import { getCesiumViewer } from "../components/CesiumViewerWrapper";
 
 export const text = "Live";
 export const id = "live-drone";
@@ -47,11 +41,10 @@ export function getEntity(): Entity.ConstructorOptions {
 
 /**
  * Returns a camera position for this demo entity.
- * @param {Viewer} viewer Cesium viewer to get entity position from.
  * @returns {object} Camera position
  */
-export function getCameraPosition(viewer: Viewer) {
-  const droneEntity = viewer?.entities?.getById("live-drone");
+export function getCameraPosition() {
+  const droneEntity = getCesiumViewer().entities?.getById("live-drone");
   if (!droneEntity) return {};
   return {
     destination: move(droneEntity.position?.getValue() as Cartesian3, 0, -5, 5),

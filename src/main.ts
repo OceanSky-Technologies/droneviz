@@ -51,7 +51,7 @@ const ColorPreset = definePreset(Aura, {
 /**
  * Start the app.
  */
-export function main() {
+export async function main() {
   registerSW({
     immediate: true,
   });
@@ -69,12 +69,7 @@ export function main() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.config.errorHandler = (error: any) => {
-    if (error instanceof Error) {
-      console.error("Caught error:", error.message);
-      console.error("Stack trace:", error.stack);
-    } else {
-      console.error("Unknown error:", error);
-    }
+    console.error("Unknown error:", error);
   };
 
   app.mount("#app");

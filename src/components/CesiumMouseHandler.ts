@@ -2,7 +2,6 @@ import CesiumHighlighter from "./CesiumHighlighter.vue";
 import { settings } from "@/components/Settings";
 import { Colors } from "@/helpers/Colors";
 import {
-  Viewer,
   Color,
   ScreenSpaceEventHandler,
   defined,
@@ -21,13 +20,12 @@ import {
   ConstantPositionProperty,
 } from "cesium";
 import * as egm96 from "egm96-universal";
+import { getCesiumViewer, googleTilesEnabled } from "./CesiumViewerWrapper";
 
 /**
  * Handles all mouse inputs to Cesium.
  */
 export default class CesiumMouseHandler {
-  private viewer: Viewer;
-
   private mouseClickHandler: ScreenSpaceEventHandler;
   private mouseDoubleClickHandler: ScreenSpaceEventHandler;
   private mouseRightClickHandler: ScreenSpaceEventHandler;
@@ -41,14 +39,11 @@ export default class CesiumMouseHandler {
 
   /**
    * Creates a new instance.
-   * @param {Viewer} viewer Viewer to use.
    */
-  constructor(viewer: Viewer) {
-    this.viewer = viewer;
-
+  constructor() {
     // single click: select
     this.mouseClickHandler = new ScreenSpaceEventHandler(
-      this.viewer.scene.canvas,
+      getCesiumViewer().scene.canvas,
     );
 
     this.mouseClickHandler.setInputAction(
@@ -58,7 +53,7 @@ export default class CesiumMouseHandler {
     );
 
     this.selectedEntityHighlighter = new CesiumHighlighter(
-      this.viewer.scene,
+      getCesiumViewer().scene,
       undefined,
       {
         color: Color.fromCssColorString(Colors.BLUE),
@@ -67,12 +62,12 @@ export default class CesiumMouseHandler {
     );
 
     // double click: flyTo
-    this.viewer.screenSpaceEventHandler.removeInputAction(
+    getCesiumViewer().screenSpaceEventHandler.removeInputAction(
       ScreenSpaceEventType.LEFT_DOUBLE_CLICK,
     );
 
     this.mouseDoubleClickHandler = new ScreenSpaceEventHandler(
-      this.viewer.scene.canvas,
+      getCesiumViewer().scene.canvas,
     );
 
     this.mouseDoubleClickHandler.setInputAction(
@@ -83,7 +78,7 @@ export default class CesiumMouseHandler {
 
     // right click: track entity
     this.mouseRightClickHandler = new ScreenSpaceEventHandler(
-      this.viewer.scene.canvas,
+      getCesiumViewer().scene.canvas,
     );
 
     this.mouseRightClickHandler.setInputAction(
@@ -93,13 +88,13 @@ export default class CesiumMouseHandler {
     );
 
     this.trackedEntityHighlighter = new CesiumHighlighter(
-      this.viewer.scene,
+      getCesiumViewer().scene,
       Color.fromCssColorString(Colors.GOLD),
     );
 
     // mouse over: highlight
     this.mouseMoveHandler = new ScreenSpaceEventHandler(
-      this.viewer.scene.canvas,
+      getCesiumViewer().scene.canvas,
     );
 
     this.mouseMoveHandler.setInputAction(
@@ -109,12 +104,12 @@ export default class CesiumMouseHandler {
     );
 
     this.mouseOverHighlighter = new CesiumHighlighter(
-      this.viewer.scene,
+      getCesiumViewer().scene,
       Color.fromCssColorString(Colors.RED),
     );
 
     // position info at mouse position
-    this.mousePositionInfoEntity = this.viewer.entities.add({
+    this.mousePositionInfoEntity = getCesiumViewer().entities.add({
       label: {
         show: false,
         showBackground: true,
@@ -134,7 +129,7 @@ export default class CesiumMouseHandler {
   async mouseClickListener(
     positionEvent: ScreenSpaceEventHandler.PositionedEvent,
   ) {
-    const entity = await this.viewer.scene.pick(positionEvent.position);
+    const entity = await getCesiumViewer().scene.pick(positionEvent.position);
     if (!defined(entity)) return;
     if (!defined(entity.primitive)) return;
     if (!(entity.primitive instanceof Model)) return;
@@ -163,7 +158,7 @@ export default class CesiumMouseHandler {
   async mouseDoubleClickListener(
     positionEvent: ScreenSpaceEventHandler.PositionedEvent,
   ) {
-    const entity = await this.viewer.scene.pick(positionEvent.position);
+    const entity = await getCesiumViewer().scene.pick(positionEvent.position);
     if (!defined(entity)) return;
     if (!defined(entity.id)) return;
 
@@ -172,17 +167,17 @@ export default class CesiumMouseHandler {
 
     if (entity.id instanceof Entity) {
       const headingPitchRange = new HeadingPitchRange(
-        this.viewer.camera.heading,
-        this.viewer.camera.pitch,
+        getCesiumViewer().camera.heading,
+        getCesiumViewer().camera.pitch,
         45,
       );
 
-      await this.viewer.flyTo(entity.id, {
+      await getCesiumViewer().flyTo(entity.id, {
         duration: 1.0,
         offset: headingPitchRange,
       });
 
-      this.viewer.scene.requestRender();
+      getCesiumViewer().scene.requestRender();
     }
   }
 
@@ -193,7 +188,7 @@ export default class CesiumMouseHandler {
   async mouseRightClickListener(
     positionEvent: ScreenSpaceEventHandler.PositionedEvent,
   ) {
-    const entity = await this.viewer.scene.pick(positionEvent.position);
+    const entity = await getCesiumViewer().scene.pick(positionEvent.position);
 
     // if right clicked to something which is not an entity, disable tracking
     if (
@@ -201,10 +196,10 @@ export default class CesiumMouseHandler {
       !defined(entity.id) ||
       !(entity.id instanceof Entity)
     ) {
-      this.viewer.trackedEntity = undefined;
+      getCesiumViewer().trackedEntity = undefined;
       this.trackedEntityHighlighter.clear();
 
-      this.viewer.scene.requestRender();
+      getCesiumViewer().scene.requestRender();
       this.updateRequestRenderMode();
 
       return;
@@ -214,22 +209,22 @@ export default class CesiumMouseHandler {
     console.log(entity);
 
     if (!this.trackedEntityHighlighter.contains(entity)) {
-      this.viewer
+      getCesiumViewer()
         .flyTo(entity.id, {
           offset: new HeadingPitchRange(0, -Math.PI_OVER_FOUR, 35.5),
         })
         .then(() => {
-          this.viewer.trackedEntity = entity.id;
+          getCesiumViewer().trackedEntity = entity.id;
         });
 
       this.trackedEntityHighlighter.add(entity);
     } else {
       // the same entity was already tracked, so remove tracking
-      this.viewer.trackedEntity = undefined;
+      getCesiumViewer().trackedEntity = undefined;
       this.trackedEntityHighlighter.clear();
     }
 
-    this.viewer.scene.requestRender();
+    getCesiumViewer().scene.requestRender();
     this.updateRequestRenderMode();
   }
 
@@ -241,7 +236,7 @@ export default class CesiumMouseHandler {
     if (settings.enableMousePositionInfo.value)
       this.showPositionInfoEntity(motionEvent.endPosition);
 
-    const entity = await this.viewer.scene.pick(motionEvent.endPosition);
+    const entity = await getCesiumViewer().scene.pick(motionEvent.endPosition);
 
     this.mouseOverHighlighter.clear();
 
@@ -274,7 +269,7 @@ export default class CesiumMouseHandler {
     // show a position data text box next to the mouse cursor
     try {
       // get the position below the mouse
-      const cartesian = this.viewer.scene.pickPosition(position);
+      const cartesian = getCesiumViewer().scene.pickPosition(position);
       const cartographic = Cartographic.fromCartesian(cartesian);
       const latitudeDegrees = Math.toDegrees(cartographic.latitude);
       const longitudeDegrees = Math.toDegrees(cartographic.longitude);
@@ -297,20 +292,22 @@ export default class CesiumMouseHandler {
       let height3DString = "";
 
       // show position infos depending on if 3D tiles are enabled or not
-      if (settings.google3DTilesEnabled.value) {
+      if (googleTilesEnabled()) {
         // try to retrieve 3D position
-        if (this.viewer.scene.clampToHeightSupported) {
+        if (getCesiumViewer().scene.clampToHeightSupported) {
           let updatedCartesians;
 
           if (settings.mousePositionInfoMostDetailed.value) {
-            const tmpResult = await this.viewer.scene.clampToHeightMostDetailed(
-              [cartesian],
-            );
+            const tmpResult =
+              await getCesiumViewer().scene.clampToHeightMostDetailed([
+                cartesian,
+              ]);
 
             if (tmpResult.length > 0 && tmpResult[0])
               updatedCartesians = tmpResult[0];
           } else {
-            updatedCartesians = this.viewer.scene.clampToHeight(cartesian);
+            updatedCartesians =
+              getCesiumViewer().scene.clampToHeight(cartesian);
           }
 
           if (updatedCartesians)
@@ -323,8 +320,8 @@ export default class CesiumMouseHandler {
         // if 3D position couldn't be retrieved fall back to height of scene geometry
         if (height3DString === "") {
           height3DString =
-            this.viewer.scene
-              .sampleHeight(cartographic)
+            getCesiumViewer()
+              .scene.sampleHeight(cartographic)
               .toFixed(2)
               .padStart(12, " ") + "m";
         }
@@ -342,7 +339,7 @@ export default class CesiumMouseHandler {
 
         if (settings.mousePositionInfoMostDetailed.value) {
           tmpResult = await sampleTerrainMostDetailed(
-            this.viewer.terrainProvider,
+            getCesiumViewer().terrainProvider,
             [cartographic],
           );
 
@@ -350,11 +347,11 @@ export default class CesiumMouseHandler {
             height = tmpResult[0].height;
         } else {
           // sampleTerrain still triggers the cesium API and increases quota!
-          // tmpResult = await sampleTerrain(this.viewer.terrainProvider, 11, [
+          // tmpResult = await sampleTerrain(getCesiumViewer().terrainProvider, 11, [
           //   cartographic,
           // ]);
 
-          height = this.viewer.scene.globe.getHeight(cartographic);
+          height = getCesiumViewer().scene.globe.getHeight(cartographic);
         }
 
         if (height) {
@@ -382,7 +379,7 @@ export default class CesiumMouseHandler {
     } catch (e: unknown) {
       /* empty */
     } finally {
-      this.viewer.scene.requestRender();
+      getCesiumViewer().scene.requestRender();
     }
   }
 
@@ -397,11 +394,11 @@ export default class CesiumMouseHandler {
       !this.mouseOverHighlighter.empty() ||
       !this.trackedEntityHighlighter.empty()
     ) {
-      this.viewer.scene.requestRenderMode = false;
+      getCesiumViewer().scene.requestRenderMode = false;
     } else {
-      this.viewer.scene.requestRenderMode = true;
+      getCesiumViewer().scene.requestRenderMode = true;
     }
 
-    this.viewer.scene.requestRender();
+    getCesiumViewer().scene.requestRender();
   }
 }

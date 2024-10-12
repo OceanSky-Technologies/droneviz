@@ -5,3 +5,5 @@ mavlink-ts
 pnpm-lock.yaml
 tauri-app
 theme
+src-tauri
+vite.config.mts.*
