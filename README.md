@@ -27,12 +27,6 @@ Then run
 pnpm install
 ```
 
-Also install playwright:
-
-```bash
-pnpm exec playwright install
-```
-
 ## Build and test
 
 To build the project for production with `vite` use:
@@ -45,6 +39,7 @@ Run tests with:
 
 ```bash
 pnpm test
+pnpm test-e2e
 ```
 
 In addition the following commands are supported to lint the project:
@@ -60,7 +55,14 @@ pnpm format-check
 Dependabot is set up to automatically update library dependencies. This can also be done manually using
 
 ```bash
-pnpm up "*" "@*/*"
+pnpm up
+```
+
+For tauri dependencies run
+
+```bash
+cd src-tauri
+cargo update
 ```
 
 ## Test overview
@@ -72,18 +74,3 @@ pnpm vitest --ui
 ```
 
 Alternatively, the `vscode` configuration comes with the `Testing` tab fully set up from where tests can also be run.
-
-## Deployment
-
-VitePWA is used to create standalone apps. It is set up using a service worker and caching of all requests for offline usage (and to reduce API quota usage).
-See [this page](https://wildermuth.com/2023/02/09/vite-plugin-for-progressive-web-apps/) for more information.
-
-In addition, [tauri](https://tauri.app/) is used to create cross-platform bundles with installers.
-
-In future add [action-gh-release](https://github.com/softprops/action-gh-release) for release artifact creation.
-
-## MAVLINK communication
-
-The [MAVSDK-JavaScript](https://github.com/mavlink/MAVSDK-JavaScript) library is not used because it's using an architecture that's very difficult to
-ship with releases to customers. It's based on envoy and mavsdk-server and requires `podman` running aside to host envoy and mavsdk-server.
-Also this library is highly incomplete and therefore not a long-term solution.

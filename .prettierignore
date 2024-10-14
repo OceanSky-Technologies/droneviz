@@ -1,9 +1,11 @@
+.nuxt
+.tauri-build
 build
 coverage
-node_modules
 mavlink-ts
+node_modules
 pnpm-lock.yaml
+src-tauri
 tauri-app
 theme
-src-tauri
 vite.config.mts.*

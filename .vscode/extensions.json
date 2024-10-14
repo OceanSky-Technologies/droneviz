@@ -12,6 +12,7 @@
     "tauri-apps.tauri-vscode",
     "swellaby.rust-pack",
     "github.copilot",
-    "davidanson.vscode-markdownlint"
+    "davidanson.vscode-markdownlint",
+    "ms-playwright.playwright"
   ]
 }

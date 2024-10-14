@@ -88,3 +88,10 @@ vite.config.mts.timestamp*
 
 # Electron-Forge
 out/
+
+.output
+.tauri-build
+
+test-results
+
+auto-imports.d.ts

@@ -1,14 +1,14 @@
-ignores:
-  - "depcheck"
-  - "@vitest/coverage-istanbul"
-  - "@vue/eslint-config-prettier"
-  - "@cesium/engine" # getWebGLStub.js
-  - "playwright" # vitest
-  - "virtual:pwa-register" # pwa.ts
-  - "autoprefixer" # postcss.config.js
-  - "cssnano" # postcss.config.js
-  - "postcss" # postcss.config.js
-  - "postcss-import" # postcss.config.js
-  - "postcss-nesting" # postcss.config.js
-  - "prettier-plugin-tailwindcss" # .prettierrc
-  - "@tauri-apps/cli" # package.json
+# ignores:
+#   - "depcheck"
+#   - "@vitest/coverage-istanbul"
+#   - "@vue/eslint-config-prettier"
+#   - "@cesium/engine" # getWebGLStub.js
+#   - "playwright" # vitest
+#   - "virtual:pwa-register" # pwa.ts
+#   - "autoprefixer" # postcss.config.js
+#   - "cssnano" # postcss.config.js
+#   - "postcss" # postcss.config.js
+#   - "postcss-import" # postcss.config.js
+#   - "postcss-nesting" # postcss.config.js
+#   - "prettier-plugin-tailwindcss" # .prettierrc
+#   - "@tauri-apps/cli" # package.json

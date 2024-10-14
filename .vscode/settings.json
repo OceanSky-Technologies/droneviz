@@ -18,7 +18,9 @@
     "**/target/**/build": true,
     "**/target/**/deps": true,
     "**/target/**/examples": true,
-    "**/target/**/incremental": true
+    "**/target/**/incremental": true,
+    "test-results": true,
+    "auto-imports.d.ts": true
   },
   "files.eol": "\n",
   "typescript.preferences.importModuleSpecifier": "relative",

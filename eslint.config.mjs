@@ -1,27 +1,15 @@
-import eslint from "@eslint/js";
 import globals from "globals";
 import jsdoc from "eslint-plugin-jsdoc";
-import prettier from "eslint-plugin-prettier/recommended";
-import tseslint from "typescript-eslint";
-import vue from "eslint-plugin-vue";
 
-const config = [
-  eslint.configs.recommended,
-  ...tseslint.configs.strict,
-  ...tseslint.configs.stylistic,
-  prettier,
-  ...vue.configs["flat/recommended"],
-  jsdoc.configs["flat/recommended-error"],
+import withNuxt from "./.nuxt/eslint.config.mjs";
 
+export default withNuxt(
   {
-    files: ["src/**/*", "packages/**/*", "test/**/*"],
+    files: ["**/*.ts", "**/*.js", "**/*.vue"],
     languageOptions: {
       globals: {
         ...globals.browser,
         ...globals.node,
-      },
-      parserOptions: {
-        parser: tseslint.parser,
       },
     },
     plugins: {
@@ -53,7 +41,6 @@ const config = [
       "no-use-before-define": "off",
       "one-var": "off",
       "prefer-template": "off",
-      "prettier/prettier": "error",
       "sort-imports": "off",
       "sort-keys": "off",
       "vue/html-self-closing": "off",
@@ -62,23 +49,20 @@ const config = [
       "vue/singleline-html-element-content-newline": "off",
     },
   },
-
   {
     ignores: [
       ".github",
+      ".nuxt",
+      ".tauri-build",
       ".vscode",
       "coverage",
-      "dist",
       "dev-dist",
-      "node_modules",
-      "test/helpers/getWebGLStub.js",
-      "tauri-app",
+      "dist",
       "mavlink-ts",
-      "theme",
+      "node_modules",
       "src-tauri",
-      "vite.config.mts.*",
+      "tauri-app",
+      "test",
     ],
   },
-];
-
-export default config;
+);
