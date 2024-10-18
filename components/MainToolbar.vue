@@ -68,8 +68,11 @@ async function doSearch() {
   searchIconClass.value = "pi pi-spin pi-spinner";
 
   try {
+    const config = useRuntimeConfig();
+
     const data = await $fetch("/api/geocoder", {
       params: { text: searchStringSanitized },
+      baseURL: config.public.baseURL as string,
     });
 
     console.log(data);

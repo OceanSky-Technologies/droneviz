@@ -1,5 +1,4 @@
 import https from "https";
-import { pipeline } from "stream";
 import {
   createWriteStream,
   createReadStream,
@@ -8,13 +7,12 @@ import {
 } from "fs";
 import { URL } from "whatwg-url";
 import path from "path";
-import unzipper from "unzipper"; // For handling zip extraction
+import unzipper from "unzipper";
 import zlib from "zlib";
 import tar from "tar";
 import { rimraf } from "rimraf";
 
-// node.js version
-const nodeVersion = "v20.18.0"; //nodejs.org/dist/v20.18.0/node-v20.18.0-win-x64.zip
+const nodeVersion = "v23.0.0";
 
 const outputDir = path.join(import.meta.dirname, "../.tauri-build/node");
 const extractDir = path.join(outputDir, "tmp");
@@ -22,27 +20,27 @@ const extractDir = path.join(outputDir, "tmp");
 const nodeDownloads = [
   {
     url: `https://nodejs.org/dist/${nodeVersion}/node-${nodeVersion}-win-x64.zip`,
-    name: "node-x86_64-pc-windows-msvc.exe",
+    name: "droneviz-node-x86_64-pc-windows-msvc.exe",
   },
   {
     url: `https://nodejs.org/dist/${nodeVersion}/node-${nodeVersion}-win-arm64.zip`,
-    name: "node-aarch64-pc-windows-msvc.exe",
+    name: "droneviz-node-aarch64-pc-windows-msvc.exe",
   },
   {
     url: `https://nodejs.org/dist/${nodeVersion}/node-${nodeVersion}-linux-x64.tar.gz`,
-    name: "node-x86_64-unknown-linux-gnu",
+    name: "droneviz-node-x86_64-unknown-linux-gnu",
   },
   {
     url: `https://nodejs.org/dist/${nodeVersion}/node-${nodeVersion}-linux-arm64.tar.gz`,
-    name: "node-aarch64-unknown-linux-gnu",
+    name: "droneviz-node-aarch64-unknown-linux-gnu",
   },
   {
     url: `https://nodejs.org/dist/${nodeVersion}/node-${nodeVersion}-darwin-x64.tar.gz`,
-    name: "node-x86_64-apple-darwin",
+    name: "droneviz-node-x86_64-apple-darwin",
   },
   {
     url: `https://nodejs.org/dist/${nodeVersion}/node-${nodeVersion}-darwin-arm64.tar.gz`,
-    name: "node-aarch64-apple-darwin",
+    name: "droneviz-node-aarch64-apple-darwin",
   },
 ];
 
@@ -56,12 +54,10 @@ function downloadFile(url: string, dest: string): Promise<void> {
           reject(new Error(`Failed to download file: ${response.statusCode}`));
           return;
         }
-        pipeline(response, file, (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
+
+        response.pipe(file).on("finish", () => {
+          file.close();
+          resolve();
         });
       })
       .on("error", reject);
@@ -82,12 +78,6 @@ async function extractTarGz(filePath: string, destDir: string): Promise<void> {
 async function extractZip(filePath: string, destDir: string) {
   const directory = await unzipper.Open.file(filePath);
   await directory.extract({ path: destDir });
-  // return new Promise((resolve, reject) => {
-  //   createReadStream(filePath)
-  //     .pipe(unzipper.Extract({ path: destDir }))
-  //     .on("close", resolve)
-  //     .on("error", reject);
-  // });
 }
 
 // Function to handle the download and extraction of binaries
@@ -134,15 +124,17 @@ async function downloadNodeBinaries() {
   await fs.mkdir(outputDir, { recursive: true });
   await fs.mkdir(extractDir, { recursive: true });
 
-  for (const download of nodeDownloads) {
-    try {
-      await handleDownload(download);
-      console.log();
-    } catch (err) {
+  // Create an array of promises for all download tasks
+  const downloadPromises = nodeDownloads.map((download) =>
+    handleDownload(download).catch((err) => {
       console.error(`Error downloading or handling ${download.name}:`, err);
-      process.exit(1);
-    }
-  }
+    }),
+  );
+
+  // Wait for all downloads to complete
+  await Promise.all(downloadPromises);
+
+  console.log("All downloads and extractions completed.");
 }
 
 async function main() {
@@ -151,11 +143,11 @@ async function main() {
     process.exit(0);
   }
 
-  await rimraf(outputDir);
+  await rimraf(outputDir); // clean up any previous failed runs
   await downloadNodeBinaries().catch((err) =>
     console.error("Error:", err.stack),
   );
-  await rimraf(extractDir);
+  await rimraf(extractDir); // clean up the temporary extraction folder
   console.log("Finished");
   process.exit(0);
 }

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "identifier": "com.oceansky.droneviz",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "pnpm dlnode && pnpm build:server && pnpm dev",
     "beforeBuildCommand": "pnpm generate && pnpm dlnode && pnpm build:server",
     "devUrl": "http://localhost:3000",
     "frontendDist": "../.tauri-build/dist"
@@ -39,7 +39,7 @@
       "../public/oceansky-logo.icns",
       "../public/oceansky-logo.ico"
     ],
-    "externalBin": ["../.tauri-build/node/node"],
+    "externalBin": ["../.tauri-build/node/droneviz-node"],
     "resources": ["../.output/server","../.output/public/_nuxt"]
   },
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json"

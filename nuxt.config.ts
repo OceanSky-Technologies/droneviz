@@ -1,11 +1,10 @@
-import { fileURLToPath } from "node:url";
 import { defineNuxtConfig } from "nuxt/config";
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false, // tauri needs this
   // Enables the development server to be discoverable by other devices when running on iOS physical devices
-  devServer: { host: process.env.TAURI_DEV_HOST || "localhost" },
+  devServer: { host: process.env.TAURI_DEV_HOST || "127.0.0.1" },
   telemetry: false,
   compatibilityDate: "2024-10-14",
   modules: [
@@ -41,6 +40,14 @@ export default defineNuxtConfig({
       },
       title: "Droneviz",
     },
+  },
+  runtimeConfig: {
+    public: {
+      baseURL: "http://127.0.0.1:3000",
+    },
+  },
+  routeRules: {
+    "/api/**": { cors: true },
   },
   pwa: {
     devOptions: {

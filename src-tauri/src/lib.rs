@@ -1,75 +1,7 @@
-#[cfg(target_os = "windows")]
-use std::{os::windows::process::CommandExt, process::Command};
-
-// see https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
-#[cfg(target_os = "windows")]
-const CREATE_NO_WINDOW: u32 = 0x08000000;
+use std::sync::{Arc, Mutex};
 
 use tauri::{path::BaseDirectory, AppHandle, Manager, RunEvent};
 use tauri_plugin_shell::ShellExt;
-
-// #[tauri::command]
-// fn open_webcam_window(app: tauri::AppHandle) {
-//     // Create a new window
-//     #[cfg(target_os = "windows")]
-//     {
-//         let new_window = tauri::WebviewWindowBuilder::new(
-//             &app,
-//             "video",
-//             tauri::WebviewUrl::App("video.html".into()),
-//         )
-//         .title("Video")
-//         .visible(true)
-//         .build()
-//         .expect("Failed to create new window");
-
-//         println!("now");
-//     }
-// }
-
-// #[tauri::command]
-// fn start_backend(app: &AppHandle) {
-//     #[cfg(target_os = "windows")]
-//     {
-//         let run_script = if cfg!(target_os = "windows") {
-//             "_up_/dist/backend/start.bat"
-//         } else {
-//             panic!("OS not supported")
-//         };
-
-//         let path = app
-//             .path()
-//             .resolve(run_script, tauri::path::BaseDirectory::Resource)
-//             .unwrap();
-
-//         Command::new(path)
-//             .creation_flags(CREATE_NO_WINDOW) // hide console window
-//             .spawn()
-//             .expect("failed to execute process");
-//     }
-// }
-
-// #[tauri::command]
-// fn stop_backend(app: &AppHandle) {
-//     #[cfg(target_os = "windows")]
-//     {
-//         let run_script = if cfg!(target_os = "windows") {
-//             "_up_/dist/backend/stop.bat"
-//         } else {
-//             panic!("OS not supported")
-//         };
-
-//         let path = app
-//             .path()
-//             .resolve(run_script, tauri::path::BaseDirectory::Resource)
-//             .unwrap();
-
-//         Command::new(path)
-//             .creation_flags(CREATE_NO_WINDOW) // hide console window
-//             .spawn()
-//             .expect("failed to execute process");
-//     }
-// }
 
 #[tauri::command]
 fn start_server(app: &AppHandle) {
@@ -78,24 +10,49 @@ fn start_server(app: &AppHandle) {
         .path()
         .resolve("_up_/.output/server/index.mjs", BaseDirectory::Resource);
 
-    // TODO:find resource_path with resolveResource
-    // let resPath = resolveResource("../.output/server/index.mjs").await;
+    // // TODO: find resource_path with resolveResource
+    // // let resPath = resolveResource("../.output/server/index.mjs").await;
 
-    let _ = app
+    let sidecar_command = app
         .shell()
-        .sidecar("node")
+        .sidecar("droneviz-node")
         .unwrap()
         .arg(resource_path.unwrap());
+
+    let (mut _rx, sidecar_child) = sidecar_command.spawn().expect("Failed to spawn cargo");
+
+    // Wrap the child process in Arc<Mutex<>> for shared access
+    let child = Arc::new(Mutex::new(Some(sidecar_child)));
+
+    // Clone the Arc to move into the async task
+    let child_clone = Arc::clone(&child);
+
+    // auto kill the child process when the window is closed
+    let window = app.get_webview_window("main").unwrap();
+    window.on_window_event(move |event| {
+        if let tauri::WindowEvent::CloseRequested { .. } = event {
+            println!("killing children");
+            let mut child_lock = child_clone.lock().unwrap();
+            if let Some(mut child_process) = child_lock.take() {
+                if let Err(e) = child_process.write("Exit message from Rust\n".as_bytes()) {
+                    println!("Fail to send to stdin of Python: {}", e);
+                }
+
+                if let Err(e) = child_process.kill() {
+                    eprintln!("Failed to kill child process: {}", e);
+                }
+
+                // workaround to exit the process correctly (without zombie processs)
+                std::process::exit(0);
+            }
+        }
+    });
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        // .setup(move |app| {
-        //     start_backend(&app.app_handle());
-        //     Ok(())
-        // })
         .setup(|app| {
             start_server(app.app_handle());
             Ok(())
@@ -103,9 +60,10 @@ pub fn run() {
         // .invoke_handler(tauri::generate_handler![open_webcam_window])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        .run(move |_app_handle, _event| match &_event {
+        .run(move |_app_handle, event| match event {
             RunEvent::ExitRequested { .. } => {
-                // stop_backend(&_app_handle);
+                // TODO: doesn't work here - keeps the process running... workaround: call exit when closing child process
+                std::process::exit(0);
             }
             _ => (),
         });

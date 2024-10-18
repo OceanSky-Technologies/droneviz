@@ -1,7 +1,20 @@
 import NodeGeocoder, { type Options } from "node-geocoder";
+import fs from "fs";
+
+// Write data in 'Output.txt' .
+fs.writeFile("C:\\Users\\Martin\\Desktop\\start.txt", "start", (err) => {
+  // In case of a error throw err.
+  if (err) throw err;
+});
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
+
+  // Write data in 'Output.txt' .
+  fs.writeFile("C:\\Users\\Martin\\Desktop\\handler.txt", "handler", (err) => {
+    // In case of a error throw err.
+    if (err) throw err;
+  });
 
   const options = {
     provider: "openstreetmap",
