@@ -2,6 +2,12 @@ import { SceneMode } from "cesium";
 import type { Ref } from "vue";
 import { ref } from "vue";
 
+export enum DarkMode {
+  Dark = "dark",
+  Light = "light",
+  System = "system",
+}
+
 /**
  * Collection of all settings.
  */
@@ -16,6 +22,7 @@ class Settings {
   showFramesPerSecond: Ref<boolean>;
   enableMousePositionInfo: Ref<boolean>;
   mousePositionInfoMostDetailed: Ref<boolean>;
+  darkMode: Ref<DarkMode>;
 
   /**
    * Constructs a new Settings class with default values.
@@ -31,6 +38,7 @@ class Settings {
     this.showFramesPerSecond = ref(true);
     this.enableMousePositionInfo = ref(true);
     this.mousePositionInfoMostDetailed = ref(false); // most detailed position retrieval triggers the API and increases quota!
+    this.darkMode = ref(DarkMode.Dark);
   }
 }
 

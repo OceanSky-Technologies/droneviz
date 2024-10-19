@@ -85,7 +85,7 @@ onMounted(async () => {
   <div class="relative">
     <div id="cesiumContainer" />
 
-    <MainToolbar v-if="cesiumInitialized" id="mainToolbar" ref="maintoolbar" />
+    <MainToolbar v-if="cesiumInitialized" id="mainToolbar" />
 
     <div
       id="toolbar"

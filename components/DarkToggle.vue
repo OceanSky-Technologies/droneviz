@@ -2,14 +2,27 @@
 import "primeicons/primeicons.css";
 import Button from "primevue/button";
 import { ref } from "vue";
+import { DarkMode, settings } from "./Settings";
 
-const darkMode = ref(false);
+let darkMode: Ref<boolean>;
 
-// get system scheme
-if (import.meta.client) {
-  if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-    darkMode.value = true;
+if (settings.darkMode.value === DarkMode.System) {
+  // get system scheme
+  if (import.meta.client) {
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      darkMode = ref(true);
+    } else {
+      darkMode = ref(false);
+    }
+  } else {
+    darkMode = ref(true);
   }
+} else {
+  darkMode = ref(settings.darkMode.value === DarkMode.Dark);
+}
+
+if (darkMode.value) {
+  document.documentElement.classList.add("dark");
 }
 
 const toggleDarkMode = () => {

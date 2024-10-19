@@ -5,6 +5,8 @@ import ToggleSwitch from "primevue/toggleswitch";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
+import Listbox from "primevue/listbox";
+
 import { onMounted, type Ref, ref, watch } from "vue";
 import { settings } from "./Settings";
 import {
@@ -14,7 +16,8 @@ import {
   getGoogle3DTileset,
 } from "./CesiumViewerWrapper";
 import type { Cesium3DTileset, ProviderViewModel } from "cesium";
-import { SceneMode } from "cesium";
+import { Cartesian3, SceneMode } from "cesium";
+import { showToast, ToastSeverity } from "./ToastService";
 
 // list of all available map data sources
 const mapDataSources: Ref<MapDataSource[]> = ref([
@@ -30,7 +33,53 @@ const map3DEnabled = ref(true);
 // search string
 const searchString = ref("");
 
-const searchIconClass = ref("pi pi-search"); // default class
+// search icon class
+const searchIconClass = ref("pi pi-search");
+
+// geolocation search results
+interface GeoLocationResult {
+  text: string;
+  lat: number;
+  lon: number;
+}
+// list of geolocation search results
+const geolocationOptions: GeoLocationResult[] = [];
+
+// reference to the search input field
+const searchBox: Ref<InstanceType<typeof InputText> | null> =
+  useTemplateRef("searchBox");
+
+// reference to the listbox
+const geolocationListbox: Ref<InstanceType<typeof Listbox> | null> =
+  useTemplateRef("geolocationListbox");
+
+// Control visibility of the Listbox
+const showGeolocationListbox = ref(false);
+
+// Selected geolocation
+const selectedGeolocation = ref<GeoLocationResult | null>(null);
+
+// when a geolocation was selected then hide the geolocationListbox and fly to the selected location
+watch(
+  () => selectedGeolocation.value,
+  (newVal: GeoLocationResult | null) => {
+    if (newVal) {
+      showGeolocationListbox.value = false;
+
+      // fly to the selected location
+      getCesiumViewer().camera.flyTo({
+        destination: Cartesian3.fromDegrees(newVal.lon, newVal.lat, 10000),
+        duration: 3,
+      });
+
+      // clear the list
+      geolocationOptions.splice(0, geolocationOptions.length);
+
+      showGeolocationListbox.value = false;
+      searchString.value = "";
+    }
+  },
+);
 
 watch(
   () => map3DEnabled.value,
@@ -59,6 +108,33 @@ watch(
 );
 
 /**
+ * Position the geolocation results listbox under the search input field.
+ */
+function positionListbox() {
+  if (!searchBox.value || !searchBox.value.$el) {
+    console.error("Couldn't find the searchBox");
+    return;
+  }
+  if (!geolocationListbox.value || !geolocationListbox.value.$el) {
+    console.error("Couldn't find the geolocationListbox");
+    return;
+  }
+
+  try {
+    const inputElement = searchBox.value.$el;
+    const inputRect = inputElement.getBoundingClientRect();
+    const listboxElement = geolocationListbox.value.$el;
+
+    // Set the position based on the input's bounding rectangle
+    listboxElement.style.width = `${inputRect.width}px`;
+    listboxElement.style.top = `${inputRect.bottom}px`;
+    listboxElement.style.left = `${inputElement.style.left}px`;
+  } catch (e) {
+    console.error("Error positioning listbox", e);
+  }
+}
+
+/**
  * Perform a search based on the search string using the geocoder.
  */
 async function doSearch() {
@@ -75,9 +151,46 @@ async function doSearch() {
       baseURL: config.public.baseURL as string,
     });
 
-    console.log(data);
+    // clear the list
+    geolocationOptions.splice(0, geolocationOptions.length);
+
+    if (data.length === 0) {
+      showToast(
+        "Info",
+        `No geolocation results found for: ${searchStringSanitized}`,
+        ToastSeverity.Info,
+      );
+      searchIconClass.value = "pi pi-search";
+      return;
+    }
+
+    // add all elements to the list
+    for (const geolocation of data) {
+      if (
+        geolocation.formattedAddress &&
+        geolocation.latitude &&
+        geolocation.longitude
+      ) {
+        geolocationOptions.push({
+          text: geolocation.formattedAddress,
+          lat: geolocation.latitude,
+          lon: geolocation.longitude,
+        });
+      }
+    }
+
+    // position the listbox under the input field (do it dynamically as the input field might have moved when resizing the window)
+    positionListbox();
+
+    // hide the listbox and show it again to force a re-render in case the listbox is already visible
+    showGeolocationListbox.value = false;
+    showGeolocationListbox.value = true;
   } catch (e) {
-    console.error(e);
+    showToast(
+      "Error",
+      `Couldn't find geolocation results: ${JSON.stringify(e)}`,
+      ToastSeverity.Error,
+    );
   }
 
   searchIconClass.value = "pi pi-search";
@@ -279,46 +392,57 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Toolbar class="main-toolbar">
-    <template #start>
-      <div>3D</div>
-      <ToggleSwitch id="3d-toggle-switch" v-model="map3DEnabled" />
-    </template>
+  <div>
+    <Toolbar class="main-toolbar">
+      <template #start>
+        <div>3D</div>
+        <ToggleSwitch id="3d-toggle-switch" v-model="map3DEnabled" />
+      </template>
 
-    <template #center>
-      <IconField icon-position="left">
-        <InputIcon>
-          <i :class="searchIconClass" />
-        </InputIcon>
-        <InputText
-          v-model="searchString"
-          placeholder="Search"
-          @keyup.enter="doSearch"
+      <template #center>
+        <IconField ref="searchBox" icon-position="left">
+          <InputIcon>
+            <i :class="searchIconClass" />
+          </InputIcon>
+          <InputText
+            v-model="searchString"
+            placeholder="Search"
+            @keyup.enter="doSearch"
+          />
+        </IconField>
+        <Listbox
+          v-show="showGeolocationListbox"
+          ref="geolocationListbox"
+          v-model="selectedGeolocation"
+          :options="geolocationOptions"
+          option-label="text"
+          class="floating-listbox"
+          style="position: absolute"
         />
-      </IconField>
-    </template>
+      </template>
 
-    <template #end>
-      <CascadeSelect
-        v-model="mapDataSourceSelection"
-        :options="mapDataSources"
-        option-label="name"
-        option-group-label="name"
-        :option-group-children="['options']"
-        style="min-width: 14rem"
-        placeholder="Select a data source"
-      >
-        <template #option="slotProps">
-          <div class="flex items-center">
-            <img :src="`${slotProps.option.image}`" style="width: 18px" />
-            <span>{{
-              slotProps.option.optionName || slotProps.option.shortName
-            }}</span>
-          </div>
-        </template>
-      </CascadeSelect>
-    </template>
-  </Toolbar>
+      <template #end>
+        <CascadeSelect
+          v-model="mapDataSourceSelection"
+          :options="mapDataSources"
+          option-label="name"
+          option-group-label="name"
+          :option-group-children="['options']"
+          style="min-width: 14rem"
+          placeholder="Select a data source"
+        >
+          <template #option="slotProps">
+            <div class="flex items-center">
+              <img :src="`${slotProps.option.image}`" style="width: 18px" />
+              <span>{{
+                slotProps.option.optionName || slotProps.option.shortName
+              }}</span>
+            </div>
+          </template>
+        </CascadeSelect>
+      </template>
+    </Toolbar>
+  </div>
 </template>
 
 <style scoped lang="postcss">
@@ -331,5 +455,10 @@ onMounted(async () => {
 
 :deep(.p-toolbar-start) {
   column-gap: 7px !important;
+}
+
+.floating-listbox {
+  position: absolute;
+  z-index: 1000; /* Ensure it floats above other elements */
 }
 </style>

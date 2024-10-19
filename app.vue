@@ -1,6 +1,11 @@
+<script setup lang="ts">
+import Toast from "primevue/toast";
+</script>
+
 <template>
   <VitePwaManifest />
   <NuxtPage />
+  <Toast />
 </template>
 
 <style>
