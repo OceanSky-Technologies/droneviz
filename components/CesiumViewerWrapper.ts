@@ -28,6 +28,9 @@ export async function initCesium(
 
   viewer = new Viewer("cesiumContainer", viewerOptions);
 
+  // improve quality of visible maps: https://github.com/CesiumGS/cesium/issues/3279
+  getCesiumViewer().scene.globe.maximumScreenSpaceError = 1.5;
+
   getCesiumViewer().scene.globe.tileCacheSize = settings.tileCacheSize.value; // improve rendering speed
   getCesiumViewer().scene.postProcessStages.fxaa.enabled = settings.fxaa.value;
   getCesiumViewer().scene.debugShowFramesPerSecond =

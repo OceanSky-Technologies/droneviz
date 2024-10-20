@@ -2,8 +2,6 @@
 import Toolbar from "primevue/toolbar";
 import CascadeSelect from "primevue/cascadeselect";
 import ToggleSwitch from "primevue/toggleswitch";
-import IconField from "primevue/iconfield";
-import InputIcon from "primevue/inputicon";
 import InputText from "primevue/inputtext";
 import Listbox from "primevue/listbox";
 
@@ -194,6 +192,20 @@ async function doSearch() {
   }
 
   searchIconClass.value = "pi pi-search";
+}
+
+/**
+ * Close the search listbox.
+ */
+function closeSearchListbox() {
+  // clear the list
+  geolocationOptions.splice(0, geolocationOptions.length);
+  showGeolocationListbox.value = false;
+  searchString.value = "";
+  searchIconClass.value = "pi pi-search";
+
+  // remove foxus from the search input field
+  (document.activeElement as HTMLElement)?.blur();
 }
 
 // react on map data source changes
@@ -400,16 +412,23 @@ onMounted(async () => {
       </template>
 
       <template #center>
-        <IconField ref="searchBox" icon-position="left">
-          <InputIcon>
-            <i :class="searchIconClass" />
-          </InputIcon>
-          <InputText
-            v-model="searchString"
-            placeholder="Search"
-            @keyup.enter="doSearch"
+        <InputGroup ref="searchBox" style="width: 18rem">
+          <Button :icon="searchIconClass" severity="info" @click="doSearch" />
+
+          <FloatLabel variant="on">
+            <InputText
+              v-model="searchString"
+              @keyup.enter="doSearch"
+              @keyup.escape="closeSearchListbox"
+            />
+            <label for="on_label" style="font-weight: normal">Search</label>
+          </FloatLabel>
+          <Button
+            icon="pi pi-times"
+            severity="danger"
+            @click="closeSearchListbox"
           />
-        </IconField>
+        </InputGroup>
         <Listbox
           v-show="showGeolocationListbox"
           ref="geolocationListbox"
@@ -422,24 +441,27 @@ onMounted(async () => {
       </template>
 
       <template #end>
-        <CascadeSelect
-          v-model="mapDataSourceSelection"
-          :options="mapDataSources"
-          option-label="name"
-          option-group-label="name"
-          :option-group-children="['options']"
-          style="min-width: 14rem"
-          placeholder="Select a data source"
-        >
-          <template #option="slotProps">
-            <div class="flex items-center">
-              <img :src="`${slotProps.option.image}`" style="width: 18px" />
-              <span>{{
-                slotProps.option.optionName || slotProps.option.shortName
-              }}</span>
-            </div>
-          </template>
-        </CascadeSelect>
+        <FloatLabel variant="on">
+          <CascadeSelect
+            v-model="mapDataSourceSelection"
+            :options="mapDataSources"
+            option-label="name"
+            option-group-label="name"
+            :option-group-children="['options']"
+            style="width: 15rem"
+            placeholder="Select a data source"
+          >
+            <template #option="slotProps">
+              <div class="flex items-center">
+                <img :src="`${slotProps.option.image}`" style="width: 18px" />
+                <span>{{
+                  slotProps.option.optionName || slotProps.option.shortName
+                }}</span>
+              </div>
+            </template>
+          </CascadeSelect>
+          <label for="on_label" style="font-weight: normal">Map provider</label>
+        </FloatLabel>
       </template>
     </Toolbar>
   </div>
@@ -447,10 +469,14 @@ onMounted(async () => {
 
 <style scoped lang="postcss">
 .main-toolbar {
-  border-top-left-radius: 0 !important;
-  border-top-right-radius: 0 !important;
-  border-top: 0 !important;
-  flex-wrap: nowrap !important;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border-top: 0;
+  padding: 8px;
+  column-gap: 15px;
+  flex-wrap: nowrap;
 }
 
 :deep(.p-toolbar-start) {
