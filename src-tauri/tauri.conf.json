@@ -5,7 +5,7 @@
   "build": {
     "beforeDevCommand": "pnpm dlnode && pnpm build:server && pnpm dev",
     "beforeBuildCommand": "pnpm generate && pnpm dlnode && pnpm build:server",
-    "devUrl": "http://localhost:3000",
+    "devUrl": "http://127.0.0.1:3000",
     "frontendDist": "../.tauri-build/dist"
   },
   "app": {
