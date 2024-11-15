@@ -16,6 +16,7 @@ export default defineNuxtConfig({
     "@primevue/nuxt-module",
     "@vite-pwa/nuxt",
   ],
+  css: ["/assets/style.css"],
   primevue: {
     importTheme: { from: "@/assets/theme.ts" },
   },

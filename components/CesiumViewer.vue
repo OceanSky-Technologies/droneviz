@@ -5,11 +5,13 @@ import { getCesiumViewer, initCesium } from "./CesiumViewerWrapper";
 import { initDemo } from "~/demo/Demo";
 import { Math, Cartesian3 } from "cesium";
 import { onMounted, ref } from "vue";
-import { run } from "./EntityHandler";
+import "./DroneCollection";
 // import CameraWindow from "./CameraWindow.vue";
 import CesiumMouseHandler from "./CesiumMouseHandler";
 import MainToolbar from "./MainToolbar.vue";
 import type { Viewer, Cesium3DTileset } from "cesium";
+import { settings } from "./Settings";
+import { droneCollection } from "./DroneCollection";
 
 export interface CesiumViewerProps {
   mockViewerOptions?: Viewer.ConstructorOptions | undefined;
@@ -45,11 +47,9 @@ class CesiumViewerImpl {
 
     this.mouseHandlers = new CesiumMouseHandler();
 
-    initDemo();
+    if (settings.demoMode.value == true) initDemo();
 
     this.resetCamera();
-
-    run();
   }
 
   /**
@@ -86,23 +86,6 @@ onMounted(async () => {
     <div id="cesiumContainer" />
 
     <MainToolbar v-if="cesiumInitialized" id="mainToolbar" />
-
-    <div
-      id="toolbar"
-      style="
-        background-color: #f0f9ff;
-        border-radius: 5px;
-        padding: 5px;
-        display: block;
-        position: absolute;
-        top: 5px;
-        left: 5px;
-      "
-    >
-      <div id="demoMenu" />
-
-      <!-- <CameraWindow /> -->
-    </div>
   </div>
 </template>
 

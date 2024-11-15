@@ -331,6 +331,7 @@ export function createViewerOptions(): Viewer.ConstructorOptions {
     animation: false,
     timeline: false,
     infoBox: false,
+    navigationHelpButton: false,
     baseLayerPicker: true,
     selectionIndicator: false,
     sceneMode: settings.sceneMode.value,

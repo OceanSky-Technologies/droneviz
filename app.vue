@@ -4,8 +4,8 @@ import Toast from "primevue/toast";
 
 <template>
   <VitePwaManifest />
-  <NuxtPage />
   <Toast />
+  <NuxtPage />
 </template>
 
 <style>

@@ -1,3 +1,5 @@
+@import url("/assets/tailwind.css");
+
 :root {
   font-size: 14px;
   transition:
@@ -34,13 +36,7 @@
 
 /* default */
 .p-component {
-  padding: 0.4rem !important;
-  border-radius: 3px !important;
-}
-
-/* iconfield */
-.p-inputtext {
-  padding-left: 30px !important;
+  padding: 0.5rem !important;
 }
 
 /* cascadeselect */
@@ -56,4 +52,15 @@
 
 .p-toggleswitch {
   padding: 0 !important;
+}
+
+/* hide cesium toolbar */
+.cesium-viewer-toolbar {
+  display: none !important;
+}
+
+.cesium-performanceDisplay-defaultContainer {
+  position: absolute;
+  top: 5px !important;
+  right: 5px !important;
 }

@@ -20,6 +20,7 @@ class Settings {
   msaaSamples: Ref<number>;
   fxaa: Ref<boolean>;
   showFramesPerSecond: Ref<boolean>;
+  demoMode: Ref<boolean>;
   enableMousePositionInfo: Ref<boolean>;
   mousePositionInfoMostDetailed: Ref<boolean>;
   darkMode: Ref<DarkMode>;
@@ -36,6 +37,7 @@ class Settings {
     this.msaaSamples = ref(0);
     this.fxaa = ref(true);
     this.showFramesPerSecond = ref(true);
+    this.demoMode = ref(false);
     this.enableMousePositionInfo = ref(true);
     this.mousePositionInfoMostDetailed = ref(false); // most detailed position retrieval triggers the API and increases quota!
     this.darkMode = ref(DarkMode.Dark);

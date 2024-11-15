@@ -15,7 +15,8 @@ import {
 } from "./CesiumViewerWrapper";
 import type { Cesium3DTileset, ProviderViewModel } from "cesium";
 import { Cartesian3, SceneMode } from "cesium";
-import { showToast, ToastSeverity } from "./ToastService";
+import { showToast, ToastSeverity } from "../utils/ToastService";
+import type InputGroup from "primevue/inputgroup";
 
 // list of all available map data sources
 const mapDataSources: Ref<MapDataSource[]> = ref([
@@ -44,8 +45,7 @@ interface GeoLocationResult {
 const geolocationOptions: GeoLocationResult[] = [];
 
 // reference to the search input field
-const searchBox: Ref<InstanceType<typeof InputText> | null> =
-  useTemplateRef("searchBox");
+const searchBox: Ref<HTMLElement | null> = ref(null);
 
 // reference to the listbox
 const geolocationListbox: Ref<InstanceType<typeof Listbox> | null> =
