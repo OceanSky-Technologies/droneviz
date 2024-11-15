@@ -25,7 +25,6 @@ jobs:
         with:
           lfs: true
           submodules: true
-          token: ${{ secrets.MAVLINK_TS_TOKEN }}
           fetch-depth: 0
 
       - uses: ./.github/workflows/setup
