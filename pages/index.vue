@@ -1,10 +1,14 @@
 <script lang="ts" setup>
 import CesiumViewer from "~/components/CesiumViewer.vue";
 import DarkToggle from "~/components/DarkToggle.vue";
-import { droneCollection } from "~/components/DroneCollection";
+import { droneCollection } from "~/components/Drone";
 
 function connect() {
   droneCollection.connectAll();
+}
+
+function disconnect() {
+  droneCollection.disconnectAll();
 }
 </script>
 
@@ -18,6 +22,7 @@ function connect() {
     >
       <DarkToggle />
       <Button label="Connect" @click="connect" />
+      <Button label="Disconnect" @click="disconnect" />
       <CameraWindow />
 
       <div id="demoMenu" />

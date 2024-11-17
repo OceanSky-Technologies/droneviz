@@ -3,33 +3,38 @@ import { connect } from "net";
 import {
   MavEsp8266,
   MavLinkPacketParser,
-  type MavLinkPacketRegistry,
-  minimal,
-  common,
-  ardupilotmega,
   MavLinkPacketSplitter,
   MavLinkPacketSignature,
 } from "node-mavlink";
 import { SerialPort } from "serialport";
+import type { EventStream } from "h3";
 import {
   SerialOptions,
   TcpOptions,
   UdpOptions,
-} from "../../types/DroneConnectionOptions";
+} from "~/types/DroneConnectionOptions";
+import { REGISTRY } from "~/types/MavlinkRegistry";
 
-export class Drone {
+// fix BigInt serialization: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-953187833
+declare global {
+  interface BigInt {
+    toJSON: () => string;
+  }
+}
+
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+// fix BigInt serialization end
+
+export class DroneInterface {
   private connectionOption: SerialOptions | TcpOptions | UdpOptions;
 
   private serialPort?: SerialPort;
   private port: MavEsp8266 | Socket | MavLinkPacketParser | undefined;
   private signatureKey?: Buffer;
 
-  // create a registry of mappings between a message id and a data class
-  private REGISTRY: MavLinkPacketRegistry = {
-    ...minimal.REGISTRY,
-    ...common.REGISTRY,
-    ...ardupilotmega.REGISTRY,
-  };
+  eventStream?: EventStream;
 
   constructor(
     connectionOption: SerialOptions | TcpOptions | UdpOptions,
@@ -47,10 +52,8 @@ export class Drone {
       if (this.connectionOption instanceof SerialOptions) {
         await this.connectSerial();
       } else if (this.connectionOption instanceof TcpOptions) {
-        console.log("tcp");
         await this.connectTcp();
       } else if (this.connectionOption instanceof UdpOptions) {
-        console.log("udp");
         await this.connectUdp();
       } else {
         throw new Error(
@@ -59,6 +62,34 @@ export class Drone {
       }
     } catch (err) {
       throw new Error(`Failed to establish connection: ${err}`);
+    }
+  }
+
+  async disconnect() {
+    try {
+      if (this.connectionOption instanceof SerialOptions) {
+        (this.port as MavLinkPacketParser)?.removeAllListeners();
+        (this.port as MavLinkPacketParser)?.destroy();
+        (this.port as MavLinkPacketParser)?.unpipe();
+        this.port = undefined;
+
+        this.serialPort?.close();
+        this.serialPort = undefined;
+      } else if (this.connectionOption instanceof TcpOptions) {
+        (this.port as Socket)?.removeAllListeners();
+        (this.port as Socket)?.resetAndDestroy();
+        this.port = undefined;
+      } else if (this.connectionOption instanceof UdpOptions) {
+        (this.port as MavEsp8266)?.removeAllListeners();
+        await (this.port as MavEsp8266)?.close();
+        this.port = undefined;
+      } else {
+        throw new Error(
+          "Invalid connection option: " + JSON.stringify(this.connectionOption),
+        );
+      }
+    } catch (err) {
+      throw new Error(`Failed to close connection: ${err}`);
     }
   }
 
@@ -152,22 +183,23 @@ export class Drone {
     // TODO: test signature verification with TCP -> the 'data' callback provides a 'Buffer' object which has no 'signature' property
     if (packet.signature) {
       if (packet.signature.matches(this.signatureKey)) {
-        this.parseData(packet);
+        this.streamToBrowser(packet);
       } else {
-        console.warn("Signature check failed! Fraudulent package?");
+        console.warn("Signature check failed! Fraudulent package received?");
       }
     } else {
-      this.parseData(packet);
+      this.streamToBrowser(packet);
     }
   }
 
-  parseData(packet: any) {
-    const clazz = this.REGISTRY[packet.header.msgid];
-    if (clazz) {
-      const data = packet.protocol.data(packet.payload, clazz);
-      console.log("Parsed packet:", data);
-    } else {
-      console.log("Not registered packet received:", packet);
+  streamToBrowser(packet: any) {
+    try {
+      // push data through event stream to the frontend
+      if (this.eventStream) {
+        this.eventStream.push(JSON.stringify(packet));
+      }
+    } catch (err) {
+      console.error(`Failed to stream packet: ${err}`);
     }
   }
 }

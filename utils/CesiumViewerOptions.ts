@@ -11,7 +11,7 @@ import {
   SkyAtmosphere,
   Terrain,
 } from "cesium";
-import { settings } from "~/components/Settings";
+import { settings } from "~/utils/Settings";
 
 /**
  * Create default imagery provider view models.

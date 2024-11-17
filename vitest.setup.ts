@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, vi } from "vitest";
 import { cleanup } from "@testing-library/vue";
 import { destroyCesium } from "./components/CesiumViewerWrapper";
-import { settings } from "./components/Settings";
+import { settings } from "./utils/Settings";
 
 beforeEach(() => {
   // disable Google and Bing Maps to reduce quota usage

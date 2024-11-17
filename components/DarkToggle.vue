@@ -2,7 +2,7 @@
 import "primeicons/primeicons.css";
 import Button from "primevue/button";
 import { ref } from "vue";
-import { DarkMode, settings } from "./Settings";
+import { DarkMode, settings } from "../utils/Settings";
 
 let darkMode: Ref<boolean>;
 

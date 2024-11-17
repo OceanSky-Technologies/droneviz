@@ -1,5 +1,5 @@
 import { createViewerOptions } from "~/utils/CesiumViewerOptions";
-import { settings } from "~/components/Settings";
+import { settings } from "~/utils/Settings";
 import { describe, expect, test } from "vitest";
 
 describe("CesiumViewerOptions", () => {

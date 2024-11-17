@@ -1,5 +1,5 @@
 import CesiumHighlighter from "./CesiumHighlighter.vue";
-import { settings } from "~/components/Settings";
+import { settings } from "~/utils/Settings";
 import { Colors } from "~/utils/Colors";
 import {
   Color,

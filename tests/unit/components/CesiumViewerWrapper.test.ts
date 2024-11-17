@@ -12,7 +12,7 @@ import {
   createCesiumContainer,
   createTestViewerOptions,
 } from "~/tests/test-utils/MockUtils";
-import { settings } from "~/components/Settings";
+import { settings } from "~/utils/Settings";
 import { describe, expect, test } from "vitest";
 
 describe("CesiumViewer", () => {

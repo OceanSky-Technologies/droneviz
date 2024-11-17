@@ -5,13 +5,13 @@ import { getCesiumViewer, initCesium } from "./CesiumViewerWrapper";
 import { initDemo } from "~/demo/Demo";
 import { Math, Cartesian3 } from "cesium";
 import { onMounted, ref } from "vue";
-import "./DroneCollection";
+import "./Drone";
 // import CameraWindow from "./CameraWindow.vue";
 import CesiumMouseHandler from "./CesiumMouseHandler";
 import MainToolbar from "./MainToolbar.vue";
 import type { Viewer, Cesium3DTileset } from "cesium";
-import { settings } from "./Settings";
-import { droneCollection } from "./DroneCollection";
+import { settings } from "../utils/Settings";
+import { droneCollection } from "./Drone";
 
 export interface CesiumViewerProps {
   mockViewerOptions?: Viewer.ConstructorOptions | undefined;
@@ -55,15 +55,50 @@ class CesiumViewerImpl {
   /**
    * Resets the camera.
    */
-  resetCamera() {
-    // fly the camera to San Francisco
-    getCesiumViewer().camera.flyTo({
-      destination: Cartesian3.fromDegrees(-122.4175, 37.655, 400),
-      orientation: {
-        heading: Math.toRadians(0.0),
-        pitch: Math.toRadians(-15.0),
+  async resetCamera() {
+    // wait for Cesium to initialize for a smooth transition
+    await new Promise((r) => setTimeout(r, 1000));
+
+    getCesiumViewer().scene.requestRender();
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      // position successfully obtained
+      (pos) => {
+        const crd = pos.coords;
+
+        getCesiumViewer().camera.flyTo({
+          destination: Cartesian3.fromDegrees(crd.longitude, crd.latitude, 400),
+          orientation: {
+            heading: Math.toRadians(0.0),
+            pitch: Math.toRadians(-90.0),
+          },
+        });
       },
-    });
+      // position successfully obtained
+      (err) => {
+        showToast(
+          "Info",
+          "Couldn't get your location. Please enable location services and make sure you're connected to the internet. " +
+            JSON.stringify(err),
+          ToastSeverity.Info,
+        );
+
+        // fly the camera to San Francisco
+        getCesiumViewer().camera.flyTo({
+          destination: Cartesian3.fromDegrees(-122.4175, 37.655, 400),
+          orientation: {
+            heading: Math.toRadians(0.0),
+            pitch: Math.toRadians(-15.0),
+          },
+        });
+      },
+      options,
+    );
   }
 }
 

@@ -6,7 +6,7 @@ import InputText from "primevue/inputtext";
 import Listbox from "primevue/listbox";
 
 import { onMounted, type Ref, ref, watch } from "vue";
-import { settings } from "./Settings";
+import { settings } from "../utils/Settings";
 import {
   disableGoogleTiles,
   enableGoogleTiles,
@@ -45,11 +45,11 @@ interface GeoLocationResult {
 const geolocationOptions: GeoLocationResult[] = [];
 
 // reference to the search input field
-const searchBox: Ref<HTMLElement | null> = ref(null);
+const searchBoxRef = useTemplateRef<typeof InputGroup>("searchBox");
 
 // reference to the listbox
-const geolocationListbox: Ref<InstanceType<typeof Listbox> | null> =
-  useTemplateRef("geolocationListbox");
+const geolocationListboxRef =
+  useTemplateRef<typeof Listbox>("geolocationListbox");
 
 // Control visibility of the Listbox
 const showGeolocationListbox = ref(false);
@@ -109,19 +109,19 @@ watch(
  * Position the geolocation results listbox under the search input field.
  */
 function positionListbox() {
-  if (!searchBox.value || !searchBox.value.$el) {
+  if (!searchBoxRef.value || !searchBoxRef.value.$el) {
     console.error("Couldn't find the searchBox");
     return;
   }
-  if (!geolocationListbox.value || !geolocationListbox.value.$el) {
+  if (!geolocationListboxRef.value || !geolocationListboxRef.value.$el) {
     console.error("Couldn't find the geolocationListbox");
     return;
   }
 
   try {
-    const inputElement = searchBox.value.$el;
+    const inputElement = searchBoxRef.value.$el;
     const inputRect = inputElement.getBoundingClientRect();
-    const listboxElement = geolocationListbox.value.$el;
+    const listboxElement = geolocationListboxRef.value.$el;
 
     // Set the position based on the input's bounding rectangle
     listboxElement.style.width = `${inputRect.width}px`;
@@ -159,6 +159,26 @@ async function doSearch() {
         ToastSeverity.Info,
       );
       searchIconClass.value = "pi pi-search";
+      return;
+    }
+
+    // only one result -> fly to it
+    if (data.length === 1 && data[0].latitude && data[0].longitude) {
+      // fly to the selected location
+      getCesiumViewer().camera.flyTo({
+        destination: Cartesian3.fromDegrees(
+          data[0].longitude,
+          data[0].latitude,
+          10000,
+        ),
+        duration: 3,
+      });
+
+      searchString.value = "";
+      searchIconClass.value = "pi pi-search";
+
+      // remove foxus from the search input field
+      (document.activeElement as HTMLElement)?.blur();
       return;
     }
 

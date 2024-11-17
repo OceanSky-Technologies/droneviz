@@ -1,6 +1,6 @@
 import type { Cesium3DTileset } from "cesium";
 import { createGooglePhotorealistic3DTileset, Ion, Viewer } from "cesium";
-import { settings } from "./Settings";
+import { settings } from "../utils/Settings";
 
 Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTJmM2RmYi0wMDI3LTQxYmMtYjY1NS00MzhmYzg4Njk1NTMiLCJpZCI6MjExMDU5LCJpYXQiOjE3MTM5OTExNTh9.cgvEwVgVgDQRqLsZzWCubdKnui9qoZAXTPCRbtVzZmo";

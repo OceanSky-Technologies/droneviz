@@ -12,7 +12,7 @@ import {
 } from "~/components/CesiumViewerWrapper";
 import { cleanup } from "@testing-library/vue";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { settings } from "~/components/Settings";
+import { settings } from "~/utils/Settings";
 
 // global cleanup somehow does not work so do it here ?!
 afterEach(() => {

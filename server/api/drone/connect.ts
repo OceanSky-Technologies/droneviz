@@ -1,19 +1,23 @@
-import { Drone } from "~/server/droneInterface/Drone";
+import { DroneInterface } from "~/server/api/drone/DroneInterface";
 import {
   SerialOptions,
   TcpOptions,
   UdpOptions,
 } from "~/types/DroneConnectionOptions";
-
-const drones: Drone[] = [];
+import { drones } from "./DroneCollection";
 
 interface QueryInterface {
   connectionOptions: string;
+  signatureKey: string;
 }
 
 export default defineEventHandler(async (event) => {
   const query = getQuery<QueryInterface>(event);
   console.log("Received connection request", query);
+
+  if (drones.length > 0) {
+    return { result: "error", message: "Already connected to a drone" };
+  }
 
   if (typeof query.connectionOptions !== "string")
     throw new Error("Invalid connectionOption parameter");
@@ -25,13 +29,20 @@ export default defineEventHandler(async (event) => {
 
   let drone;
   if (parsedOptions.type === "serial") {
-    drone = new Drone(
+    drone = new DroneInterface(
       new SerialOptions(parsedOptions.path, parsedOptions.baudRate),
+      query.signatureKey,
     );
   } else if (parsedOptions.type === "tcp") {
-    drone = new Drone(new TcpOptions(parsedOptions.host, parsedOptions.port));
+    drone = new DroneInterface(
+      new TcpOptions(parsedOptions.host, parsedOptions.port),
+      query.signatureKey,
+    );
   } else if (parsedOptions.type === "udp") {
-    drone = new Drone(Object.assign(new UdpOptions(), parsedOptions));
+    drone = new DroneInterface(
+      Object.assign(new UdpOptions(), parsedOptions),
+      query.signatureKey,
+    );
   } else {
     throw new Error("Invalid connection option");
   }
