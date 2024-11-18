@@ -5,13 +5,10 @@ import { getCesiumViewer, initCesium } from "./CesiumViewerWrapper";
 import { initDemo } from "~/demo/Demo";
 import { Math, Cartesian3 } from "cesium";
 import { onMounted, ref } from "vue";
-import "./Drone";
-// import CameraWindow from "./CameraWindow.vue";
 import CesiumMouseHandler from "./CesiumMouseHandler";
 import MainToolbar from "./MainToolbar.vue";
 import type { Viewer, Cesium3DTileset } from "cesium";
 import { settings } from "../utils/Settings";
-import { droneCollection } from "./Drone";
 
 export interface CesiumViewerProps {
   mockViewerOptions?: Viewer.ConstructorOptions | undefined;

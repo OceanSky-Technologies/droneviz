@@ -1,12 +1,20 @@
-import type { SerialOptions, TcpOptions } from "~/types/DroneConnectionOptions";
-import { UdpOptions } from "~/types/DroneConnectionOptions";
+import type {
+  SerialOptions,
+  TcpOptions,
+  UdpOptions,
+} from "~/types/DroneConnectionOptions";
 import { showToast, ToastSeverity } from "../utils/ToastService";
 import { REGISTRY } from "~/types/MavlinkRegistry";
+import { getCesiumViewer } from "./CesiumViewerWrapper";
+import type { Entity } from "cesium";
+import type { MavlinkMessageInterface } from "~/types/MessageInterface";
 
-class DroneEntity {
+export class DroneEntity {
   connectionOptions: SerialOptions | TcpOptions | UdpOptions;
   private signatureKey?: string;
   private eventSource?: EventSource;
+
+  entity?: Entity;
 
   constructor(
     connectionOptions: SerialOptions | TcpOptions | UdpOptions,
@@ -89,33 +97,50 @@ class DroneEntity {
     }
   }
 
-  onMessage(rawMessage: unknown) {
-    const messageData = rawMessage as {
-      header: { msgid: number };
-      messageType: string;
-    };
+  onMessage(rawMessage: MavlinkMessageInterface) {
+    const clazz = REGISTRY[rawMessage.header.msgid]; // Lookup the class
 
-    const MessageClass = REGISTRY[messageData.header.msgid]; // Lookup the class
+    // The complete header, protocol and signature are also available in rawMessage for future use
 
-    if (MessageClass) {
-      //Create an instance of the class and populate it with data
-      const message = new MessageClass();
-      Object.assign(message, rawMessage);
+    if (clazz) {
+      // Create an instance of the class and populate it with data
+      const message = new clazz();
+      Object.assign(message, rawMessage.data);
 
       console.log(message);
+
+      // TODO: update this.entity with the new position
     } else {
-      console.warn(`Unknown message type: ${messageData.messageType}`);
+      console.warn(`Unknown message ID: ${rawMessage.header.msgid}`);
     }
   }
 }
 
 class DroneCollection {
-  drones: DroneEntity[] = [];
+  private drones: DroneEntity[] = [];
 
-  constructor() {
-    // add a single drone for now
-    // this.drones.push(new DroneEntity(new TcpOptions("127.0.0.1", 55555)));
-    this.drones.push(new DroneEntity(new UdpOptions()));
+  addDrone(drone: DroneEntity) {
+    const num = this.drones.push(drone);
+
+    const entity = getCesiumViewer().entities.add({
+      id: num.toString(),
+      model: {
+        uri: new URL("assets/models/Skywinger.glb", import.meta.url).href,
+        scale: 1,
+        minimumPixelSize: 50,
+        maximumScale: 20000,
+      },
+    });
+
+    this.drones[num - 1].entity = entity;
+  }
+
+  removeAllDrones() {
+    this.drones.forEach((drone) => {
+      if (drone.entity) getCesiumViewer().entities.remove(drone.entity);
+    });
+
+    this.drones = [];
   }
 
   connectAll() {

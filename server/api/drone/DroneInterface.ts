@@ -14,6 +14,7 @@ import {
   UdpOptions,
 } from "~/types/DroneConnectionOptions";
 import { REGISTRY } from "~/types/MavlinkRegistry";
+import type { MavlinkMessageInterface } from "~/types/MessageInterface";
 
 // fix BigInt serialization: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-953187833
 declare global {
@@ -193,10 +194,24 @@ export class DroneInterface {
   }
 
   streamToBrowser(packet: any) {
+    console.log(packet);
     try {
       // push data through event stream to the frontend
       if (this.eventStream) {
-        this.eventStream.push(JSON.stringify(packet));
+        const clazz = REGISTRY[packet.header.msgid]; // Lookup the class
+        if (clazz) {
+          const data = packet.protocol.data(packet.payload, clazz);
+
+          this.eventStream.push({
+            event: "message",
+            data: JSON.stringify({
+              header: packet.header,
+              protocol: packet.protocol,
+              signature: packet.signature,
+              data: data,
+            } as MavlinkMessageInterface),
+          });
+        } else console.warn(`Unknown message ID: ${packet.header.msgid}`);
       }
     } catch (err) {
       console.error(`Failed to stream packet: ${err}`);

@@ -1,14 +1,21 @@
 <script lang="ts" setup>
 import CesiumViewer from "~/components/CesiumViewer.vue";
 import DarkToggle from "~/components/DarkToggle.vue";
-import { droneCollection } from "~/components/Drone";
+import { droneCollection, DroneEntity } from "~/components/Drone";
+import { UdpOptions } from "~/types/DroneConnectionOptions";
 
 function connect() {
+  // add a single drone for now
+  // droneCollection.addDrone(new DroneEntity(new TcpOptions("127.0.0.1", 55555)));
+  droneCollection.addDrone(new DroneEntity(new UdpOptions()));
+
   droneCollection.connectAll();
 }
 
 function disconnect() {
   droneCollection.disconnectAll();
+
+  droneCollection.removeAllDrones();
 }
 </script>
 

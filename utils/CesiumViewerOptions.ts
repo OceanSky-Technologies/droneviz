@@ -327,7 +327,7 @@ export function createViewerOptions(): Viewer.ConstructorOptions {
     createDefaultImageryProviderViewModels();
 
   return {
-    useBrowserRecommendedResolution: true,
+    useBrowserRecommendedResolution: false,
     animation: false,
     timeline: false,
     infoBox: false,
