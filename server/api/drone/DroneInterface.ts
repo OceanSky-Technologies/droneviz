@@ -194,7 +194,7 @@ export class DroneInterface {
   }
 
   streamToBrowser(packet: any) {
-    console.log(packet);
+    // console.log(packet);
     try {
       // push data through event stream to the frontend
       if (this.eventStream) {

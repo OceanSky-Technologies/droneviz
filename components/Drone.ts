@@ -3,11 +3,14 @@ import type {
   TcpOptions,
   UdpOptions,
 } from "~/types/DroneConnectionOptions";
-import { showToast, ToastSeverity } from "../utils/ToastService";
+import { showToast, ToastSeverity } from "~/utils/ToastService";
 import { REGISTRY } from "~/types/MavlinkRegistry";
 import { getCesiumViewer } from "./CesiumViewerWrapper";
+import { setAltitude } from "~/utils/CoordinateUtils";
 import type { Entity } from "cesium";
 import type { MavlinkMessageInterface } from "~/types/MessageInterface";
+import type { GlobalPositionInt } from "mavlink-mappings/dist/lib/common";
+import type { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
 
 export class DroneEntity {
   connectionOptions: SerialOptions | TcpOptions | UdpOptions;
@@ -15,6 +18,8 @@ export class DroneEntity {
   private eventSource?: EventSource;
 
   entity?: Entity;
+  lastGlobalPosition?: GlobalPositionInt;
+  lastHeartbeat?: Heartbeat;
 
   constructor(
     connectionOptions: SerialOptions | TcpOptions | UdpOptions,
@@ -109,10 +114,24 @@ export class DroneEntity {
 
       console.log(message);
 
-      // TODO: update this.entity with the new position
+      if (clazz.name === "GlobalPositionInt") {
+        this.lastGlobalPosition = message as GlobalPositionInt;
+        this.updateEntityPosition(message as GlobalPositionInt);
+      }
+      if (clazz.name === "Heartbeat") {
+        this.lastHeartbeat = message as Heartbeat;
+      }
     } else {
       console.warn(`Unknown message ID: ${rawMessage.header.msgid}`);
     }
+  }
+
+  updateEntityPosition(message: GlobalPositionInt) {
+    if (!this.entity) return;
+
+    setAltitude(this.entity, message, this.lastHeartbeat);
+
+    getCesiumViewer().scene.requestRender();
   }
 }
 
