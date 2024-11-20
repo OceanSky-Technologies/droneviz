@@ -151,27 +151,14 @@ export class DroneEntity {
 
     if (this.lastGlobalPosition.hdg === UINT16_MAX) return;
 
-    const heading = Math.toRadians(this.lastGlobalPosition.hdg / 100); //Math.toRadians(45.0);
-    // const heading = Math.toRadians(0);
-    const pitch = message.pitch - Math.toRadians(-30); //Math.toRadians(15.0);
-    const roll = message.roll; //Math.toRadians(0.0);
+    const heading = Math.toRadians(this.lastGlobalPosition.hdg / 100 - 90.0);
+    const pitch = message.pitch - Math.toRadians(-30); // skywinger has 30 degrees pitch
+    const roll = message.roll;
     const orientation = Transforms.headingPitchRollQuaternion(
       this.entity.position.getValue()!,
       new HeadingPitchRoll(heading, pitch, roll),
     );
 
-    console.log(new HeadingPitchRoll(heading, pitch, roll));
-
-    // this.entity.orientation = new ConstantProperty(
-    //   Transforms.headingPitchRollQuaternion(
-    //     this.entity.position.getValue()!,
-    //     new HeadingPitchRoll(
-    //       Math.toRadians(this.lastGlobalPosition.hdg / 100),
-    //       message.pitch - Math.toRadians(-30), // skywinger has 30 degrees pitch which needs to be compensated for the 3D model. TODO: pitch 3D model
-    //       message.roll,
-    //     ),
-    //   ),
-    // );
     this.entity.orientation = new ConstantProperty(orientation);
 
     getCesiumViewer().scene.requestRender();
