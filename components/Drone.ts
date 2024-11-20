@@ -15,12 +15,12 @@ import {
   type Entity,
 } from "cesium";
 import type { MavlinkMessageInterface } from "~/types/MessageInterface";
-import type {
+import {
   Attitude,
   GlobalPositionInt,
   HomePosition,
 } from "mavlink-mappings/dist/lib/common";
-import type { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
+import { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
 
 const UINT16_MAX = 65535;
 
@@ -58,17 +58,19 @@ export class DroneEntity {
       if (data.result === "success") {
         showToast("Info", "Connected!", ToastSeverity.Success);
 
-        this.eventSource = new EventSource("/api/drone/stream");
+        this.eventSource = new EventSource(
+          new URL("/api/drone/stream", config.public.baseURL as string),
+        );
 
         this.eventSource.onmessage = (event) => {
           const rawMessage = JSON.parse(event.data);
           this.onMessage(rawMessage);
         };
 
-        this.eventSource.onerror = () => {
+        this.eventSource.onerror = (error) => {
           showToast(
             "Warning",
-            "Data stream error: " + JSON.stringify(this.connectionOptions),
+            `Data stream error for connection ${JSON.stringify(this.connectionOptions)}: ${JSON.stringify(error)}`,
             ToastSeverity.Warn,
           );
           this.eventSource?.close();
@@ -126,16 +128,14 @@ export class DroneEntity {
       const message = new clazz();
       Object.assign(message, rawMessage.data);
 
-      // console.log(message);
-
-      if (clazz.name === "GlobalPositionInt") {
+      if (message instanceof GlobalPositionInt) {
         this.lastGlobalPosition = message as GlobalPositionInt;
         this.updateEntityPosition(message as GlobalPositionInt);
-      } else if (clazz.name === "Heartbeat") {
+      } else if (message instanceof Heartbeat) {
         this.lastHeartbeat = message as Heartbeat;
-      } else if (clazz.name === "HomePosition") {
+      } else if (message instanceof HomePosition) {
         this.homePosition = message as HomePosition;
-      } else if (clazz.name === "Attitude") {
+      } else if (message instanceof Attitude) {
         this.lastAttitude = message as Attitude;
         this.updateEntityOrientation(message as Attitude);
       }
