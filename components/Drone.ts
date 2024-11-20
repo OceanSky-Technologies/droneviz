@@ -7,10 +7,22 @@ import { showToast, ToastSeverity } from "~/utils/ToastService";
 import { REGISTRY } from "~/types/MavlinkRegistry";
 import { getCesiumViewer } from "./CesiumViewerWrapper";
 import { setAltitude } from "~/utils/CoordinateUtils";
-import type { Entity } from "cesium";
+import {
+  ConstantProperty,
+  HeadingPitchRoll,
+  Math,
+  Transforms,
+  type Entity,
+} from "cesium";
 import type { MavlinkMessageInterface } from "~/types/MessageInterface";
-import type { GlobalPositionInt } from "mavlink-mappings/dist/lib/common";
+import type {
+  Attitude,
+  GlobalPositionInt,
+  HomePosition,
+} from "mavlink-mappings/dist/lib/common";
 import type { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
+
+const UINT16_MAX = 65535;
 
 export class DroneEntity {
   connectionOptions: SerialOptions | TcpOptions | UdpOptions;
@@ -20,6 +32,8 @@ export class DroneEntity {
   entity?: Entity;
   lastGlobalPosition?: GlobalPositionInt;
   lastHeartbeat?: Heartbeat;
+  homePosition?: HomePosition;
+  lastAttitude?: Attitude;
 
   constructor(
     connectionOptions: SerialOptions | TcpOptions | UdpOptions,
@@ -112,24 +126,61 @@ export class DroneEntity {
       const message = new clazz();
       Object.assign(message, rawMessage.data);
 
-      console.log(message);
+      // console.log(message);
 
       if (clazz.name === "GlobalPositionInt") {
         this.lastGlobalPosition = message as GlobalPositionInt;
         this.updateEntityPosition(message as GlobalPositionInt);
-      }
-      if (clazz.name === "Heartbeat") {
+      } else if (clazz.name === "Heartbeat") {
         this.lastHeartbeat = message as Heartbeat;
+      } else if (clazz.name === "HomePosition") {
+        this.homePosition = message as HomePosition;
+      } else if (clazz.name === "Attitude") {
+        this.lastAttitude = message as Attitude;
+        this.updateEntityOrientation(message as Attitude);
       }
     } else {
       console.warn(`Unknown message ID: ${rawMessage.header.msgid}`);
     }
   }
 
+  updateEntityOrientation(message: Attitude) {
+    if (!this.entity) return;
+    if (!this.entity.position || !this.entity.position.getValue()) return;
+    if (!this.lastGlobalPosition) return;
+
+    if (this.lastGlobalPosition.hdg === UINT16_MAX) return;
+
+    const heading = Math.toRadians(this.lastGlobalPosition.hdg / 100); //Math.toRadians(45.0);
+    // const heading = Math.toRadians(0);
+    const pitch = message.pitch - Math.toRadians(-30); //Math.toRadians(15.0);
+    const roll = message.roll; //Math.toRadians(0.0);
+    const orientation = Transforms.headingPitchRollQuaternion(
+      this.entity.position.getValue()!,
+      new HeadingPitchRoll(heading, pitch, roll),
+    );
+
+    console.log(new HeadingPitchRoll(heading, pitch, roll));
+
+    // this.entity.orientation = new ConstantProperty(
+    //   Transforms.headingPitchRollQuaternion(
+    //     this.entity.position.getValue()!,
+    //     new HeadingPitchRoll(
+    //       Math.toRadians(this.lastGlobalPosition.hdg / 100),
+    //       message.pitch - Math.toRadians(-30), // skywinger has 30 degrees pitch which needs to be compensated for the 3D model. TODO: pitch 3D model
+    //       message.roll,
+    //     ),
+    //   ),
+    // );
+    this.entity.orientation = new ConstantProperty(orientation);
+
+    getCesiumViewer().scene.requestRender();
+  }
+
   updateEntityPosition(message: GlobalPositionInt) {
     if (!this.entity) return;
 
-    setAltitude(this.entity, message, this.lastHeartbeat);
+    setAltitude(this.entity, message);
 
     getCesiumViewer().scene.requestRender();
   }

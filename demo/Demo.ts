@@ -1,4 +1,3 @@
-import * as LiveDrone from "./LiveDrone";
 import * as ShipInHamburg from "./ShipInHamburg";
 import * as AircraftInSanFrancisco from "./AircraftInSanFrancisco";
 import * as VehiclesInUkraine from "./VehiclesInUkraine";
@@ -9,7 +8,6 @@ import { getCesiumViewer } from "~/components/CesiumViewerWrapper";
  * Initializes demo functionalities.
  */
 export function initDemo() {
-  getCesiumViewer().entities.add(LiveDrone.getEntity());
   getCesiumViewer().entities.add(ShipInHamburg.getEntity());
   getCesiumViewer().entities.add(AircraftInSanFrancisco.getEntity());
   getCesiumViewer().entities.add(DroneInNewYork.getEntity());
@@ -20,15 +18,6 @@ export function initDemo() {
 
   addToolbarMenu([
     new ToolbarOption({ text: "[Menu]", value: "demo-menu" }),
-    new ToolbarOption({
-      text: LiveDrone.text,
-      value: LiveDrone.id,
-      onSelect: () => {
-        const destination = LiveDrone.getCameraPosition()?.destination;
-        if (destination)
-          getCesiumViewer().camera.flyTo({ destination: destination });
-      },
-    }),
     new ToolbarOption({
       text: ShipInHamburg.text,
       value: ShipInHamburg.id,

@@ -2,7 +2,7 @@ import {
   mountCesiumViewerMock,
   silenceConsole,
 } from "~/tests/test-utils/MockUtils";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { cleanup } from "@testing-library/vue";
 import { destroyCesium } from "~/components/CesiumViewerWrapper";
 
@@ -25,8 +25,8 @@ describe("CesiumViewer", () => {
 
     // toolbar exists
     expect(
-      document.getElementById("toolbar")!.innerHTML,
-      "toolbar is empty",
+      document.getElementById("mainToolbar")!.innerHTML,
+      "mainToolbar is empty",
     ).not.toBe(undefined);
   });
 

@@ -12,6 +12,7 @@ import getWebGLStub from "./getWebGLStub";
 import CesiumViewer from "~/components/CesiumViewer.vue";
 import { createViewerOptions } from "~/utils/CesiumViewerOptions";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { vi } from "vitest";
 
 /**
  * Provides Cesium Viewer.ConstructorOptions for usage in unit tests.
