@@ -4,12 +4,12 @@ import {
   ArcGisMapServerImageryProvider,
   buildModuleUrl,
   createWorldImageryAsync,
-  IonImageryProvider,
   IonWorldImageryStyle,
   OpenStreetMapImageryProvider,
   ProviderViewModel,
   SkyAtmosphere,
   Terrain,
+  WebMercatorProjection,
 } from "cesium";
 import { settings } from "~/utils/Settings";
 
@@ -258,18 +258,19 @@ of the world.\nhttp://www.openstreetmap.org",
   //   }),
   // );
 
-  providerViewModels.push(
-    new ProviderViewModel({
-      name: "Sentinel-2",
-      iconUrl: buildModuleUrl("Widgets/Images/ImageryProviders/sentinel-2.png"),
-      tooltip:
-        "Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016 and 2017).",
-      category: "Cesium ion",
-      creationFunction: function () {
-        return IonImageryProvider.fromAssetId(3954);
-      },
-    }),
-  );
+  // bad quality
+  // providerViewModels.push(
+  //   new ProviderViewModel({
+  //     name: "Sentinel-2",
+  //     iconUrl: buildModuleUrl("Widgets/Images/ImageryProviders/sentinel-2.png"),
+  //     tooltip:
+  //       "Sentinel-2 cloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016 and 2017).",
+  //     category: "Cesium ion",
+  //     creationFunction: function () {
+  //       return IonImageryProvider.fromAssetId(3954);
+  //     },
+  //   }),
+  // );
 
   // providerViewModels.push(
   //   new ProviderViewModel({
@@ -333,6 +334,7 @@ export function createViewerOptions(): Viewer.ConstructorOptions {
     infoBox: false,
     navigationHelpButton: false,
     baseLayerPicker: true,
+    baseLayer: false,
     selectionIndicator: false,
     sceneMode: settings.sceneMode.value,
     shouldAnimate: true,
@@ -342,6 +344,7 @@ export function createViewerOptions(): Viewer.ConstructorOptions {
     requestRenderMode: true,
     maximumRenderTimeChange: Infinity,
     skyAtmosphere: new SkyAtmosphere(),
+    mapProjection: new WebMercatorProjection(),
     imageryProviderViewModels: imageryViewModels,
     terrain: Terrain.fromWorldTerrain({
       requestWaterMask: false,

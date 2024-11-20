@@ -109,6 +109,7 @@ async function initGoogleTileset(tilesetMock?: Cesium3DTileset) {
     //maximumScreenSpaceError: 8, // quality
     preloadFlightDestinations: true,
     showCreditsOnScreen: true,
+    projectTo2D: true,
   });
 
   googleTileset = getCesiumViewer().scene.primitives.add(tileset);

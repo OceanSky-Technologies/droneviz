@@ -67,5 +67,5 @@
     "whatwg-url": "^14.0.0",
     "zlib": "^1.0.5"
   },
-  "packageManager": "pnpm@9.12.1+sha512.e5a7e52a4183a02d5931057f7a0dbff9d5e9ce3161e33fa68ae392125b79282a8a8a470a51dfc8a0ed86221442eb2fb57019b0990ed24fab519bf0e1bc5ccfc4"
+  "packageManager": "pnpm@9.14.1+sha512.7f1de9cffea40ff4594c48a94776112a0db325e81fb18a9400362ff7b7247f4fbd76c3011611c9f8ac58743c3dc526017894e07948de9b72052f874ee2edfdcd"
 }
