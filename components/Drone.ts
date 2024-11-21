@@ -14,15 +14,29 @@ import {
   Transforms,
   type Entity,
 } from "cesium";
-import type { MavlinkMessageInterface } from "~/types/MessageInterface";
+import type {
+  MavlinkMessageInterface,
+  ProtocolInterface,
+} from "~/types/MessageInterface";
 import {
   Attitude,
+  AttitudeQuaternion,
+  AttitudeTarget,
+  CommandLong,
   GlobalPositionInt,
   HomePosition,
+  LocalPositionNed,
+  MavCmd,
+  PositionTargetLocalNed,
+  PrecisionLandMode,
+  ServoOutputRaw,
 } from "mavlink-mappings/dist/lib/common";
 import { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
 
 const UINT16_MAX = 65535;
+
+let resolveProtocolPromise: (value: ProtocolInterface) => void;
+let rejectProtocolPromise: () => void;
 
 export class DroneEntity {
   connectionOptions: SerialOptions | TcpOptions | UdpOptions;
@@ -35,6 +49,10 @@ export class DroneEntity {
   homePosition?: HomePosition;
   lastAttitude?: Attitude;
 
+  protocolPromise = new Promise<ProtocolInterface>(() => {});
+
+  dataReceived: boolean = false;
+
   constructor(
     connectionOptions: SerialOptions | TcpOptions | UdpOptions,
     signatureKey?: string,
@@ -44,77 +62,69 @@ export class DroneEntity {
   }
 
   async connect() {
-    try {
-      const config = useRuntimeConfig();
+    this.dataReceived = false;
 
-      const data = await $fetch("/api/drone/connect", {
-        params: {
-          connectionOptions: JSON.stringify(this.connectionOptions),
-          signatureKey: JSON.stringify(this.signatureKey),
-        },
-        baseURL: config.public.baseURL as string,
-      });
+    // create a new data received promise
+    this.protocolPromise = new Promise<ProtocolInterface>((resolve, reject) => {
+      resolveProtocolPromise = resolve;
+      rejectProtocolPromise = reject;
+    });
 
-      if (data.result === "success") {
-        showToast("Info", "Connected!", ToastSeverity.Success);
+    const data = await $fetch("/api/drone/connect", {
+      method: "POST",
+      body: {
+        connectionOptions: JSON.stringify(this.connectionOptions),
+        signatureKey: JSON.stringify(this.signatureKey),
+      },
+      baseURL: useRuntimeConfig().public.baseURL as string,
+    });
 
-        this.eventSource = new EventSource(
-          new URL("/api/drone/stream", config.public.baseURL as string),
+    if (data.result === "success") {
+      this.eventSource = new EventSource(
+        new URL(
+          "/api/drone/stream",
+          useRuntimeConfig().public.baseURL as string,
+        ),
+      );
+
+      this.eventSource.onmessage = (event) => {
+        const rawMessage = JSON.parse(event.data);
+        this.onMessage(rawMessage);
+      };
+
+      this.eventSource.onerror = (error) => {
+        showToast(
+          `Data stream error for connection ${JSON.stringify(this.connectionOptions)}: ${JSON.stringify(error)}`,
+          ToastSeverity.Warn,
         );
 
-        this.eventSource.onmessage = (event) => {
-          const rawMessage = JSON.parse(event.data);
-          this.onMessage(rawMessage);
-        };
+        rejectProtocolPromise();
 
-        this.eventSource.onerror = (error) => {
-          showToast(
-            "Warning",
-            `Data stream error for connection ${JSON.stringify(this.connectionOptions)}: ${JSON.stringify(error)}`,
-            ToastSeverity.Warn,
-          );
-          this.eventSource?.close();
-        };
-      } else {
-        if ("message" in data && data.message)
-          showToast("Error", data.message, ToastSeverity.Error);
-        else showToast("Error", "Connection failed!", ToastSeverity.Error);
-      }
-    } catch (e) {
-      showToast(
-        "Error",
-        `Couldn't connect to drone: ${JSON.stringify(e)}`,
-        ToastSeverity.Error,
-      );
+        this.eventSource?.close();
+      };
+
+      // wait until data was received
+      await this.protocolPromise;
+    } else {
+      rejectProtocolPromise();
+
+      if ("message" in data && data.message) throw new Error(data.message);
+      else throw new Error(JSON.stringify(data));
     }
   }
 
   async disconnect() {
-    try {
-      if (this.eventSource) {
-        this.eventSource.close();
-        this.eventSource = undefined;
-      }
+    this.eventSource?.close();
+    this.eventSource = undefined;
 
-      const config = useRuntimeConfig();
+    const data = await $fetch("/api/drone/disconnect", {
+      method: "POST",
+      baseURL: useRuntimeConfig().public.baseURL as string,
+    });
 
-      const data = await $fetch("/api/drone/disconnect", {
-        baseURL: config.public.baseURL as string,
-      });
-
-      if (data.result === "success") {
-        showToast("Info", "Disconnected!", ToastSeverity.Success);
-      } else {
-        if ("message" in data && data.message)
-          showToast("Error", data.message, ToastSeverity.Error);
-        else showToast("Error", "Disconnection failed!", ToastSeverity.Error);
-      }
-    } catch (e) {
-      showToast(
-        "Error",
-        `Couldn't disconnect from drone: ${JSON.stringify(e)}`,
-        ToastSeverity.Error,
-      );
+    if (data.result !== "success") {
+      if ("message" in data && data.message) throw new Error(data.message);
+      else throw new Error(JSON.stringify(data));
     }
   }
 
@@ -122,6 +132,12 @@ export class DroneEntity {
     const clazz = REGISTRY[rawMessage.header.msgid]; // Lookup the class
 
     // The complete header, protocol and signature are also available in rawMessage for future use
+    // console.log(rawMessage);
+
+    if (!this.dataReceived) {
+      resolveProtocolPromise(rawMessage.protocol);
+      this.dataReceived = true;
+    }
 
     if (clazz) {
       // Create an instance of the class and populate it with data
@@ -138,6 +154,18 @@ export class DroneEntity {
       } else if (message instanceof Attitude) {
         this.lastAttitude = message as Attitude;
         this.updateEntityOrientation(message as Attitude);
+      } else if (message instanceof AttitudeQuaternion) {
+        // do nothing
+      } else if (message instanceof ServoOutputRaw) {
+        // do nothing
+      } else if (message instanceof AttitudeTarget) {
+        // do nothing
+      } else if (message instanceof PositionTargetLocalNed) {
+        // do nothing
+      } else if (message instanceof LocalPositionNed) {
+        // do nothing
+      } else {
+        console.log(message);
       }
     } else {
       console.warn(`Unknown message ID: ${rawMessage.header.msgid}`);
@@ -171,12 +199,97 @@ export class DroneEntity {
 
     getCesiumViewer().scene.requestRender();
   }
+
+  async arm() {
+    const command = new CommandLong();
+    command.command = MavCmd.COMPONENT_ARM_DISARM;
+    command.targetSystem = 1;
+    command._param1 = 1; // arm
+    // command._param2 = 21196; // force
+
+    const data = await $fetch("/api/drone/command", {
+      method: "POST",
+      body: {
+        command: command,
+      },
+      baseURL: useRuntimeConfig().public.baseURL as string,
+    });
+
+    if (data.result !== "success") {
+      if ("message" in data && data.message)
+        throw new Error(`Arming failed: ${data.message}`);
+      else throw new Error("Arming failed");
+    }
+  }
+
+  async disarm() {
+    const command = new CommandLong();
+    command.command = MavCmd.COMPONENT_ARM_DISARM;
+    command.targetSystem = 1;
+    command._param1 = 0; // arm
+    command._param2 = 21196; // force
+
+    const data = await $fetch("/api/drone/command", {
+      method: "POST",
+      body: {
+        command: command,
+      },
+      baseURL: useRuntimeConfig().public.baseURL as string,
+    });
+
+    if (data.result !== "success") {
+      if ("message" in data && data.message)
+        throw new Error(`Disarming failed: ${data.message}`);
+      else throw new Error("Disarming failed");
+    }
+  }
+
+  async takeoff() {
+    const command = new CommandLong();
+    command.command = MavCmd.NAV_TAKEOFF_LOCAL;
+    command.targetSystem = 1;
+
+    const data = await $fetch("/api/drone/command", {
+      method: "POST",
+      body: {
+        command: command,
+      },
+      baseURL: useRuntimeConfig().public.baseURL as string,
+    });
+
+    if (data.result !== "success") {
+      if ("message" in data && data.message)
+        throw new Error(`Takeoff failed: ${data.message}`);
+      else throw new Error("Takeoff failed");
+    }
+  }
+
+  async land() {
+    const command = new CommandLong();
+    command.command = MavCmd.NAV_LAND;
+    command.targetSystem = 1;
+    command._param2 = PrecisionLandMode.DISABLED;
+
+    const data = await $fetch("/api/drone/command", {
+      method: "POST",
+      body: {
+        command: command,
+      },
+      baseURL: useRuntimeConfig().public.baseURL as string,
+    });
+
+    if (data.result !== "success") {
+      if ("message" in data && data.message)
+        throw new Error(`Landing failed: ${data.message}`);
+      else throw new Error("Landing failed");
+    }
+  }
 }
 
 class DroneCollection {
   private drones: DroneEntity[] = [];
 
-  addDrone(drone: DroneEntity) {
+  addDrone(drone: DroneEntity): DroneEntity {
     const num = this.drones.push(drone);
 
     const entity = getCesiumViewer().entities.add({
@@ -190,6 +303,19 @@ class DroneCollection {
     });
 
     this.drones[num - 1].entity = entity;
+
+    return this.drones[num - 1];
+  }
+
+  getDrone(index: number) {
+    if (index < 0 || index >= this.drones.length)
+      throw Error("Index out of bounds!");
+
+    return this.drones[index];
+  }
+
+  getNumDrones() {
+    return this.drones.length;
   }
 
   removeAllDrones() {
@@ -200,16 +326,20 @@ class DroneCollection {
     this.drones = [];
   }
 
-  connectAll() {
-    this.drones.forEach((drone) => {
-      drone.connect();
-    });
+  async connectAll() {
+    await Promise.all(
+      this.drones.map((drone) => {
+        return drone.connect();
+      }),
+    );
   }
 
-  disconnectAll() {
-    this.drones.forEach((drone) => {
-      drone.disconnect();
-    });
+  async disconnectAll() {
+    await Promise.all(
+      this.drones.map((drone) => {
+        return drone.disconnect();
+      }),
+    );
   }
 }
 

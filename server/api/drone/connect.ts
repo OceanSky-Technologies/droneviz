@@ -12,20 +12,14 @@ interface QueryInterface {
 }
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery<QueryInterface>(event);
-  console.log("Received connection request", query);
+  const query = await readBody<QueryInterface>(event);
+  console.log("Received connection request:", JSON.stringify(query));
 
-  if (drones.length > 0) {
+  if (drones.length !== 0) {
     return { result: "error", message: "Already connected to a drone" };
   }
 
-  if (typeof query.connectionOptions !== "string")
-    throw new Error("Invalid connectionOption parameter");
-
   const parsedOptions = JSON.parse(query.connectionOptions);
-
-  if (typeof parsedOptions.type !== "string")
-    throw new Error("Invalid/unknown connectionOption.type");
 
   let drone;
   if (parsedOptions.type === "serial") {
@@ -46,6 +40,8 @@ export default defineEventHandler(async (event) => {
   } else {
     throw new Error("Invalid connection option");
   }
+
+  // TODO: FIX UDP OPTIONS!!
 
   try {
     await drone.connect();

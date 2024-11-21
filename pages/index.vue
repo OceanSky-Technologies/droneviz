@@ -2,20 +2,141 @@
 import CesiumViewer from "~/components/CesiumViewer.vue";
 import DarkToggle from "~/components/DarkToggle.vue";
 import { droneCollection, DroneEntity } from "~/components/Drone";
-import { UdpOptions } from "~/types/DroneConnectionOptions";
+import Button from "primevue/button";
+import type { ComponentPublicInstance } from "vue";
+import { TcpOptions, UdpOptions } from "~/types/DroneConnectionOptions";
 
-function connect() {
-  // add a single drone for now
-  // droneCollection.addDrone(new DroneEntity(new TcpOptions("127.0.0.1", 55555)));
-  droneCollection.addDrone(new DroneEntity(new UdpOptions()));
+const connectDisconnectRef =
+  useTemplateRef<ComponentPublicInstance>("connectDisconnect");
 
-  droneCollection.connectAll();
+async function connectDisconnect() {
+  if (!connectDisconnectRef.value || !connectDisconnectRef.value.$el) {
+    showToast("connectDisconnectRef button not found", ToastSeverity.Error);
+    return;
+  }
+
+  try {
+    if (droneCollection.getNumDrones() === 0) {
+      const drone = droneCollection.addDrone(new DroneEntity(new UdpOptions()));
+
+      await droneCollection.connectAll();
+
+      showToast(
+        `Connected! (sysid: ${(await drone.protocolPromise).sysid}, compid: ${(await drone.protocolPromise).compid})`,
+        ToastSeverity.Success,
+      );
+
+      connectDisconnectRef.value.$el.textContent = "Disconnect";
+    } else {
+      await droneCollection.disconnectAll();
+      droneCollection.removeAllDrones();
+
+      showToast("Disconnected!", ToastSeverity.Success);
+
+      connectDisconnectRef.value.$el.textContent = "Connect";
+    }
+  } catch (e) {
+    if (e instanceof Error) {
+      showToast(e.message, ToastSeverity.Error);
+    } else {
+      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+    }
+  }
 }
 
-function disconnect() {
-  droneCollection.disconnectAll();
+async function arm() {
+  if (droneCollection.getNumDrones() === 0) {
+    showToast("No drone connected", ToastSeverity.Error);
+    return;
+  }
 
-  droneCollection.removeAllDrones();
+  try {
+    const drone = droneCollection.getDrone(0);
+    await drone.arm();
+    showToast("Armed!", ToastSeverity.Info);
+  } catch (e) {
+    if (e instanceof Error) {
+      showToast(e.message, ToastSeverity.Error);
+    } else {
+      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+    }
+  }
+}
+
+async function disarm() {
+  if (droneCollection.getNumDrones() === 0) {
+    showToast("No drone connected", ToastSeverity.Error);
+    return;
+  }
+
+  try {
+    const drone = droneCollection.getDrone(0);
+    await drone.disarm();
+    showToast("Disarmed!", ToastSeverity.Info);
+  } catch (e) {
+    if (e instanceof Error) {
+      showToast(e.message, ToastSeverity.Error);
+    } else {
+      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+    }
+  }
+}
+
+async function takeoff() {
+  if (droneCollection.getNumDrones() === 0) {
+    showToast("No drone connected", ToastSeverity.Error);
+    return;
+  }
+
+  try {
+    const drone = droneCollection.getDrone(0);
+    await drone.takeoff();
+    showToast("Takeoff!", ToastSeverity.Info);
+  } catch (e) {
+    if (e instanceof Error) {
+      showToast(e.message, ToastSeverity.Error);
+    } else {
+      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+    }
+  }
+}
+
+async function land() {
+  if (droneCollection.getNumDrones() === 0) {
+    showToast("No drone connected", ToastSeverity.Error);
+    return;
+  }
+
+  try {
+    const drone = droneCollection.getDrone(0);
+    await drone.land();
+    showToast("Landing!", ToastSeverity.Info);
+  } catch (e) {
+    if (e instanceof Error) {
+      showToast(e.message, ToastSeverity.Error);
+    } else {
+      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+    }
+  }
+}
+
+async function calibrate() {
+  if (droneCollection.getNumDrones() === 0) {
+    showToast("No drone connected", ToastSeverity.Error);
+    return;
+  }
+
+  try {
+    const drone = droneCollection.getDrone(0);
+    await drone.calibrate();
+    showToast("Calibrating...", ToastSeverity.Info);
+  } catch (e) {
+    if (e instanceof Error) {
+      showToast(e.message, ToastSeverity.Error);
+    } else {
+      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+    }
+  }
 }
 </script>
 
@@ -25,11 +146,26 @@ function disconnect() {
 
     <div
       id="toolbarTopLeft"
-      style="display: flex; gap: 5px; position: absolute; top: 5px; left: 5px"
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        position: absolute;
+        top: 5px;
+        left: 5px;
+      "
     >
       <DarkToggle />
-      <Button label="Connect" @click="connect" />
-      <Button label="Disconnect" @click="disconnect" />
+      <Button
+        label="Connect"
+        @click="connectDisconnect"
+        ref="connectDisconnect"
+      />
+      <Button label="Arm" @click="arm" />
+      <Button label="Disarm" @click="disarm" />
+      <Button label="Takeoff" @click="takeoff" />
+      <Button label="Land" @click="land" />
+      <Button label="Calibrate" @click="calibrate" />
       <CameraWindow />
 
       <div id="demoMenu" />

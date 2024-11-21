@@ -1,5 +1,7 @@
 import { drones } from "./DroneCollection";
 
+interface QueryInterface {}
+
 export default defineEventHandler(async (event) => {
   const query = getQuery<QueryInterface>(event);
   console.log("streaming request", query);

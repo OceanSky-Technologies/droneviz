@@ -1,10 +1,14 @@
-import type { Socket } from "net";
-import { connect } from "net";
+import { Socket, connect } from "node:net";
+import dgram from "dgram";
+import { Readable, Writable } from "stream";
 import {
-  MavEsp8266,
   MavLinkPacketParser,
   MavLinkPacketSplitter,
   MavLinkPacketSignature,
+  createMavLinkStream,
+  send as mavlinkSend,
+  sendSigned as mavlinkSendSigned,
+  MavLinkProtocolV2,
 } from "node-mavlink";
 import { SerialPort } from "serialport";
 import type { EventStream } from "h3";
@@ -15,6 +19,7 @@ import {
 } from "~/types/DroneConnectionOptions";
 import { REGISTRY } from "~/types/MavlinkRegistry";
 import type { MavlinkMessageInterface } from "~/types/MessageInterface";
+import { CommandLong } from "mavlink-mappings/dist/lib/common";
 
 // fix BigInt serialization: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-953187833
 declare global {
@@ -31,9 +36,12 @@ BigInt.prototype.toJSON = function () {
 export class DroneInterface {
   private connectionOption: SerialOptions | TcpOptions | UdpOptions;
 
-  private serialPort?: SerialPort;
-  private port: MavEsp8266 | Socket | MavLinkPacketParser | undefined;
+  private port: Socket | dgram.Socket | SerialPort | undefined;
+  private readStream?: Readable;
+  private writeStream?: Writable;
+  private mavlinkPacketParser?: MavLinkPacketParser;
   private signatureKey?: Buffer;
+  private clients = new Map<string, { address: string; port: number }>();
 
   eventStream?: EventStream;
 
@@ -67,60 +75,54 @@ export class DroneInterface {
   }
 
   async disconnect() {
-    try {
-      if (this.connectionOption instanceof SerialOptions) {
-        (this.port as MavLinkPacketParser)?.removeAllListeners();
-        (this.port as MavLinkPacketParser)?.destroy();
-        (this.port as MavLinkPacketParser)?.unpipe();
-        this.port = undefined;
+    this.clients.clear();
 
-        this.serialPort?.close();
-        this.serialPort = undefined;
-      } else if (this.connectionOption instanceof TcpOptions) {
-        (this.port as Socket)?.removeAllListeners();
-        (this.port as Socket)?.resetAndDestroy();
-        this.port = undefined;
-      } else if (this.connectionOption instanceof UdpOptions) {
-        (this.port as MavEsp8266)?.removeAllListeners();
-        await (this.port as MavEsp8266)?.close();
-        this.port = undefined;
-      } else {
-        throw new Error(
-          "Invalid connection option: " + JSON.stringify(this.connectionOption),
-        );
-      }
-    } catch (err) {
-      throw new Error(`Failed to close connection: ${err}`);
+    this.mavlinkPacketParser?.removeAllListeners();
+    this.mavlinkPacketParser?.destroy();
+    this.mavlinkPacketParser = undefined;
+
+    if (this.port instanceof SerialPort) {
+      this.port.removeAllListeners();
+      this.port.close();
+      this.port = undefined;
+    } else if (this.port instanceof Socket) {
+      this.port.removeAllListeners();
+      this.port.resetAndDestroy();
+      this.port = undefined;
+    } else if (this.port instanceof dgram.Socket) {
+      this.port.removeAllListeners();
+      this.port.close();
+      this.port = undefined;
     }
   }
 
   private async connectSerial() {
-    this.serialPort = new SerialPort({
+    this.port = new SerialPort({
       path: (this.connectionOption as SerialOptions).path,
       baudRate: (this.connectionOption as SerialOptions).baudRate,
     });
 
     // constructing a reader that will emit each packet separately
-    this.port = this.serialPort
+    this.mavlinkPacketParser = this.port
       .pipe(new MavLinkPacketSplitter())
       .pipe(new MavLinkPacketParser());
 
-    this.port.on("data", (packet) => {
+    this.mavlinkPacketParser.on("data", (packet: any) => {
       this.onData(packet);
     });
 
     // TODO this hasn't been tested yet
     await new Promise<void>((resolve, reject) => {
-      (this.port as MavLinkPacketParser).on("connect", () => {
+      this.mavlinkPacketParser!.on("connect", () => {
         resolve();
       });
 
-      (this.port as MavLinkPacketParser).on("error", (err) => {
+      this.mavlinkPacketParser!.on("error", (err) => {
         reject(new Error(`Connection failed: ${err.message}`));
       });
 
       // Optionally listen for "close" if no "error" occurs
-      (this.port as MavLinkPacketParser).on("close", (hadError: unknown) => {
+      this.mavlinkPacketParser!.on("close", (hadError: unknown) => {
         if (hadError) {
           reject(new Error("Connection closed unexpectedly."));
         }
@@ -129,6 +131,8 @@ export class DroneInterface {
   }
 
   private async connectTcp() {
+    // TODO: structure it the same way like UDP connection
+
     this.port = connect({
       host: (this.connectionOption as TcpOptions).host,
       port: (this.connectionOption as TcpOptions).port,
@@ -151,32 +155,81 @@ export class DroneInterface {
       });
     });
 
-    this.port.on("data", (packet) => {
+    this.port.on("data", (packet: any) => {
       this.onData(packet);
     });
   }
 
   private async connectUdp() {
-    this.port = new MavEsp8266();
-    await this.port.start(
-      (this.connectionOption as UdpOptions).receivePort,
-      (this.connectionOption as UdpOptions).sendPort,
-      (this.connectionOption as UdpOptions).ip,
+    const socketOptions: dgram.SocketOptions = {
+      type: (this.connectionOption as UdpOptions).socketType,
+      reuseAddr: true,
+    };
+    this.port = dgram.createSocket(socketOptions);
+
+    this.port.bind(
+      (this.connectionOption as UdpOptions).sourcePort,
+      (this.connectionOption as UdpOptions).sourceIp,
     );
 
-    this.port.on("data", (packet) => {
-      this.onData(packet);
+    // create a Readable stream to pipe the UDP packets into the Mavlink parser
+    this.readStream = new Readable();
+    this.readStream._read = (size: number) => {
+      return this.readStream!.read(size);
+    };
+
+    this.mavlinkPacketParser = createMavLinkStream(this.readStream, {
+      onCrcError: (buffer: Buffer) => {
+        console.error(`CRC error: ${buffer}`);
+      },
+    });
+
+    // create a Writable stream to pipe the Mavlink packets into the UDP port
+    this.writeStream = new Writable();
+    this.writeStream._write = (
+      chunk: Buffer,
+      _encoding: BufferEncoding,
+      callback: (error?: Error | null) => void,
+    ) => {
+      // send to all connected clients
+      for (const [_key, { address, port }] of this.clients.entries()) {
+        (this.port as dgram.Socket).send(
+          chunk,
+          (this.connectionOption as UdpOptions).targetPort ?? port,
+          (this.connectionOption as UdpOptions).targetIp ?? address,
+          (err) => {
+            if (err) callback(err);
+            else callback();
+          },
+        );
+      }
+    };
+
+    this.port.on("listening", () => {
+      const address = (this.port as dgram.Socket).address();
+      console.log(`Server is listening at ${address.address}:${address.port}`);
+    });
+
+    this.port.on("message", (msg, rinfo) => {
+      // add client to the list of connected clients
+      // TODO: handle automatic discovery of multiple drones in the frontend
+      const clientKey = `${rinfo.address}:${rinfo.port}`;
+      if (!this.clients.has(clientKey)) {
+        this.clients.set(clientKey, {
+          address: rinfo.address,
+          port: rinfo.port,
+        });
+      }
+
+      this.readStream!.push(msg);
+    });
+
+    this.mavlinkPacketParser.on("data", (msg) => {
+      this.onData(msg);
     });
 
     this.port.on("error", (err) => {
-      console.error(`Connection failed: ${err.message}`);
-    });
-
-    // Optionally listen for "close" if no "error" occurs
-    this.port.on("close", (hadError) => {
-      if (hadError) {
-        console.error("Connection closed unexpectedly.");
-      }
+      console.error(`Server error: ${err}`);
     });
   }
 
@@ -216,5 +269,22 @@ export class DroneInterface {
     } catch (err) {
       console.error(`Failed to stream packet: ${err}`);
     }
+  }
+
+  async sendCommandLong(command: CommandLong) {
+    if (!this.writeStream) {
+      throw new Error("Connection not established");
+    }
+
+    // TODO: add support for serial connection
+
+    if (this.port instanceof dgram.Socket || this.port instanceof Socket) {
+      if (this.signatureKey === undefined) {
+        console.log("Sending command without signature");
+        await mavlinkSend(this.writeStream, command, new MavLinkProtocolV2());
+      } else {
+        await mavlinkSendSigned(this.writeStream, command, this.signatureKey);
+      }
+    } else throw new Error("Unsupported connection type for sending commands");
   }
 }

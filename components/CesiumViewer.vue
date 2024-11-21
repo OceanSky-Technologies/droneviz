@@ -79,7 +79,6 @@ class CesiumViewerImpl {
       // position successfully obtained
       (err) => {
         showToast(
-          "Info",
           "Couldn't get your location. Please enable location services and make sure you're connected to the internet. " +
             JSON.stringify(err),
           ToastSeverity.Info,

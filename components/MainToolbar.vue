@@ -16,7 +16,7 @@ import {
 import type { Cesium3DTileset, ProviderViewModel } from "cesium";
 import { Cartesian3, SceneMode } from "cesium";
 import { showToast, ToastSeverity } from "../utils/ToastService";
-import type InputGroup from "primevue/inputgroup";
+import type { ComponentPublicInstance } from "vue";
 
 // list of all available map data sources
 const mapDataSources: Ref<MapDataSource[]> = ref([
@@ -45,11 +45,11 @@ interface GeoLocationResult {
 const geolocationOptions: GeoLocationResult[] = [];
 
 // reference to the search input field
-const searchBoxRef = useTemplateRef<typeof InputGroup>("searchBox");
+const searchBoxRef = useTemplateRef<ComponentPublicInstance>("searchBox");
 
 // reference to the listbox
 const geolocationListboxRef =
-  useTemplateRef<typeof Listbox>("geolocationListbox");
+  useTemplateRef<ComponentPublicInstance>("geolocationListbox");
 
 // Control visibility of the Listbox
 const showGeolocationListbox = ref(false);
@@ -154,7 +154,6 @@ async function doSearch() {
 
     if (data.length === 0) {
       showToast(
-        "Info",
         `No geolocation results found for: ${searchStringSanitized}`,
         ToastSeverity.Info,
       );
@@ -205,7 +204,6 @@ async function doSearch() {
     showGeolocationListbox.value = true;
   } catch (e) {
     showToast(
-      "Error",
       `Couldn't find geolocation results: ${JSON.stringify(e)}`,
       ToastSeverity.Error,
     );

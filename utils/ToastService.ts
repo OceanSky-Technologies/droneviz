@@ -11,38 +11,32 @@ export enum ToastSeverity {
 
 /**
  * Show a toast message.
- * @param {string} summary The summary of the toast.
  * @param {string} detail The detail of the toast.
  * @param {string} severity The severity of the toast.
  */
-export function showToast(
-  summary: string,
-  detail: string,
-  severity: ToastSeverity,
-) {
+export function showToast(detail?: string, severity?: ToastSeverity) {
   const nuxtApp = useNuxtApp();
   const toastService = nuxtApp.$toastService as ToastServiceMethods;
 
   if (severity === ToastSeverity.Success) {
-    console.log(`Success: ${summary} - ${detail}`);
+    console.log(`Success: ${detail}`);
   } else if (severity === ToastSeverity.Info) {
-    console.log(`Info: ${summary} - ${detail}`);
+    console.log(`Info: ${detail}`);
   } else if (severity === ToastSeverity.Warn) {
-    console.warn(`Warning: ${summary} - ${detail}`);
+    console.warn(`Warning: ${detail}`);
   } else if (severity === ToastSeverity.Error) {
-    console.error(`Error: ${summary} - ${detail}`);
+    console.error(`Error: ${detail}`);
   } else if (severity === ToastSeverity.Secondary) {
-    console.log(`Secondary: ${summary} - ${detail}`);
+    console.log(`Secondary: ${detail}`);
   } else if (severity === ToastSeverity.Contrast) {
-    console.log(`Contrast: ${summary} - ${detail}`);
+    console.log(`Contrast: ${detail}`);
   } else {
-    console.error(`Unknown severity ${severity}: ${summary} - ${detail}`);
+    console.error(`Unknown severity ${severity}: ${detail}`);
   }
 
   if (toastService && typeof toastService.add === "function") {
     toastService.add({
       severity: severity,
-      summary: summary,
       detail: detail,
       life: 3000,
     });
