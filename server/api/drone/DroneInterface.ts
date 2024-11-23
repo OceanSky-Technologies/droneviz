@@ -1,5 +1,6 @@
 import { Socket, connect } from "node:net";
 import dgram from "dgram";
+import os from "os";
 import { Readable, Writable } from "stream";
 import {
   MavLinkPacketParser,
@@ -9,6 +10,8 @@ import {
   send as mavlinkSend,
   sendSigned as mavlinkSendSigned,
   MavLinkProtocolV2,
+  MavLinkData,
+  MavLinkProtocolV1,
 } from "node-mavlink";
 import { SerialPort } from "serialport";
 import type { EventStream } from "h3";
@@ -19,7 +22,11 @@ import {
 } from "~/types/DroneConnectionOptions";
 import { REGISTRY } from "~/types/MavlinkRegistry";
 import type { MavlinkMessageInterface } from "~/types/MessageInterface";
-import { CommandLong } from "mavlink-mappings/dist/lib/common";
+import {
+  CommandAck,
+  CommandLong,
+  ManualControl,
+} from "mavlink-mappings/dist/lib/common";
 
 // fix BigInt serialization: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-953187833
 declare global {
@@ -44,6 +51,14 @@ export class DroneInterface {
   private clients = new Map<string, { address: string; port: number }>();
 
   eventStream?: EventStream;
+
+  private callbacks: Array<{
+    matcher: (message: any) => boolean;
+    onDenied: (message: any) => [boolean, string?];
+    resolve: (message: any) => void;
+    reject: (reason: any) => void;
+    timeoutId: NodeJS.Timeout;
+  }> = [];
 
   constructor(
     connectionOption: SerialOptions | TcpOptions | UdpOptions,
@@ -161,22 +176,36 @@ export class DroneInterface {
   }
 
   private async connectUdp() {
+    this.connectionOption = this.connectionOption as UdpOptions;
+
     const socketOptions: dgram.SocketOptions = {
-      type: (this.connectionOption as UdpOptions).socketType,
+      type: this.connectionOption.socketType,
       reuseAddr: true,
     };
     this.port = dgram.createSocket(socketOptions);
 
-    this.port.bind(
-      (this.connectionOption as UdpOptions).sourcePort,
-      (this.connectionOption as UdpOptions).sourceIp,
-    );
+    let bindAddress;
+    if (this.connectionOption.sourceIp)
+      bindAddress = this.connectionOption.sourceIp;
+    else if (this.connectionOption.autoBindInterface)
+      bindAddress = this.getInterfaceAddress(this.connectionOption.socketType);
+    else {
+      // bind to all interfaces -> receives packets twice: broadcast packets and packets sent to the drone's IP
+      // specify the source IP to avoid this
+      bindAddress = undefined;
+    }
+
+    this.port.bind(this.connectionOption.sourcePort, bindAddress, () => {
+      const address = (this.port as dgram.Socket)!.address();
+      console.log(`Server bound to ${address.address}:${address.port}`);
+    });
 
     // create a Readable stream to pipe the UDP packets into the Mavlink parser
-    this.readStream = new Readable();
-    this.readStream._read = (size: number) => {
-      return this.readStream!.read(size);
-    };
+    this.readStream = new Readable({
+      read() {
+        // Intentionally empty because we manually push data
+      },
+    });
 
     this.mavlinkPacketParser = createMavLinkStream(this.readStream, {
       onCrcError: (buffer: Buffer) => {
@@ -230,6 +259,7 @@ export class DroneInterface {
 
     this.port.on("error", (err) => {
       console.error(`Server error: ${err}`);
+      this.disconnect();
     });
   }
 
@@ -237,16 +267,16 @@ export class DroneInterface {
     // TODO: test signature verification with TCP -> the 'data' callback provides a 'Buffer' object which has no 'signature' property
     if (packet.signature) {
       if (packet.signature.matches(this.signatureKey)) {
-        this.streamToBrowser(packet);
+        this.handleMessage(packet);
       } else {
         console.warn("Signature check failed! Fraudulent package received?");
       }
     } else {
-      this.streamToBrowser(packet);
+      this.handleMessage(packet);
     }
   }
 
-  streamToBrowser(packet: any) {
+  handleMessage(packet: any) {
     // console.log(packet);
     try {
       // push data through event stream to the frontend
@@ -264,6 +294,24 @@ export class DroneInterface {
               data: data,
             } as MavlinkMessageInterface),
           });
+
+          // check if the message is a response to a request
+          for (const callback of this.callbacks) {
+            const [denied, deniedMessage] = callback.onDenied(data);
+            if (denied) {
+              callback.reject(new Error(deniedMessage ?? data));
+              clearTimeout(callback.timeoutId);
+              this.callbacks = this.callbacks.filter((cb) => cb !== callback);
+              break;
+            }
+
+            if (callback.matcher(data)) {
+              callback.resolve(data);
+              clearTimeout(callback.timeoutId);
+              this.callbacks = this.callbacks.filter((cb) => cb !== callback);
+              break;
+            }
+          }
         } else console.warn(`Unknown message ID: ${packet.header.msgid}`);
       }
     } catch (err) {
@@ -271,7 +319,35 @@ export class DroneInterface {
     }
   }
 
-  async sendCommandLong(command: CommandLong) {
+  private getInterfaceAddress(type: dgram.SocketType): string {
+    const interfaces = os.networkInterfaces();
+
+    for (const [name, addresses] of Object.entries(interfaces)) {
+      for (const addressInfo of addresses!) {
+        const { address, family, internal } = addressInfo;
+
+        // Skip internal (loopback) interfaces
+        if (internal) continue;
+
+        // Match socket type: IPv4 or IPv6
+        if (type === "udp4" && family === "IPv4") {
+          console.log(`Selected interface: ${name}, address: ${address}`);
+          return address;
+        }
+
+        if (type === "udp6" && family === "IPv6") {
+          console.log(`Selected interface: ${name}, address: ${address}`);
+          return address;
+        }
+      }
+    }
+
+    // Default to undefined or wildcard if no interface matches
+    console.warn("No suitable interface found; binding to wildcard address.");
+    return type === "udp4" ? "0.0.0.0" : "::";
+  }
+
+  send(command: MavLinkData): Promise<unknown> {
     if (!this.writeStream) {
       throw new Error("Connection not established");
     }
@@ -280,11 +356,29 @@ export class DroneInterface {
 
     if (this.port instanceof dgram.Socket || this.port instanceof Socket) {
       if (this.signatureKey === undefined) {
-        console.log("Sending command without signature");
-        await mavlinkSend(this.writeStream, command, new MavLinkProtocolV2());
+        return mavlinkSend(this.writeStream, command, new MavLinkProtocolV1());
       } else {
-        await mavlinkSendSigned(this.writeStream, command, this.signatureKey);
+        return mavlinkSendSigned(this.writeStream, command, this.signatureKey);
       }
     } else throw new Error("Unsupported connection type for sending commands");
+  }
+
+  sendAndExpectResponse(
+    sendMessageToServer: () => void,
+    matcher: (message: any) => boolean,
+    onDenied: (message: any) => [boolean, string?],
+    timeoutMs: number = 5000,
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error("Request timed out"));
+        this.callbacks = this.callbacks.filter(
+          (cb) => cb.timeoutId !== timeoutId,
+        );
+      }, timeoutMs);
+
+      this.callbacks.push({ matcher, onDenied, resolve, reject, timeoutId });
+      sendMessageToServer();
+    });
   }
 }

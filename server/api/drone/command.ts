@@ -1,4 +1,8 @@
-import { CommandLong } from "mavlink-mappings/dist/lib/common";
+import {
+  CommandAck,
+  CommandLong,
+  MavResult,
+} from "mavlink-mappings/dist/lib/common";
 import { drones } from "./DroneCollection";
 
 interface QueryInterface {
@@ -13,13 +17,36 @@ export default defineEventHandler(async (event) => {
     return { result: "error", message: "No drone connected." };
   }
 
-  // Rehydrate the CommandLong instance
+  const drone = drones[0];
+
   const command = Object.assign(new CommandLong(), query.command);
 
   try {
-    await drones[0].sendCommandLong(command);
-
-    // TODO: wait for confirmation
+    await drone.sendAndExpectResponse(
+      () => drone.send(command),
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (message.result === MavResult.ACCEPTED) return true;
+            if (message.result === MavResult.IN_PROGRESS) return true;
+          }
+        }
+        return false;
+      },
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (
+              message.result !== MavResult.ACCEPTED &&
+              message.result !== MavResult.IN_PROGRESS
+            ) {
+              return [true, MavResult[message.result]];
+            }
+          }
+        }
+        return [false, undefined];
+      },
+    );
   } catch (e) {
     if (e instanceof Error) return { result: "error", message: e.message };
     else return { result: "error", message: JSON.stringify(e) };

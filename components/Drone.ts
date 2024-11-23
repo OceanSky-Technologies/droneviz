@@ -26,12 +26,19 @@ import {
   GlobalPositionInt,
   HomePosition,
   LocalPositionNed,
+  ManualControl,
   MavCmd,
   PositionTargetLocalNed,
   PrecisionLandMode,
   ServoOutputRaw,
 } from "mavlink-mappings/dist/lib/common";
-import { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
+import {
+  Heartbeat,
+  MavAutopilot,
+  MavModeFlag,
+  MavState,
+  MavType,
+} from "mavlink-mappings/dist/lib/minimal";
 
 const UINT16_MAX = 65535;
 
@@ -50,8 +57,10 @@ export class DroneEntity {
   lastAttitude?: Attitude;
 
   protocolPromise = new Promise<ProtocolInterface>(() => {});
-
   dataReceived: boolean = false;
+
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private manualControlInterval: NodeJS.Timeout | null = null;
 
   constructor(
     connectionOptions: SerialOptions | TcpOptions | UdpOptions,
@@ -105,6 +114,16 @@ export class DroneEntity {
 
       // wait until data was received
       await this.protocolPromise;
+
+      // send heartbeat
+      this.heartbeatInterval = setInterval(() => {
+        this.sendHeartbeat();
+      }, 1000);
+
+      // send manual control data
+      this.manualControlInterval = setInterval(() => {
+        this.sendManualControl();
+      }, 40);
     } else {
       rejectProtocolPromise();
 
@@ -114,6 +133,16 @@ export class DroneEntity {
   }
 
   async disconnect() {
+    if (this.heartbeatInterval !== null) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+
+    if (this.manualControlInterval !== null) {
+      clearInterval(this.manualControlInterval);
+      this.manualControlInterval = null;
+    }
+
     this.eventSource?.close();
     this.eventSource = undefined;
 
@@ -125,6 +154,50 @@ export class DroneEntity {
     if (data.result !== "success") {
       if ("message" in data && data.message) throw new Error(data.message);
       else throw new Error(JSON.stringify(data));
+    }
+  }
+
+  async sendHeartbeat() {
+    const command = new Heartbeat();
+    command.type = MavType.GCS;
+    command.autopilot = MavAutopilot.INVALID;
+    command.baseMode =
+      MavModeFlag.MANUAL_INPUT_ENABLED | MavModeFlag.SAFETY_ARMED;
+    command.systemStatus = MavState.ACTIVE;
+    command.mavlinkVersion = 3;
+
+    const data = await $fetch("/api/drone/heartbeat", {
+      method: "POST",
+      body: {
+        data: command,
+      },
+      baseURL: useRuntimeConfig().public.baseURL as string,
+    });
+
+    if (data.result !== "success") {
+      if ("message" in data && data.message)
+        throw new Error(`Sending heartbeat failed: ${data.message}`);
+      else throw new Error("Sending heartbeat failed");
+    }
+  }
+
+  async sendManualControl() {
+    const command = new ManualControl();
+    command.target = 254;
+    command.z = 500;
+
+    const data = await $fetch("/api/drone/manualControl", {
+      method: "POST",
+      body: {
+        data: command,
+      },
+      baseURL: useRuntimeConfig().public.baseURL as string,
+    });
+
+    if (data.result !== "success") {
+      if ("message" in data && data.message)
+        throw new Error(`Manual control failed: ${data.message}`);
+      else throw new Error("Manual control failed");
     }
   }
 
@@ -149,6 +222,7 @@ export class DroneEntity {
         this.updateEntityPosition(message as GlobalPositionInt);
       } else if (message instanceof Heartbeat) {
         this.lastHeartbeat = message as Heartbeat;
+        console.log(this.lastHeartbeat);
       } else if (message instanceof HomePosition) {
         this.homePosition = message as HomePosition;
       } else if (message instanceof Attitude) {
@@ -248,6 +322,7 @@ export class DroneEntity {
     const command = new CommandLong();
     command.command = MavCmd.NAV_TAKEOFF_LOCAL;
     command.targetSystem = 1;
+    command._param3 = 5;
 
     const data = await $fetch("/api/drone/command", {
       method: "POST",
