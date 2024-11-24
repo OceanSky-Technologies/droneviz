@@ -22,11 +22,6 @@ import {
 } from "~/types/DroneConnectionOptions";
 import { REGISTRY } from "~/types/MavlinkRegistry";
 import type { MavlinkMessageInterface } from "~/types/MessageInterface";
-import {
-  CommandAck,
-  CommandLong,
-  ManualControl,
-} from "mavlink-mappings/dist/lib/common";
 
 // fix BigInt serialization: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-953187833
 declare global {
@@ -51,14 +46,6 @@ export class DroneInterface {
   private clients = new Map<string, { address: string; port: number }>();
 
   eventStream?: EventStream;
-
-  private callbacks: Array<{
-    matcher: (message: any) => boolean;
-    onDenied: (message: any) => [boolean, string?];
-    resolve: (message: any) => void;
-    reject: (reason: any) => void;
-    timeoutId: NodeJS.Timeout;
-  }> = [];
 
   constructor(
     connectionOption: SerialOptions | TcpOptions | UdpOptions,
@@ -294,24 +281,6 @@ export class DroneInterface {
               data: data,
             } as MavlinkMessageInterface),
           });
-
-          // check if the message is a response to a request
-          for (const callback of this.callbacks) {
-            const [denied, deniedMessage] = callback.onDenied(data);
-            if (denied) {
-              callback.reject(new Error(deniedMessage ?? data));
-              clearTimeout(callback.timeoutId);
-              this.callbacks = this.callbacks.filter((cb) => cb !== callback);
-              break;
-            }
-
-            if (callback.matcher(data)) {
-              callback.resolve(data);
-              clearTimeout(callback.timeoutId);
-              this.callbacks = this.callbacks.filter((cb) => cb !== callback);
-              break;
-            }
-          }
         } else console.warn(`Unknown message ID: ${packet.header.msgid}`);
       }
     } catch (err) {
@@ -361,24 +330,5 @@ export class DroneInterface {
         return mavlinkSendSigned(this.writeStream, command, this.signatureKey);
       }
     } else throw new Error("Unsupported connection type for sending commands");
-  }
-
-  sendAndExpectResponse(
-    sendMessageToServer: () => void,
-    matcher: (message: any) => boolean,
-    onDenied: (message: any) => [boolean, string?],
-    timeoutMs: number = 5000,
-  ): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error("Request timed out"));
-        this.callbacks = this.callbacks.filter(
-          (cb) => cb.timeoutId !== timeoutId,
-        );
-      }, timeoutMs);
-
-      this.callbacks.push({ matcher, onDenied, resolve, reject, timeoutId });
-      sendMessageToServer();
-    });
   }
 }

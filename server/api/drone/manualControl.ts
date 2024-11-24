@@ -1,15 +1,16 @@
 import { ManualControl } from "mavlink-mappings/dist/lib/common";
 import { drones } from "./DroneCollection";
+import type { QueryResult } from "~/types/MessageInterface";
 
-interface QueryInterface {
+interface Query {
   data: ManualControl;
 }
 
-export default defineEventHandler(async (event) => {
-  const query = await readBody<QueryInterface>(event);
+export default defineEventHandler(async (event): Promise<QueryResult> => {
+  const query = await readBody<Query>(event);
 
-  if (drones.length === 0) {
-    return { result: "error", message: "No drone connected." };
+  if (drones.length !== 1) {
+    return { success: false, message: `${drones.length} drones connected.` };
   }
 
   const drone = drones[0];
@@ -19,9 +20,9 @@ export default defineEventHandler(async (event) => {
   try {
     await drone.send(data);
   } catch (e) {
-    if (e instanceof Error) return { result: "error", message: e.message };
-    else return { result: "error", message: JSON.stringify(e) };
+    if (e instanceof Error) return { success: false, message: e.message };
+    else return { success: false, message: JSON.stringify(e) };
   }
 
-  return { result: "success" };
+  return { success: true, message: "Success" };
 });

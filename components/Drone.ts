@@ -17,17 +17,22 @@ import {
 import type {
   MavlinkMessageInterface,
   ProtocolInterface,
+  QueryResult,
 } from "~/types/MessageInterface";
 import {
   Attitude,
   AttitudeQuaternion,
   AttitudeTarget,
+  AutotuneAxis,
+  CommandAck,
   CommandLong,
   GlobalPositionInt,
   HomePosition,
   LocalPositionNed,
   ManualControl,
   MavCmd,
+  MavResult,
+  Ping,
   PositionTargetLocalNed,
   PrecisionLandMode,
   ServoOutputRaw,
@@ -42,6 +47,11 @@ import {
 
 const UINT16_MAX = 65535;
 
+const defaultFetchOptions = {
+  method: "POST" as any,
+  baseURL: useRuntimeConfig().public.baseURL as string,
+};
+
 let resolveProtocolPromise: (value: ProtocolInterface) => void;
 let rejectProtocolPromise: () => void;
 
@@ -50,17 +60,28 @@ export class DroneEntity {
   private signatureKey?: string;
   private eventSource?: EventSource;
 
+  sysid: number = NaN;
+  compid: number = NaN;
+
   entity?: Entity;
   lastGlobalPosition?: GlobalPositionInt;
   lastHeartbeat?: Heartbeat;
   homePosition?: HomePosition;
   lastAttitude?: Attitude;
 
-  protocolPromise = new Promise<ProtocolInterface>(() => {});
-  dataReceived: boolean = false;
+  // protocolPromise = new Promise<ProtocolInterface>(() => {});
+  // dataReceived: boolean = false;
 
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private manualControlInterval: NodeJS.Timeout | null = null;
+
+  private responseCallbacks: Array<{
+    matcher: (message: any, rawMessage: MavlinkMessageInterface) => boolean;
+    onDenied?: (message: any) => [boolean, string?];
+    resolve: (message: any) => void;
+    reject: (reason: any) => void;
+    timeoutId: NodeJS.Timeout;
+  }> = [];
 
   constructor(
     connectionOptions: SerialOptions | TcpOptions | UdpOptions,
@@ -71,68 +92,67 @@ export class DroneEntity {
   }
 
   async connect() {
-    this.dataReceived = false;
+    await this.sendAndExpectResponse(
+      async () => {
+        await this.send("/api/drone/connect", {
+          connectionOptions: JSON.stringify(this.connectionOptions),
+          signatureKey: JSON.stringify(this.signatureKey),
+        });
 
-    // create a new data received promise
-    this.protocolPromise = new Promise<ProtocolInterface>((resolve, reject) => {
-      resolveProtocolPromise = resolve;
-      rejectProtocolPromise = reject;
-    });
-
-    const data = await $fetch("/api/drone/connect", {
-      method: "POST",
-      body: {
-        connectionOptions: JSON.stringify(this.connectionOptions),
-        signatureKey: JSON.stringify(this.signatureKey),
-      },
-      baseURL: useRuntimeConfig().public.baseURL as string,
-    });
-
-    if (data.result === "success") {
-      this.eventSource = new EventSource(
-        new URL(
-          "/api/drone/stream",
-          useRuntimeConfig().public.baseURL as string,
-        ),
-      );
-
-      this.eventSource.onmessage = (event) => {
-        const rawMessage = JSON.parse(event.data);
-        this.onMessage(rawMessage);
-      };
-
-      this.eventSource.onerror = (error) => {
-        showToast(
-          `Data stream error for connection ${JSON.stringify(this.connectionOptions)}: ${JSON.stringify(error)}`,
-          ToastSeverity.Warn,
+        this.eventSource = new EventSource(
+          new URL(
+            "/api/drone/stream",
+            useRuntimeConfig().public.baseURL as string,
+          ),
         );
 
-        rejectProtocolPromise();
+        this.eventSource.onmessage = (event) => {
+          const rawMessage = JSON.parse(event.data);
+          this.onMessage(rawMessage);
+        };
 
-        this.eventSource?.close();
-      };
+        this.eventSource.onerror = (error) => {
+          showToast(
+            `Data stream error for connection ${JSON.stringify(this.connectionOptions)}: ${JSON.stringify(error)}`,
+            ToastSeverity.Warn,
+          );
 
-      // wait until data was received
-      await this.protocolPromise;
+          rejectProtocolPromise();
 
-      // send heartbeat
+          this.eventSource?.close();
+        };
+      },
+      (_message, rawMessage: MavlinkMessageInterface) => {
+        this.sysid = rawMessage.protocol.sysid;
+        this.compid = rawMessage.protocol.compid;
+
+        // promise is resolved when the first message (of any kind) is received
+        return true;
+      },
+      undefined,
+      "Connection timed out",
+      5000,
+    );
+
+    // send heartbeat
+    if (settings.heartbeatInterval) {
       this.heartbeatInterval = setInterval(() => {
         this.sendHeartbeat();
-      }, 1000);
+      }, settings.heartbeatInterval.value);
+    }
 
-      // send manual control data
+    // send manual control data
+    if (settings.manualControlInterval) {
       this.manualControlInterval = setInterval(() => {
         this.sendManualControl();
-      }, 40);
-    } else {
-      rejectProtocolPromise();
-
-      if ("message" in data && data.message) throw new Error(data.message);
-      else throw new Error(JSON.stringify(data));
+      }, settings.manualControlInterval.value);
     }
   }
 
   async disconnect() {
+    this.sysid = NaN;
+    this.compid = NaN;
+
     if (this.heartbeatInterval !== null) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
@@ -146,83 +166,56 @@ export class DroneEntity {
     this.eventSource?.close();
     this.eventSource = undefined;
 
-    const data = await $fetch("/api/drone/disconnect", {
-      method: "POST",
-      baseURL: useRuntimeConfig().public.baseURL as string,
-    });
+    const data = await this.send("/api/drone/disconnect");
 
-    if (data.result !== "success") {
-      if ("message" in data && data.message) throw new Error(data.message);
-      else throw new Error(JSON.stringify(data));
-    }
+    if (!data.success) throw new Error(`Disconnecting failed: ${data.message}`);
   }
 
-  async sendHeartbeat() {
-    const command = new Heartbeat();
-    command.type = MavType.GCS;
-    command.autopilot = MavAutopilot.INVALID;
-    command.baseMode =
-      MavModeFlag.MANUAL_INPUT_ENABLED | MavModeFlag.SAFETY_ARMED;
-    command.systemStatus = MavState.ACTIVE;
-    command.mavlinkVersion = 3;
-
-    const data = await $fetch("/api/drone/heartbeat", {
-      method: "POST",
-      body: {
-        data: command,
-      },
-      baseURL: useRuntimeConfig().public.baseURL as string,
-    });
-
-    if (data.result !== "success") {
-      if ("message" in data && data.message)
-        throw new Error(`Sending heartbeat failed: ${data.message}`);
-      else throw new Error("Sending heartbeat failed");
-    }
-  }
-
-  async sendManualControl() {
-    const command = new ManualControl();
-    command.target = 254;
-    command.z = 500;
-
-    const data = await $fetch("/api/drone/manualControl", {
-      method: "POST",
-      body: {
-        data: command,
-      },
-      baseURL: useRuntimeConfig().public.baseURL as string,
-    });
-
-    if (data.result !== "success") {
-      if ("message" in data && data.message)
-        throw new Error(`Manual control failed: ${data.message}`);
-      else throw new Error("Manual control failed");
-    }
-  }
-
-  onMessage(rawMessage: MavlinkMessageInterface) {
+  private onMessage(rawMessage: MavlinkMessageInterface) {
     const clazz = REGISTRY[rawMessage.header.msgid]; // Lookup the class
 
     // The complete header, protocol and signature are also available in rawMessage for future use
     // console.log(rawMessage);
 
-    if (!this.dataReceived) {
-      resolveProtocolPromise(rawMessage.protocol);
-      this.dataReceived = true;
-    }
-
     if (clazz) {
       // Create an instance of the class and populate it with data
-      const message = new clazz();
-      Object.assign(message, rawMessage.data);
+      const message = Object.assign(new clazz(), rawMessage.data);
+
+      // check if the message is a response to a request
+      for (const callback of this.responseCallbacks) {
+        // check if the denied callback returns true
+        if (callback.onDenied) {
+          const [denied, deniedMessage] = callback.onDenied(message);
+          if (denied) {
+            callback.reject(
+              new Error(
+                deniedMessage ?? clazz + ": " + JSON.stringify(message),
+              ),
+            );
+            clearTimeout(callback.timeoutId);
+            this.responseCallbacks = this.responseCallbacks.filter(
+              (cb) => cb !== callback,
+            );
+            break;
+          }
+        }
+
+        // check if the matcher callback returns true
+        if (callback.matcher(message, rawMessage)) {
+          callback.resolve(message);
+          clearTimeout(callback.timeoutId);
+          this.responseCallbacks = this.responseCallbacks.filter(
+            (cb) => cb !== callback,
+          );
+          break;
+        }
+      }
 
       if (message instanceof GlobalPositionInt) {
         this.lastGlobalPosition = message as GlobalPositionInt;
         this.updateEntityPosition(message as GlobalPositionInt);
       } else if (message instanceof Heartbeat) {
         this.lastHeartbeat = message as Heartbeat;
-        console.log(this.lastHeartbeat);
       } else if (message instanceof HomePosition) {
         this.homePosition = message as HomePosition;
       } else if (message instanceof Attitude) {
@@ -238,15 +231,95 @@ export class DroneEntity {
         // do nothing
       } else if (message instanceof LocalPositionNed) {
         // do nothing
+      } else if (message instanceof Ping) {
+        this.replyToPing(message);
       } else {
-        console.log(message);
+        // console.log(message);
       }
     } else {
       console.warn(`Unknown message ID: ${rawMessage.header.msgid}`);
     }
   }
 
-  updateEntityOrientation(message: Attitude) {
+  private send<T>(api: string, data?: T): Promise<QueryResult> {
+    const promise = $fetch(api, {
+      ...defaultFetchOptions,
+      body: {
+        ...data,
+      },
+    });
+
+    return promise as Promise<QueryResult>;
+  }
+
+  private sendAndExpectResponse<T, R>(
+    sendMessageToServer: () => void,
+    matcher: (message: T, rawMessage: MavlinkMessageInterface) => boolean,
+    onDenied?: (message: T) => [boolean, string?],
+    timeoutMessage?: string,
+    timeoutMs: number = 5000,
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(
+          new Error(
+            timeoutMessage || "Request timed out: " + sendMessageToServer,
+          ),
+        );
+        this.responseCallbacks = this.responseCallbacks.filter(
+          (cb) => cb.timeoutId !== timeoutId,
+        );
+      }, timeoutMs);
+
+      this.responseCallbacks.push({
+        matcher,
+        onDenied,
+        resolve,
+        reject,
+        timeoutId,
+      });
+
+      sendMessageToServer();
+    });
+  }
+
+  private async sendHeartbeat() {
+    const command = new Heartbeat();
+    command.type = MavType.GCS;
+    command.autopilot = MavAutopilot.INVALID;
+    command.baseMode =
+      MavModeFlag.MANUAL_INPUT_ENABLED | MavModeFlag.SAFETY_ARMED;
+    command.systemStatus = MavState.ACTIVE;
+    command.mavlinkVersion = 3;
+
+    const data = await this.send("/api/drone/heartbeat", { data: command });
+
+    if (!data.success)
+      throw new Error(`Sending heartbeat failed: ${data.message}`);
+  }
+
+  async sendManualControl() {
+    const command = new ManualControl();
+    command.target = 254;
+    command.z = 500;
+
+    const data = await this.send("/api/drone/manualControl", { data: command });
+
+    if (!data.success)
+      throw new Error(`Manual control failed: ${data.message}`);
+  }
+
+  private replyToPing(ping: Ping) {
+    const pingReply = new Ping();
+    pingReply.timeUsec = ping.timeUsec;
+    pingReply.seq = ping.seq;
+    pingReply.targetSystem = 42; // fixme: hardcoded
+    pingReply.targetComponent = 42; // fixme: hardcoded
+
+    this.send("/api/drone/ping", ping);
+  }
+
+  private updateEntityOrientation(message: Attitude) {
     if (!this.entity) return;
     if (!this.entity.position || !this.entity.position.getValue()) return;
     if (!this.lastGlobalPosition) return;
@@ -266,7 +339,7 @@ export class DroneEntity {
     getCesiumViewer().scene.requestRender();
   }
 
-  updateEntityPosition(message: GlobalPositionInt) {
+  private updateEntityPosition(message: GlobalPositionInt) {
     if (!this.entity) return;
 
     setAltitude(this.entity, message);
@@ -280,20 +353,39 @@ export class DroneEntity {
     command.targetSystem = 1;
     command._param1 = 1; // arm
     // command._param2 = 21196; // force
+    command._param2 = NaN;
+    command._param3 = NaN;
+    command._param4 = NaN;
+    command._param5 = NaN;
+    command._param6 = NaN;
+    command._param7 = NaN;
 
-    const data = await $fetch("/api/drone/command", {
-      method: "POST",
-      body: {
-        command: command,
+    await this.sendAndExpectResponse(
+      () => this.send("/api/drone/commandLong", { data: command }),
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (message.result === MavResult.ACCEPTED) return true;
+            if (message.result === MavResult.IN_PROGRESS) return true;
+          }
+        }
+        return false;
       },
-      baseURL: useRuntimeConfig().public.baseURL as string,
-    });
-
-    if (data.result !== "success") {
-      if ("message" in data && data.message)
-        throw new Error(`Arming failed: ${data.message}`);
-      else throw new Error("Arming failed");
-    }
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (
+              message.result !== MavResult.ACCEPTED &&
+              message.result !== MavResult.IN_PROGRESS
+            ) {
+              return [true, "Arming failed: " + MavResult[message.result]];
+            }
+          }
+        }
+        return [false, undefined];
+      },
+      "Arming command timed out",
+    );
   }
 
   async disarm() {
@@ -302,120 +394,199 @@ export class DroneEntity {
     command.targetSystem = 1;
     command._param1 = 0; // arm
     command._param2 = 21196; // force
+    command._param3 = NaN;
+    command._param4 = NaN;
+    command._param5 = NaN;
+    command._param6 = NaN;
+    command._param7 = NaN;
 
-    const data = await $fetch("/api/drone/command", {
-      method: "POST",
-      body: {
-        command: command,
+    await this.sendAndExpectResponse(
+      () => this.send("/api/drone/commandLong", { data: command }),
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (message.result === MavResult.ACCEPTED) return true;
+            if (message.result === MavResult.IN_PROGRESS) return true;
+          }
+        }
+        return false;
       },
-      baseURL: useRuntimeConfig().public.baseURL as string,
-    });
-
-    if (data.result !== "success") {
-      if ("message" in data && data.message)
-        throw new Error(`Disarming failed: ${data.message}`);
-      else throw new Error("Disarming failed");
-    }
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (
+              message.result !== MavResult.ACCEPTED &&
+              message.result !== MavResult.IN_PROGRESS
+            ) {
+              return [true, "Disarming failed: " + MavResult[message.result]];
+            }
+          }
+        }
+        return [false, undefined];
+      },
+      "Disarming command timed out",
+    );
   }
 
   async takeoff() {
     const command = new CommandLong();
-    command.command = MavCmd.NAV_TAKEOFF_LOCAL;
+    command.command = MavCmd.NAV_TAKEOFF;
     command.targetSystem = 1;
-    command._param3 = 5;
+    command._param1 = NaN;
+    command._param2 = NaN;
+    command._param3 = NaN;
+    command._param4 = NaN;
+    command._param5 = NaN;
+    command._param6 = NaN;
+    command._param7 = NaN;
 
-    const data = await $fetch("/api/drone/command", {
-      method: "POST",
-      body: {
-        command: command,
+    await this.sendAndExpectResponse(
+      () => this.send("/api/drone/commandLong", { data: command }),
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (message.result === MavResult.ACCEPTED) return true;
+            if (message.result === MavResult.IN_PROGRESS) return true;
+          }
+        }
+        return false;
       },
-      baseURL: useRuntimeConfig().public.baseURL as string,
-    });
-
-    if (data.result !== "success") {
-      if ("message" in data && data.message)
-        throw new Error(`Takeoff failed: ${data.message}`);
-      else throw new Error("Takeoff failed");
-    }
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (
+              message.result !== MavResult.ACCEPTED &&
+              message.result !== MavResult.IN_PROGRESS
+            ) {
+              return [true, "Takeoff failed: " + MavResult[message.result]];
+            }
+          }
+        }
+        return [false, undefined];
+      },
+      "Takeoff command timed out",
+    );
   }
 
   async land() {
     const command = new CommandLong();
     command.command = MavCmd.NAV_LAND;
     command.targetSystem = 1;
+    command._param1 = NaN;
     command._param2 = PrecisionLandMode.DISABLED;
+    command._param3 = NaN;
+    command._param4 = NaN;
+    command._param5 = NaN;
+    command._param6 = NaN;
+    command._param7 = NaN;
 
-    const data = await $fetch("/api/drone/command", {
-      method: "POST",
-      body: {
-        command: command,
+    await this.sendAndExpectResponse(
+      () => this.send("/api/drone/commandLong", { data: command }),
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (message.result === MavResult.ACCEPTED) return true;
+            if (message.result === MavResult.IN_PROGRESS) return true;
+          }
+        }
+        return false;
       },
-      baseURL: useRuntimeConfig().public.baseURL as string,
-    });
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (
+              message.result !== MavResult.ACCEPTED &&
+              message.result !== MavResult.IN_PROGRESS
+            ) {
+              return [true, "Landing failed: " + MavResult[message.result]];
+            }
+          }
+        }
+        return [false, undefined];
+      },
+      "Landing command timed out",
+    );
+  }
 
-    if (data.result !== "success") {
-      if ("message" in data && data.message)
-        throw new Error(`Landing failed: ${data.message}`);
-      else throw new Error("Landing failed");
+  async autotune() {
+    const command = new CommandLong();
+    command.command = MavCmd.DO_AUTOTUNE_ENABLE;
+    command.targetSystem = 1;
+    command.targetComponent = 1;
+    command._param1 = 1; // enable
+    command._param2 = AutotuneAxis.DEFAULT;
+    command._param3 = NaN;
+    command._param4 = NaN;
+    command._param5 = NaN;
+    command._param6 = NaN;
+    command._param7 = NaN;
+
+    let pollingInterval;
+    let landingInProgress = false;
+
+    await this.send("/api/drone/commandLong", { data: command });
+
+    pollingInterval = setInterval(() => {
+      this.send("/api/drone/commandLong", { data: command });
+    }, 1000);
+
+    try {
+      await this.sendAndExpectResponse(
+        () => {},
+
+        (message) => {
+          if (message instanceof CommandAck) {
+            if (message.command === command.command) {
+              if (
+                message.result === MavResult.ACCEPTED ||
+                message.result === MavResult.IN_PROGRESS
+              ) {
+                if (message.progress === 100) {
+                  showToast("Autotuning completed", ToastSeverity.Success);
+                  return true;
+                } else {
+                  if (!landingInProgress) {
+                    if (message.progress === 95) {
+                      showToast(
+                        "Autotuning in progress: " + message.progress + "%",
+                        ToastSeverity.Info,
+                      );
+                      showToast("Landing now!", ToastSeverity.Info);
+                      landingInProgress = true;
+                      this.land();
+                    } else
+                      showToast(
+                        "Autotuning in progress: " + message.progress + "%",
+                        ToastSeverity.Info,
+                      );
+                  }
+                }
+              }
+            }
+          }
+          return false;
+        },
+        (message) => {
+          if (message instanceof CommandAck) {
+            if (message.command === command.command) {
+              if (
+                message.result !== MavResult.ACCEPTED &&
+                message.result !== MavResult.IN_PROGRESS
+              ) {
+                return [
+                  true,
+                  "Autotuning failed: " + MavResult[message.resultParam2],
+                ];
+              }
+            }
+          }
+          return [false, undefined];
+        },
+        "Autotuning command timed out",
+        60000, // autotuning can take very long
+      );
+    } finally {
+      clearInterval(pollingInterval);
     }
   }
 }
-
-class DroneCollection {
-  private drones: DroneEntity[] = [];
-
-  addDrone(drone: DroneEntity): DroneEntity {
-    const num = this.drones.push(drone);
-
-    const entity = getCesiumViewer().entities.add({
-      id: num.toString(),
-      model: {
-        uri: new URL("assets/models/Skywinger.glb", import.meta.url).href,
-        scale: 1,
-        minimumPixelSize: 50,
-        maximumScale: 20000,
-      },
-    });
-
-    this.drones[num - 1].entity = entity;
-
-    return this.drones[num - 1];
-  }
-
-  getDrone(index: number) {
-    if (index < 0 || index >= this.drones.length)
-      throw Error("Index out of bounds!");
-
-    return this.drones[index];
-  }
-
-  getNumDrones() {
-    return this.drones.length;
-  }
-
-  removeAllDrones() {
-    this.drones.forEach((drone) => {
-      if (drone.entity) getCesiumViewer().entities.remove(drone.entity);
-    });
-
-    this.drones = [];
-  }
-
-  async connectAll() {
-    await Promise.all(
-      this.drones.map((drone) => {
-        return drone.connect();
-      }),
-    );
-  }
-
-  async disconnectAll() {
-    await Promise.all(
-      this.drones.map((drone) => {
-        return drone.disconnect();
-      }),
-    );
-  }
-}
-
-export const droneCollection = new DroneCollection();

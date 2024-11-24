@@ -5,18 +5,19 @@ import {
   UdpOptions,
 } from "~/types/DroneConnectionOptions";
 import { drones } from "./DroneCollection";
+import type { QueryResult } from "~/types/MessageInterface";
 
 interface QueryInterface {
   connectionOptions: string;
   signatureKey: string;
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<QueryResult> => {
   const query = await readBody<QueryInterface>(event);
   console.log("Received connection request:", JSON.stringify(query));
 
   if (drones.length !== 0) {
-    return { result: "error", message: "Already connected to a drone" };
+    return { success: false, message: "A drone is already connected." };
   }
 
   const parsedOptions = JSON.parse(query.connectionOptions);
@@ -41,16 +42,14 @@ export default defineEventHandler(async (event) => {
     throw new Error("Invalid connection option");
   }
 
-  // TODO: FIX UDP OPTIONS!!
-
   try {
     await drone.connect();
   } catch (e) {
-    if (e instanceof Error) return { result: "error", message: e.message };
-    else return { result: "error", message: JSON.stringify(e) };
+    if (e instanceof Error) return { success: false, message: e.message };
+    else return { success: false, message: JSON.stringify(e) };
   }
 
   drones.push(drone);
 
-  return { result: "success" };
+  return { success: true, message: "Success" };
 });

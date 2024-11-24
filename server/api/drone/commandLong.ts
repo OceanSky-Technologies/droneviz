@@ -1,13 +1,14 @@
-import type { QueryResult } from "~/types/MessageInterface";
+import { CommandLong } from "mavlink-mappings/dist/lib/common";
 import { drones } from "./DroneCollection";
-import { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
+import type { QueryResult } from "~/types/MessageInterface";
 
-interface Query {
-  data: Heartbeat;
+interface QueryInterface {
+  data: CommandLong;
 }
 
 export default defineEventHandler(async (event): Promise<QueryResult> => {
-  const query = await readBody<Query>(event);
+  const query = await readBody<QueryInterface>(event);
+  console.log("Received long command: ", JSON.stringify(query));
 
   if (drones.length !== 1) {
     return { success: false, message: `${drones.length} drones connected.` };
@@ -15,7 +16,14 @@ export default defineEventHandler(async (event): Promise<QueryResult> => {
 
   const drone = drones[0];
 
-  const data = Object.assign(new Heartbeat(), query.data);
+  const data = Object.assign(new CommandLong(), query.data);
+
+  // Convert all `null` values to `NaN`
+  for (const key in data) {
+    if ((data as any)[key] === null) {
+      (data as any)[key] = NaN;
+    }
+  }
 
   try {
     await drone.send(data);

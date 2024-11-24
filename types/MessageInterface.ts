@@ -15,3 +15,8 @@ export interface MavlinkMessageInterface {
   signature: unknown;
   data: unknown; // The data structure is determined by the message ID
 }
+
+export interface QueryResult {
+  success: boolean;
+  message: string;
+}

@@ -6,8 +6,8 @@ export default defineEventHandler(async (event) => {
   const query = getQuery<QueryInterface>(event);
   console.log("streaming request", query);
 
-  if (drones.length === 0) {
-    return { result: "error", message: "No drone connected." };
+  if (drones.length !== 1) {
+    return { success: false, message: `${drones.length} drones connected.` };
   }
 
   setHeader(event, "cache-control", "no-cache");

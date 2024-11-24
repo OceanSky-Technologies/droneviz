@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import CesiumViewer from "~/components/CesiumViewer.vue";
 import DarkToggle from "~/components/DarkToggle.vue";
-import { droneCollection, DroneEntity } from "~/components/Drone";
+import { DroneEntity } from "~/components/Drone";
 import Button from "primevue/button";
 import type { ComponentPublicInstance } from "vue";
 import { TcpOptions, UdpOptions } from "~/types/DroneConnectionOptions";
+import { droneCollection } from "~/components/DroneCollection";
 
 const connectDisconnectRef =
   useTemplateRef<ComponentPublicInstance>("connectDisconnect");
@@ -22,7 +23,7 @@ async function connectDisconnect() {
       await droneCollection.connectAll();
 
       showToast(
-        `Connected! (sysid: ${(await drone.protocolPromise).sysid}, compid: ${(await drone.protocolPromise).compid})`,
+        `Connected! (sysid: ${drone.sysid}, compid: ${drone.compid})`,
         ToastSeverity.Success,
       );
 
@@ -120,7 +121,7 @@ async function land() {
   }
 }
 
-async function calibrate() {
+async function autotune() {
   if (droneCollection.getNumDrones() === 0) {
     showToast("No drone connected", ToastSeverity.Error);
     return;
@@ -128,8 +129,8 @@ async function calibrate() {
 
   try {
     const drone = droneCollection.getDrone(0);
-    await drone.calibrate();
-    showToast("Calibrating...", ToastSeverity.Info);
+    showToast("Autotuning...", ToastSeverity.Info);
+    await drone.autotune();
   } catch (e) {
     if (e instanceof Error) {
       showToast(e.message, ToastSeverity.Error);
@@ -165,7 +166,7 @@ async function calibrate() {
       <Button label="Disarm" @click="disarm" />
       <Button label="Takeoff" @click="takeoff" />
       <Button label="Land" @click="land" />
-      <Button label="Calibrate" @click="calibrate" />
+      <Button label="Autotune" @click="autotune" />
       <CameraWindow />
 
       <div id="demoMenu" />

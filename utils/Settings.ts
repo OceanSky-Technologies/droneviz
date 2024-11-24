@@ -25,6 +25,9 @@ class Settings {
   mousePositionInfoMostDetailed: Ref<boolean>;
   darkMode: Ref<DarkMode>;
 
+  heartbeatInterval: Ref<number>; // milliseconds, 0: disabled
+  manualControlInterval: Ref<number>; // milliseconds, 0: disabled
+
   /**
    * Constructs a new Settings class with default values.
    */
@@ -41,6 +44,9 @@ class Settings {
     this.enableMousePositionInfo = ref(true);
     this.mousePositionInfoMostDetailed = ref(false); // most detailed position retrieval triggers the API and increases quota!
     this.darkMode = ref(DarkMode.Dark);
+
+    this.heartbeatInterval = ref(1000);
+    this.manualControlInterval = ref(40);
   }
 }
 
