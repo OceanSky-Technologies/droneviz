@@ -20,6 +20,9 @@ export default defineNuxtConfig({
   primevue: {
     importTheme: { from: "@/assets/theme.ts" },
   },
+  tailwindcss: {
+    configPath: "tailwind.config.js",
+  },
   htmlValidator: {
     options: {
       rules: {
@@ -203,7 +206,7 @@ export default defineNuxtConfig({
   // },
   typescript: {
     strict: true,
-    // typeCheck: true, // breaks nuxt
+    // typeCheck: true, // breaks Nuxt
   },
   vite: {
     // Better support for Tauri CLI output

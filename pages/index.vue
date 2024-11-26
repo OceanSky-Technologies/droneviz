@@ -1,22 +1,16 @@
 <script lang="ts" setup>
 import CesiumViewer from "~/components/CesiumViewer.vue";
 import DarkToggle from "~/components/DarkToggle.vue";
-import { droneCollection, DroneEntity } from "~/components/Drone";
-import { UdpOptions } from "~/types/DroneConnectionOptions";
+import DroneMenu from "~/components/DroneMenu.vue";
+import DroneRightClickMenu from "~/components/DroneRightClickMenu.vue";
+import MainToolbar from "~/components/MainToolbar.vue";
 
-function connect() {
-  // add a single drone for now
-  // droneCollection.addDrone(new DroneEntity(new TcpOptions("127.0.0.1", 55555)));
-  droneCollection.addDrone(new DroneEntity(new UdpOptions()));
+// flag to indicate if Cesium is initialized. Used to delay mounting child components
+const cesiumInitialized = ref(false);
 
-  droneCollection.connectAll();
-}
-
-function disconnect() {
-  droneCollection.disconnectAll();
-
-  droneCollection.removeAllDrones();
-}
+eventBus.on("cesiumInitialized", () => {
+  cesiumInitialized.value = true;
+});
 </script>
 
 <template>
@@ -28,16 +22,18 @@ function disconnect() {
       style="display: flex; gap: 5px; position: absolute; top: 5px; left: 5px"
     >
       <DarkToggle />
-      <Button label="Connect" @click="connect" />
-      <Button label="Disconnect" @click="disconnect" />
-      <CameraWindow />
 
       <div id="demoMenu" />
     </div>
+
+    <DroneRightClickMenu style="position: absolute" />
+    <MainToolbar v-if="cesiumInitialized" id="mainToolbar" />
 
     <div
       id="toolbarTopRight"
       style="display: flex; gap: 5px; position: absolute; top: 5px; right: 5px"
     ></div>
+
+    <DroneMenu />
   </div>
 </template>

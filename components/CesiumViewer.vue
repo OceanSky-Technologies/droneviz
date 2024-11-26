@@ -4,11 +4,13 @@ import { createViewerOptions } from "~/utils/CesiumViewerOptions";
 import { getCesiumViewer, initCesium } from "./CesiumViewerWrapper";
 import { initDemo } from "~/demo/Demo";
 import { Math, Cartesian3 } from "cesium";
-import { onMounted, ref } from "vue";
-import CesiumMouseHandler from "./CesiumMouseHandler";
-import MainToolbar from "./MainToolbar.vue";
+import { onMounted } from "vue";
 import type { Viewer, Cesium3DTileset } from "cesium";
 import { settings } from "../utils/Settings";
+import { init as initLeftClickHandler } from "./LeftClickHandler";
+import { init as initDoubleClickHandler } from "./DoubleClickHandler";
+import { init as initRightClickHandler } from "./RightClickHandler";
+import { init as initMouseMoveHandler } from "./MouseMoveHandler";
 
 export interface CesiumViewerProps {
   mockViewerOptions?: Viewer.ConstructorOptions | undefined;
@@ -17,93 +19,79 @@ export interface CesiumViewerProps {
 
 const props = defineProps<CesiumViewerProps>();
 
-// flag to indicate if Cesium is initialized. Used to delay mounting child components
-const cesiumInitialized = ref(false);
-
-defineExpose({
-  // add variables / functions to define the interface
-});
 /**
- * Cesium container class.
+ * Initialize Cesium.
  */
-class CesiumViewerImpl {
-  mouseHandlers: CesiumMouseHandler | undefined;
-
-  /**
-   * Initialize Cesium.
-   */
-  async init() {
-    if (props.mockViewerOptions) {
-      console.info("Cesium setup using mockViewerOptions");
-      await initCesium(props.mockViewerOptions, props.googleTilesetMock);
-    } else {
-      await initCesium(createViewerOptions(), props.googleTilesetMock);
-    }
-
-    cesiumInitialized.value = true;
-
-    this.mouseHandlers = new CesiumMouseHandler();
-
-    if (settings.demoMode.value == true) initDemo();
-
-    this.resetCamera();
+async function init() {
+  if (props.mockViewerOptions) {
+    console.info("Cesium setup using mockViewerOptions");
+    await initCesium(props.mockViewerOptions, props.googleTilesetMock);
+  } else {
+    await initCesium(createViewerOptions(), props.googleTilesetMock);
   }
 
-  /**
-   * Resets the camera.
-   */
-  async resetCamera() {
-    // wait for Cesium to initialize for a smooth transition
-    await new Promise((r) => setTimeout(r, 1000));
+  initLeftClickHandler();
+  initDoubleClickHandler();
+  initRightClickHandler();
+  initMouseMoveHandler();
 
-    getCesiumViewer().scene.requestRender();
-    const options = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0,
-    };
+  if (settings.demoMode.value == true) initDemo();
 
-    navigator.geolocation.getCurrentPosition(
-      // position successfully obtained
-      (pos) => {
-        const crd = pos.coords;
-
-        getCesiumViewer().camera.flyTo({
-          destination: Cartesian3.fromDegrees(crd.longitude, crd.latitude, 400),
-          orientation: {
-            heading: Math.toRadians(0.0),
-            pitch: Math.toRadians(-90.0),
-          },
-        });
-      },
-      // position successfully obtained
-      (err) => {
-        showToast(
-          "Info",
-          "Couldn't get your location. Please enable location services and make sure you're connected to the internet. " +
-            JSON.stringify(err),
-          ToastSeverity.Info,
-        );
-
-        // fly the camera to San Francisco
-        getCesiumViewer().camera.flyTo({
-          destination: Cartesian3.fromDegrees(-122.4175, 37.655, 400),
-          orientation: {
-            heading: Math.toRadians(0.0),
-            pitch: Math.toRadians(-15.0),
-          },
-        });
-      },
-      options,
-    );
-  }
+  resetCamera();
 }
 
-const cesiumViewerImpl: CesiumViewerImpl = new CesiumViewerImpl();
+/**
+ * Resets the camera.
+ */
+async function resetCamera() {
+  // wait for Cesium to initialize for a smooth transition
+  await new Promise((r) => setTimeout(r, 1000));
+
+  getCesiumViewer().scene.requestRender();
+  const options = {
+    enableHighAccuracy: true,
+    timeout: 1000,
+    maximumAge: 0,
+  };
+
+  navigator.geolocation.getCurrentPosition(
+    // position successfully obtained
+    (pos) => {
+      const crd = pos.coords;
+
+      getCesiumViewer().camera.flyTo({
+        destination: Cartesian3.fromDegrees(crd.longitude, crd.latitude, 400),
+        orientation: {
+          heading: Math.toRadians(0.0),
+          pitch: Math.toRadians(-90.0),
+        },
+      });
+    },
+    // position successfully obtained
+    (err) => {
+      showToast(
+        "Info",
+        "Couldn't get your location. Please enable location services and make sure you're connected to the internet. " +
+          JSON.stringify(err),
+        ToastSeverity.Info,
+      );
+
+      // fly the camera to San Francisco
+      getCesiumViewer().camera.flyTo({
+        destination: Cartesian3.fromDegrees(-122.4175, 37.655, 400),
+        orientation: {
+          heading: Math.toRadians(0.0),
+          pitch: Math.toRadians(-15.0),
+        },
+      });
+    },
+    options,
+  );
+}
 
 onMounted(async () => {
   try {
-    await cesiumViewerImpl?.init();
+    await init();
   } catch (e) {
     if (e instanceof Error) {
       console.error("Error initializing Cesium viewer:", e.message);
@@ -116,8 +104,6 @@ onMounted(async () => {
 <template>
   <div class="relative">
     <div id="cesiumContainer" />
-
-    <MainToolbar v-if="cesiumInitialized" id="mainToolbar" />
   </div>
 </template>
 
@@ -128,13 +114,5 @@ onMounted(async () => {
   margin: 0;
   padding: 0;
   overflow: hidden;
-}
-
-#mainToolbar {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, 0);
-  z-index: 10;
 }
 </style>
