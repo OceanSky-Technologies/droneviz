@@ -1,68 +1,75 @@
 <script lang="ts" setup>
 import { onMounted } from "vue";
 import { eventBus } from "~/utils/Eventbus";
-import { Menu } from "primevue";
+const visible = ref(false);
 
-const menuRef = useTemplateRef<InstanceType<typeof Menu>>("menu");
-const visible = ref(false); // Visibility state of the menu
+function flyTo() {
+  console.log("Fly to clicked");
+  hide();
+}
 
-// Define the menu items
-const menuItems = [
-  {
-    label: "Fly to",
-    command: () => {
-      console.log("Option 1 selected");
-    },
-  },
-];
+const position = ref({ x: 0, y: 0 });
 
-const onHide = () => {
-  visible.value = false; // Reset visibility on menu hide
+import type { CSSProperties } from "vue";
+import type { Entity } from "cesium";
+
+const popupStyle = computed<CSSProperties>(() => ({
+  top: `${position.value.y}px`,
+  left: `${position.value.x}px`,
+}));
+
+function show(coords: { x: number; y: number }) {
+  position.value = coords;
+  visible.value = true;
+}
+
+const hide = () => {
+  visible.value = false;
 };
 
+function handleCesiumRightClick({
+  entity,
+  position,
+}: {
+  entity: Entity | undefined;
+  position: { x: number; y: number };
+}) {
+  if (entity) {
+    show({ x: position.x, y: position.y });
+  } else {
+    hide();
+  }
+}
+
 onMounted(() => {
-  eventBus.on("cesiumRightClick", ({ entity, position }) => {
-    if (!menuRef.value) {
-      console.error("Menu reference not found");
-      return;
-    }
+  eventBus.on("cesiumRightClick", handleCesiumRightClick);
+  eventBus.on("cesiumLeftClick", hide);
+  eventBus.on("cesiumCameraMoveStart", hide);
+});
 
-    console.log("Right click event received");
-    console.log(entity);
-    console.log(position);
-    if (entity) {
-      const mouseEvent = {
-        pageX: position.x,
-        pageY: position.y,
-        preventDefault: () => {}, // Stub method for compatibility
-      } as MouseEvent;
-
-      menuRef.value.show(mouseEvent);
-      visible.value = true;
-    } else {
-      console.log("hide");
-      menuRef.value.hide();
-      visible.value = false;
-    }
-  });
-
-  eventBus.on("cesiumLeftClick", () => {
-    if (!menuRef.value) {
-      console.error("Menu reference not found");
-      return;
-    }
-
-    console.log("hide");
-    menuRef.value.hide();
-    visible.value = false;
-  });
+onBeforeUnmount(() => {
+  eventBus.off("cesiumRightClick", handleCesiumRightClick);
+  eventBus.off("cesiumLeftClick", hide);
+  eventBus.off("cesiumCameraMoveStart", hide);
 });
 </script>
 
 <template>
-  <div>
-    <Menu ref="menu" :model="menuItems" v-show="visible" @hide="onHide" />
+  <div
+    v-if="visible"
+    :style="popupStyle"
+    class="popup-menu bg-white dark:bg-black"
+    @click.self="hide"
+  >
+    <Button label="Fly to" @click="flyTo" />
   </div>
 </template>
 
-<style scoped lang="postcss"></style>
+<style scoped lang="postcss">
+.popup-menu {
+  position: absolute;
+  border-radius: 5px;
+  padding: 10px;
+  z-index: 1000;
+}
+</style>

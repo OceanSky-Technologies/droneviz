@@ -4,13 +4,7 @@ import DarkToggle from "~/components/DarkToggle.vue";
 import DroneMenu from "~/components/DroneMenu.vue";
 import DroneRightClickMenu from "~/components/DroneRightClickMenu.vue";
 import MainToolbar from "~/components/MainToolbar.vue";
-
-// flag to indicate if Cesium is initialized. Used to delay mounting child components
-const cesiumInitialized = ref(false);
-
-eventBus.on("cesiumInitialized", () => {
-  cesiumInitialized.value = true;
-});
+import { cesiumInitialized } from "~/components/CesiumViewerWrapper";
 </script>
 
 <template>
@@ -26,7 +20,7 @@ eventBus.on("cesiumInitialized", () => {
       <div id="demoMenu" />
     </div>
 
-    <DroneRightClickMenu style="position: absolute" />
+    <DroneRightClickMenu />
     <MainToolbar v-if="cesiumInitialized" id="mainToolbar" />
 
     <div

@@ -94,9 +94,11 @@ function trackUntrack() {
 }
 
 onMounted(() => {
-  eventBus.on("cesiumLeftClick", (value: Entity | undefined) =>
-    handleCesiumClick(value),
-  );
+  eventBus.on("cesiumLeftClick", handleCesiumClick);
+});
+
+onUnmounted(() => {
+  eventBus.off("cesiumLeftClick", handleCesiumClick);
 });
 </script>
 

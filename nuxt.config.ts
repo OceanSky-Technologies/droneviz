@@ -33,16 +33,70 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      title: "Droneviz",
+      htmlAttrs: {
+        lang: "en",
+      },
+      link: [
+        {
+          rel: "icon",
+          href: "/oceansky-logo.svg",
+          sizes: "any",
+          type: "image/svg+xml",
+        },
+        {
+          rel: "apple-touch-icon",
+          href: "/oceansky-logo.svg",
+          sizes: "any",
+          type: "image/svg+xml",
+        },
+        {
+          rel: "mask-icon",
+          href: "/oceansky-logo.svg",
+          color: "#242424",
+        },
+        {
+          rel: "dns-prefetch",
+          href: "https://tile.googleapis.com",
+        },
+        {
+          rel: "preconnect",
+          href: "https://tile.googleapis.com",
+          crossorigin: "anonymous",
+        },
+        {
+          rel: "dns-prefetch",
+          href: "https://assets.ion.cesium.com",
+        },
+        {
+          rel: "preconnect",
+          href: "https://assets.ion.cesium.com",
+          crossorigin: "anonymous",
+        },
+        {
+          rel: "dns-prefetch",
+          href: "https://dev.virtualearth.net",
+        },
+        {
+          rel: "preconnect",
+          href: "https://dev.virtualearth.net",
+          crossorigin: "anonymous",
+        },
+      ],
+      meta: [{ name: "theme-color", content: "#242424" }],
       script: [
         {
           //must match the nitro config below for where the files are being served publicly
           children: `window.CESIUM_BASE_URL='_nuxt/Cesium';`,
         },
+        {
+          // Prevent right-click context menu globally
+          children:
+            'document.addEventListener("contextmenu", (event) => { \
+               event.preventDefault(); \
+             });',
+        },
       ],
-      htmlAttrs: {
-        lang: "en",
-      },
-      title: "Droneviz",
     },
   },
   runtimeConfig: {

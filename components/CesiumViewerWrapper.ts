@@ -6,7 +6,6 @@ import {
   Viewer,
 } from "cesium";
 import { settings } from "../utils/Settings";
-import { eventBus } from "~/utils/Eventbus";
 import { selectedEntityHighlighter } from "./LeftClickHandler";
 import { mouseOverHighlighter } from "./MouseMoveHandler";
 import CesiumHighlighter from "./CesiumHighlighter.vue";
@@ -21,6 +20,8 @@ Ion.defaultAccessToken =
 let viewer: Viewer | undefined;
 let googleTileset: Cesium3DTileset | undefined;
 export let trackedEntityHighlighter: CesiumHighlighter;
+
+export let cesiumInitialized: Ref<boolean> = ref(false);
 
 /**
  * Initialize Cesium viewer.
@@ -56,7 +57,7 @@ export async function initCesium(
     Color.fromCssColorString(Colors.GOLD),
   );
 
-  eventBus.emit("cesiumInitialized");
+  cesiumInitialized.value = true;
 }
 
 /**

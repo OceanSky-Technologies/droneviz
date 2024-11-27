@@ -11,6 +11,7 @@ import { init as initLeftClickHandler } from "./LeftClickHandler";
 import { init as initDoubleClickHandler } from "./DoubleClickHandler";
 import { init as initRightClickHandler } from "./RightClickHandler";
 import { init as initMouseMoveHandler } from "./MouseMoveHandler";
+import { init as initCameraMoveHandler } from "./CameraMoveHandler";
 
 export interface CesiumViewerProps {
   mockViewerOptions?: Viewer.ConstructorOptions | undefined;
@@ -34,6 +35,7 @@ async function init() {
   initDoubleClickHandler();
   initRightClickHandler();
   initMouseMoveHandler();
+  initCameraMoveHandler();
 
   if (settings.demoMode.value == true) initDemo();
 
