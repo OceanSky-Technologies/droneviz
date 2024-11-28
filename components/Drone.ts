@@ -16,7 +16,6 @@ import {
 } from "cesium";
 import type {
   MavlinkMessageInterface,
-  ProtocolInterface,
   QueryResult,
 } from "~/types/MessageInterface";
 import {
@@ -52,10 +51,7 @@ const defaultFetchOptions = {
   baseURL: useRuntimeConfig().public.baseURL as string,
 };
 
-let resolveProtocolPromise: (value: ProtocolInterface) => void;
-let rejectProtocolPromise: () => void;
-
-export class DroneEntity {
+export class Drone {
   connectionOptions: SerialOptions | TcpOptions | UdpOptions;
   private signatureKey?: string;
   private eventSource?: EventSource;
@@ -68,9 +64,6 @@ export class DroneEntity {
   lastHeartbeat?: Heartbeat;
   homePosition?: HomePosition;
   lastAttitude?: Attitude;
-
-  // protocolPromise = new Promise<ProtocolInterface>(() => {});
-  // dataReceived: boolean = false;
 
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private manualControlInterval: NodeJS.Timeout | null = null;
@@ -116,8 +109,6 @@ export class DroneEntity {
             `Data stream error for connection ${JSON.stringify(this.connectionOptions)}: ${JSON.stringify(error)}`,
             ToastSeverity.Warn,
           );
-
-          rejectProtocolPromise();
 
           this.eventSource?.close();
         };

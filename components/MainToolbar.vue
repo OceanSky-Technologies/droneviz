@@ -487,6 +487,11 @@ onMounted(async () => {
 
 <style scoped lang="postcss">
 .main-toolbar {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 10;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
   border-bottom-left-radius: 10px;

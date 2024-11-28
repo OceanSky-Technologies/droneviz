@@ -1,6 +1,14 @@
 import type { Cesium3DTileset } from "cesium";
-import { createGooglePhotorealistic3DTileset, Ion, Viewer } from "cesium";
+import {
+  Color,
+  createGooglePhotorealistic3DTileset,
+  Ion,
+  Viewer,
+} from "cesium";
 import { settings } from "../utils/Settings";
+import { selectedEntityHighlighter } from "./LeftClickHandler";
+import { mouseOverHighlighter } from "./MouseMoveHandler";
+import CesiumHighlighter from "./CesiumHighlighter.vue";
 
 Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTJmM2RmYi0wMDI3LTQxYmMtYjY1NS00MzhmYzg4Njk1NTMiLCJpZCI6MjExMDU5LCJpYXQiOjE3MTM5OTExNTh9.cgvEwVgVgDQRqLsZzWCubdKnui9qoZAXTPCRbtVzZmo";
@@ -11,6 +19,9 @@ Ion.defaultAccessToken =
 
 let viewer: Viewer | undefined;
 let googleTileset: Cesium3DTileset | undefined;
+export let trackedEntityHighlighter: CesiumHighlighter;
+
+export let cesiumInitialized: Ref<boolean> = ref(false);
 
 /**
  * Initialize Cesium viewer.
@@ -40,6 +51,13 @@ export async function initCesium(
   getCesiumViewer().scene.globe.depthTestAgainstTerrain = true;
 
   if (settings.google3DTilesEnabled.value) await initGoogleTileset(tilesetMock);
+
+  trackedEntityHighlighter = new CesiumHighlighter(
+    getCesiumViewer().scene,
+    Color.fromCssColorString(Colors.GOLD),
+  );
+
+  cesiumInitialized.value = true;
 }
 
 /**
@@ -154,4 +172,38 @@ export function disableGoogleTiles() {
   getCesiumViewer().scene.globe.show = true;
   getCesiumViewer().scene.requestRender();
   console.log("3D Google tiles disabled");
+}
+
+/**
+ * If one highlighter contains entities set requestRenderMode to false otherwise set it to true.
+ * This makes animations run if an entity is selected.
+ * Also renders the scene once.
+ */
+export function updateRequestRenderMode() {
+  if (!selectedEntityHighlighter) {
+    console.log("selectedEntityHighlighter is undefined");
+    return;
+  }
+
+  if (!mouseOverHighlighter) {
+    console.log("mouseOverHighlighter is undefined");
+    return;
+  }
+
+  if (!trackedEntityHighlighter) {
+    console.log("trackedEntityHighlighter is undefined");
+    return;
+  }
+
+  if (
+    !selectedEntityHighlighter.empty() ||
+    !mouseOverHighlighter.empty() ||
+    !trackedEntityHighlighter.empty()
+  ) {
+    getCesiumViewer().scene.requestRenderMode = false;
+  } else {
+    getCesiumViewer().scene.requestRenderMode = true;
+  }
+
+  getCesiumViewer().scene.requestRender();
 }

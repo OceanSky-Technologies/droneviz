@@ -27,6 +27,7 @@
     "@vite-pwa/nuxt": "^0.10.6",
     "cesium": "^1.123.1",
     "egm96-universal": "^1.1.1",
+    "mitt": "^3.0.1",
     "node-geocoder": "^4.4.1",
     "node-mavlink": "^2.0.7",
     "nuxt": "^3.14.1592",

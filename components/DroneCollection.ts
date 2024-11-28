@@ -1,10 +1,10 @@
 import { getCesiumViewer } from "./CesiumViewerWrapper";
-import type { DroneEntity } from "./Drone";
+import type { Drone } from "./Drone";
 
 class DroneCollection {
-  private drones: DroneEntity[] = [];
+  private drones: Drone[] = [];
 
-  addDrone(drone: DroneEntity): DroneEntity {
+  addDrone(drone: Drone): Drone {
     const num = this.drones.push(drone);
 
     const entity = getCesiumViewer().entities.add({
