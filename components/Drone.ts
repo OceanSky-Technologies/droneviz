@@ -25,11 +25,13 @@ import {
   AutotuneAxis,
   CommandAck,
   CommandLong,
+  DoRepositionCommand,
   GlobalPositionInt,
   HomePosition,
   LocalPositionNed,
   ManualControl,
   MavCmd,
+  MavDoRepositionFlags,
   MavResult,
   Ping,
   PositionTargetLocalNed,
@@ -126,14 +128,14 @@ export class Drone {
     );
 
     // send heartbeat
-    if (settings.heartbeatInterval) {
+    if (settings.heartbeatInterval.value > 0) {
       this.heartbeatInterval = setInterval(() => {
         this.sendHeartbeat();
       }, settings.heartbeatInterval.value);
     }
 
     // send manual control data
-    if (settings.manualControlInterval) {
+    if (settings.manualControlInterval.value > 0) {
       this.manualControlInterval = setInterval(() => {
         this.sendManualControl();
       }, settings.manualControlInterval.value);
@@ -379,12 +381,12 @@ export class Drone {
     );
   }
 
-  async disarm() {
+  async disarm(force?: boolean) {
     const command = new CommandLong();
     command.command = MavCmd.COMPONENT_ARM_DISARM;
     command.targetSystem = 1;
     command._param1 = 0; // arm
-    command._param2 = 21196; // force
+    command._param2 = force ? 21196 : 0;
     command._param3 = NaN;
     command._param4 = NaN;
     command._param5 = NaN;
@@ -496,6 +498,57 @@ export class Drone {
         return [false, undefined];
       },
       "Landing command timed out",
+    );
+  }
+
+  async doReposition(latitude: number, longitude: number, altitude: number) {
+    if (
+      isNaN(latitude) ||
+      isNaN(longitude) ||
+      isNaN(altitude) ||
+      altitude < 0 ||
+      latitude <= 0 ||
+      longitude <= 0
+    )
+      throw new Error("Invalid coordinates");
+
+    const command = new DoRepositionCommand();
+    command.latitude = latitude * 1e7;
+    command.longitude = longitude * 1e7;
+    command.altitude = altitude;
+    command.targetSystem = 1;
+    command.yaw = NaN;
+    command.speed = -1;
+    command.bitmask = MavDoRepositionFlags.CHANGE_MODE;
+
+    await this.sendAndExpectResponse(
+      () => this.send("/api/drone/commandInt", { data: command }),
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (message.result === MavResult.ACCEPTED) return true;
+            if (message.result === MavResult.IN_PROGRESS) return true;
+          }
+        }
+        return false;
+      },
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (
+              message.result !== MavResult.ACCEPTED &&
+              message.result !== MavResult.IN_PROGRESS
+            ) {
+              return [
+                true,
+                "Repositioning failed: " + MavResult[message.result],
+              ];
+            }
+          }
+        }
+        return [false, undefined];
+      },
+      "Repositioning command timed out",
     );
   }
 

@@ -1,0 +1,111 @@
+<template>
+  <div class="button-container">
+    <Button
+      :label="label"
+      class="progress-button"
+      :style="{ background: backgroundStyle }"
+      @mousedown="startProgress"
+      @mouseup="resetProgress"
+      @mouseleave="resetProgress"
+    >
+      <template #default>
+        <div class="button-content">
+          <slot name="icon" />
+          <span>{{ label }}</span>
+        </div>
+      </template>
+    </Button>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, computed, defineProps, defineEmits } from "vue";
+import { Button } from "primevue";
+
+const props = defineProps({
+  label: {
+    type: String,
+    required: true,
+  },
+  time: {
+    type: Number,
+    default: 1.5, // seconds
+  },
+});
+
+// Emit click event
+const emit = defineEmits(["click"]);
+
+// Progress tracking
+const progress = ref<number>(0);
+let interval: NodeJS.Timeout | null = null;
+const isHolding = ref<boolean>(false);
+
+const updateInterval = 20; // Update every 50ms
+
+// Dynamic gradient background
+const backgroundStyle = computed(() => {
+  return `linear-gradient(to right, var(--color-gold) ${progress.value}%, var(--color-dark-blue) ${progress.value}%)`;
+});
+
+// Start the progress bar
+const startProgress = (): void => {
+  isHolding.value = true;
+  progress.value = 0;
+
+  interval = setInterval(() => {
+    if (progress.value < 100) {
+      progress.value += 100 / ((props.time * 1000) / updateInterval);
+    } else {
+      stopProgress();
+      emit("click"); // Emit the click event
+    }
+  }, updateInterval);
+};
+
+// Reset progress
+const resetProgress = (): void => {
+  stopProgress();
+  progress.value = 0;
+};
+
+// Stop the progress bar
+const stopProgress = (): void => {
+  if (interval) {
+    clearInterval(interval);
+    interval = null;
+  }
+  isHolding.value = false;
+};
+</script>
+
+<style scoped lang="postcss">
+.button-container {
+  display: inline-block;
+  position: relative;
+}
+
+.progress-button {
+  position: relative;
+  display: inline-flex;
+  border: none !important;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  transition: background 50ms linear;
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white; /* Ensure text is visible */
+  z-index: 1;
+}
+
+.p-button {
+  position: relative; /* Ensure proper layout */
+}
+</style>

@@ -10,6 +10,8 @@ import {
   getCesiumViewer,
   updateRequestRenderMode,
 } from "./CesiumViewerWrapper";
+import { droneCollection } from "./DroneCollection";
+import CesiumViewer from "./CesiumViewer.vue";
 
 let mouseClickHandler: ScreenSpaceEventHandler;
 export let selectedEntityHighlighter: CesiumHighlighter;
@@ -44,11 +46,17 @@ async function mouseClickListener(
   positionEvent: ScreenSpaceEventHandler.PositionedEvent,
 ) {
   const entity = await getCesiumViewer().scene.pick(positionEvent.position);
+  // console.log("Selected entity:");
+  // console.log(entity);
+  // getCesiumViewer().trackedEntity = entity.id;
   if (
     !defined(entity) ||
     !defined(entity.primitive) ||
     !defined(entity.primitive instanceof Model)
   ) {
+    console.log("Unselected all entities");
+    selectedEntityHighlighter.clear();
+    droneCollection.selectedEntity.value = undefined;
     eventBus.emit("cesiumLeftClick", undefined);
     return;
   }
@@ -58,6 +66,7 @@ async function mouseClickListener(
     console.log(entity);
 
     selectedEntityHighlighter.add(entity);
+    droneCollection.selectedEntity.value = entity;
 
     eventBus.emit("cesiumLeftClick", entity);
   } else {
@@ -65,11 +74,10 @@ async function mouseClickListener(
     console.log(entity);
 
     selectedEntityHighlighter.remove(entity);
+    droneCollection.selectedEntity.value = undefined;
 
     eventBus.emit("cesiumLeftClick", entity);
   }
-
-  console.log(selectedEntityHighlighter.getEntities());
 
   updateRequestRenderMode();
 }

@@ -10,14 +10,16 @@
   -moz-osx-font-smoothing: grayscale;
   font-family: "Tahoma", Verdana, monospace;
 
-  --color-darkblue: #037dba;
+  --color-dark-blue: #037dba;
   --color-blue: #12a9fc;
-  --color-lightblue: #f0f9ff;
+  --color-light-blue: #f0f9ff;
   --color-gold: #edbc7a;
-  --color-darkgrey: #242424;
-  --color-lightgrey: #f4f4f4;
+  --color-dark-grey: #242424;
+  --color-light-grey: #f4f4f4;
   --color-red: #ff3232;
   --color-green: #38c695;
+  --color-dark-green: #32b286;
+  --color-orange: #ff8800;
 
   /* default color palette */
   --p-primary-0: #ffffff !important;
@@ -32,6 +34,10 @@
   --p-primary-800: var(--p-sky-800) !important;
   --p-primary-900: var(--p-sky-900) !important;
   --p-primary-950: var(--p-sky-950) !important;
+}
+
+svg {
+  fill: #ffffff;
 }
 
 /* default */
@@ -50,8 +56,41 @@
   column-gap: 7px !important;
 }
 
+.p-button {
+  background-color: var(--color-dark-blue) !important;
+  border-color: var(--color-dark-blue) !important;
+  color: #ffffff !important;
+}
+
+.p-button-danger {
+  background-color: var(--color-red) !important;
+  border-color: var(--color-red) !important;
+  color: #ffffff !important;
+}
+
+.p-button-warn {
+  background-color: var(--color-orange) !important;
+  border-color: var(--color-orange) !important;
+  color: #ffffff !important;
+}
+
+.p-button-success {
+  background-color: var(--color-dark-green) !important;
+  border-color: var(--color-dark-green) !important;
+  color: #ffffff !important;
+}
+
 .p-toggleswitch {
   padding: 0 !important;
+}
+
+.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
+  background-color: var(--color-gold) !important;
+}
+
+.p-dialog-footer {
+  justify-content: center !important;
+  gap: 10px !important;
 }
 
 /* hide cesium toolbar */
@@ -63,4 +102,13 @@
   position: absolute;
   top: 5px !important;
   right: 5px !important;
+}
+
+.cesium-performanceDisplay-ms,
+.cesium-performanceDisplay-fps {
+  color: var(--color-blue) !important;
+}
+
+.cesium-performanceDisplay-throttled {
+  color: var(--color-gold) !important;
 }

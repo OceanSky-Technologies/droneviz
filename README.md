@@ -74,3 +74,7 @@ pnpm vitest --ui
 ```
 
 Alternatively, the `vscode` configuration comes with the `Testing` tab fully set up from where tests can also be run.
+
+## Development
+
+Icons: Use svgs (material outline rounded) from <https://icones.js.org/collection/material-symbols>.

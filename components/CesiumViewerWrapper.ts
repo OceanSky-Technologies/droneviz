@@ -123,12 +123,15 @@ async function initGoogleTileset(tilesetMock?: Cesium3DTileset) {
   if (settings.googleApiKey.value && settings.googleApiKey.value !== "")
     googleApiKey = settings.googleApiKey.value;
 
-  const tileset = await createGooglePhotorealistic3DTileset(googleApiKey, {
-    //maximumScreenSpaceError: 8, // quality
-    preloadFlightDestinations: true,
-    showCreditsOnScreen: true,
-    projectTo2D: true,
-  });
+  const tileset = await createGooglePhotorealistic3DTileset(
+    { key: googleApiKey },
+    {
+      //maximumScreenSpaceError: 8, // quality
+      preloadFlightDestinations: true,
+      showCreditsOnScreen: true,
+      projectTo2D: true,
+    },
+  );
 
   googleTileset = getCesiumViewer().scene.primitives.add(tileset);
 

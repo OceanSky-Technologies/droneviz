@@ -46,7 +46,7 @@ class Settings {
     this.darkMode = ref(DarkMode.Dark);
 
     this.heartbeatInterval = ref(1000);
-    this.manualControlInterval = ref(40);
+    this.manualControlInterval = ref(0);
   }
 }
 

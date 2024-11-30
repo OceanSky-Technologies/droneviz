@@ -1,4 +1,4 @@
-import type { Entity, Event as CesiumEvent } from "cesium";
+import type { Entity, Event as CesiumEvent, Cartographic } from "cesium";
 import mitt from "mitt";
 import type { Drone } from "~/components/Drone";
 
@@ -13,6 +13,7 @@ export type Events = {
   cesiumRightClick: {
     entity: Entity | undefined;
     position: { x: number; y: number };
+    cartographic: Cartographic;
   };
   cesiumCameraMoveStart: CesiumEvent;
 };

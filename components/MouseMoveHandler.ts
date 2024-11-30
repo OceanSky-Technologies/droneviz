@@ -48,7 +48,7 @@ export function init() {
     label: {
       show: false,
       showBackground: true,
-      font: "14px monospace",
+      font: "15px monospace", // Ensure 'monospace' is a fallback font
       horizontalOrigin: HorizontalOrigin.LEFT,
       verticalOrigin: VerticalOrigin.TOP,
       pixelOffset: new Cartesian2(15, 0),

@@ -3,6 +3,7 @@ import type { Drone } from "./Drone";
 
 class DroneCollection {
   private drones: Drone[] = [];
+  selectedEntity: Ref<any> = ref(undefined);
 
   addDrone(drone: Drone): Drone {
     const num = this.drones.push(drone);
@@ -12,7 +13,7 @@ class DroneCollection {
       model: {
         uri: new URL("assets/models/Skywinger.glb", import.meta.url).href,
         scale: 1,
-        minimumPixelSize: 50,
+        minimumPixelSize: 75,
         maximumScale: 20000,
       },
     });

@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import { defined, Entity } from "cesium";
+import { defined } from "cesium";
 import { ref, onMounted } from "vue";
 import { eventBus } from "~/utils/Eventbus";
-import { selectedEntityHighlighter } from "./LeftClickHandler";
 import {
   getCesiumViewer,
   trackedEntityHighlighter,
@@ -10,9 +9,14 @@ import {
 } from "./CesiumViewerWrapper";
 import { Button } from "primevue";
 import { droneCollection } from "./DroneCollection";
+import Landing from "@/components/icons/Landing.vue";
+import Takeoff from "@/components/icons/Takeoff.vue";
+import Warning from "@/components/icons/Warning.vue";
+import { useConfirm } from "primevue/useconfirm";
+
+const confirm = useConfirm();
 
 const isMenuOpen = ref(false);
-let selectedEntity: any = undefined;
 
 const trackUntrackButtonLabel = ref("Track");
 const trackUntrackButtonIcon = ref("pi pi-lock-open");
@@ -21,22 +25,21 @@ function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value;
 }
 
+function showMenu() {
+  isMenuOpen.value = true;
+}
+
 function closeMenu() {
   isMenuOpen.value = false;
 }
 
-function handleCesiumClick(entity: Entity | undefined) {
-  selectedEntity = entity;
-
-  if (selectedEntity) {
-    if (!selectedEntityHighlighter.contains(selectedEntity))
-      isMenuOpen.value = false;
-    else isMenuOpen.value = true;
+watch(droneCollection.selectedEntity, (newValue) => {
+  if (newValue) {
+    showMenu();
   } else {
-    isMenuOpen.value = false;
-    selectedEntity = undefined;
+    closeMenu();
   }
-}
+});
 
 async function arm() {
   if (droneCollection.getNumDrones() === 0) {
@@ -44,17 +47,28 @@ async function arm() {
     return;
   }
 
-  try {
-    const drone = droneCollection.getDrone(0);
-    await drone.arm();
-    showToast("Armed!", ToastSeverity.Info);
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(e.message, ToastSeverity.Error);
-    } else {
-      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
-    }
-  }
+  confirm.require({
+    message:
+      "Are you sure you want to arm the aircraft?\nPlease ensure the environment is safe, and all pre-flight checks are complete before proceeding.",
+    header: "Arming",
+    icon: markRaw(Warning) as any,
+    rejectLabel: "CANCEL",
+    acceptLabel: "ARM",
+    acceptClass: "p-button-danger",
+    accept: async () => {
+      try {
+        const drone = droneCollection.getDrone(0);
+        await drone.arm();
+        showToast("Armed!", ToastSeverity.Info);
+      } catch (e) {
+        if (e instanceof Error) {
+          showToast(e.message, ToastSeverity.Error);
+        } else {
+          showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+        }
+      }
+    },
+  });
 }
 
 async function disarm() {
@@ -63,17 +77,28 @@ async function disarm() {
     return;
   }
 
-  try {
-    const drone = droneCollection.getDrone(0);
-    await drone.disarm();
-    showToast("Disarmed!", ToastSeverity.Info);
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(e.message, ToastSeverity.Error);
-    } else {
-      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
-    }
-  }
+  confirm.require({
+    message:
+      "Are you sure you want to disarm the aircraft?\nDisarming while airborne will cause the aircraft to fall immediately. Proceed only if it is safe to do so.",
+    header: "Disarming",
+    icon: markRaw(Warning) as any,
+    rejectLabel: "CANCEL",
+    acceptLabel: "DISARM",
+    acceptClass: "p-button-danger",
+    accept: async () => {
+      try {
+        const drone = droneCollection.getDrone(0);
+        await drone.disarm(true);
+        showToast("Disarmed!", ToastSeverity.Info);
+      } catch (e) {
+        if (e instanceof Error) {
+          showToast(e.message, ToastSeverity.Error);
+        } else {
+          showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+        }
+      }
+    },
+  });
 }
 
 async function takeoff() {
@@ -82,17 +107,27 @@ async function takeoff() {
     return;
   }
 
-  try {
-    const drone = droneCollection.getDrone(0);
-    await drone.takeoff();
-    showToast("Takeoff!", ToastSeverity.Info);
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(e.message, ToastSeverity.Error);
-    } else {
-      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
-    }
-  }
+  confirm.require({
+    message: "Ensure that the takeoff area is clear.",
+    header: "Takeoff",
+    icon: markRaw(Takeoff) as any,
+    rejectLabel: "CANCEL",
+    acceptLabel: "TAKEOFF",
+    acceptClass: "p-button-success",
+    accept: async () => {
+      try {
+        const drone = droneCollection.getDrone(0);
+        await drone.takeoff();
+        showToast("Takeoff!", ToastSeverity.Info);
+      } catch (e) {
+        if (e instanceof Error) {
+          showToast(e.message, ToastSeverity.Error);
+        } else {
+          showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+        }
+      }
+    },
+  });
 }
 
 async function land() {
@@ -101,17 +136,27 @@ async function land() {
     return;
   }
 
-  try {
-    const drone = droneCollection.getDrone(0);
-    await drone.land();
-    showToast("Landing!", ToastSeverity.Info);
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(e.message, ToastSeverity.Error);
-    } else {
-      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
-    }
-  }
+  confirm.require({
+    message: "Confirm that the landing area is safe and clear of obstacles.",
+    header: "Land",
+    icon: markRaw(Landing) as any,
+    rejectLabel: "CANCEL",
+    acceptLabel: "LAND",
+    acceptClass: "p-button-success",
+    accept: async () => {
+      try {
+        const drone = droneCollection.getDrone(0);
+        await drone.land();
+        showToast("Landing!", ToastSeverity.Info);
+      } catch (e) {
+        if (e instanceof Error) {
+          showToast(e.message, ToastSeverity.Error);
+        } else {
+          showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+        }
+      }
+    },
+  });
 }
 
 async function autotune() {
@@ -143,7 +188,10 @@ function trackUntrack() {
     return;
   }
 
-  if (!defined(selectedEntity) || !defined(selectedEntity.id)) {
+  if (
+    !defined(droneCollection.selectedEntity) ||
+    !defined(droneCollection.selectedEntity.value)
+  ) {
     console.log("No entity selected to track.");
 
     getCesiumViewer().trackedEntity = undefined;
@@ -158,11 +206,16 @@ function trackUntrack() {
   }
 
   console.log("Tracking entity:");
-  console.log(selectedEntity);
+  console.log(droneCollection.selectedEntity.value);
 
-  if (!trackedEntityHighlighter.contains(selectedEntity)) {
-    getCesiumViewer().trackedEntity = selectedEntity.id;
-    trackedEntityHighlighter.add(selectedEntity);
+  if (
+    !trackedEntityHighlighter.contains(droneCollection.selectedEntity.value)
+  ) {
+    getCesiumViewer().trackedEntity = toRaw(
+      droneCollection.selectedEntity.value.id,
+    );
+
+    trackedEntityHighlighter.add(droneCollection.selectedEntity.value);
     trackUntrackButtonLabel.value = "Untrack";
     trackUntrackButtonIcon.value = "pi pi-lock";
   } else {
@@ -178,30 +231,27 @@ function trackUntrack() {
 }
 
 onMounted(() => {
-  eventBus.on("cesiumLeftClick", handleCesiumClick);
   eventBus.on("droneDisconnected", closeMenu);
   eventBus.on("allDronesDisconnected", closeMenu);
 });
 
 onUnmounted(() => {
-  eventBus.off("cesiumLeftClick", handleCesiumClick);
   eventBus.off("droneDisconnected", closeMenu);
   eventBus.off("allDronesDisconnected", closeMenu);
 });
 </script>
 
 <template>
-  <div
-    class="menu-wrapper bg-white dark:bg-black"
-    :class="{ open: isMenuOpen }"
-  >
+  <div class="menu-wrapper" :class="{ open: isMenuOpen }">
+    <CustomConfirmDialog />
+
     <Button class="close-button" @click="toggleMenu">x</Button>
     <div class="menu">
-      <Button label="Arm" @click="arm" />
-      <Button label="Disarm" @click="disarm" />
+      <Button label="Arm" @click="arm" severity="danger" />
+      <Button label="Disarm" @click="disarm" severity="danger" />
       <Button label="Takeoff" @click="takeoff" />
       <Button label="Land" @click="land" />
-      <Button label="Autotune" @click="autotune" />
+      <Button label="Autotune" @click="autotune" severity="warn" />
       <CameraWindow />
       <Button
         :label="trackUntrackButtonLabel"
@@ -224,6 +274,8 @@ onUnmounted(() => {
   transition: transform 0.2s ease-in-out;
   z-index: 1000;
   overflow: hidden;
+  background-color: var(--p-content-background);
+  border-color: var(--p-content-border-color);
 }
 
 .menu-wrapper.open {
