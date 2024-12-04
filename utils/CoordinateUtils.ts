@@ -49,6 +49,29 @@ export function getLatLonFromCartesian3(pos: Cartesian3): {
   return { lat, lon };
 }
 
+/**
+ * Formats a coordinate to a string.
+ * @param {number} coordinate Coordinate
+ * @returns {string} Formatted coordinate (degrees)
+ */
+export function formatCoordinate(coordinate?: number): string {
+  if (coordinate === undefined) throw Error("No coordinate provided!");
+
+  // 6 decimal places equal 10 cm resolution. 12 digits are maximum.
+  return coordinate.toFixed(6).padStart(12, " ") + "°";
+}
+
+/**
+ * Formats a height to a string.
+ * @param {number} height Height (meters)
+ * @returns {string} Formatted height
+ */
+export function formatHeight(height?: number): string {
+  if (!height) throw Error("No coordinates provided!");
+
+  return height.toFixed(2).padStart(12, " ") + "m";
+}
+
 export function setAltitude(entity: Entity, message: GlobalPositionInt) {
   const longitude = message.lon / 1e7;
   const latitude = message.lat / 1e7;

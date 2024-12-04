@@ -108,8 +108,8 @@ async function showPositionInfoEntity(position: Cartesian2) {
     mousePositionInfoEntity.position = new ConstantPositionProperty(cartesian);
 
     // 6 decimal places equal 10 cm resolution. 12 digits are maximum.
-    const longitudeString = longitudeDegrees.toFixed(6).padStart(12, " ") + "°";
-    const latitudeString = latitudeDegrees.toFixed(6).padStart(12, " ") + "°";
+    const longitudeString = formatCoordinate(longitudeDegrees);
+    const latitudeString = formatCoordinate(latitudeDegrees);
 
     const heightMSLString =
       egm96

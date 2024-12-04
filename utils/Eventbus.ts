@@ -1,4 +1,4 @@
-import type { Entity, Event as CesiumEvent, Cartographic } from "cesium";
+import type { Entity, Event as CesiumEvent, Cartesian3 } from "cesium";
 import mitt from "mitt";
 import type { Drone } from "~/components/Drone";
 
@@ -12,10 +12,9 @@ export type Events = {
   cesiumLeftClick: Entity | undefined; // undefined: nothing selected
   cesiumRightClick: {
     entity: Entity | undefined;
+    cartesian3: Cartesian3;
     position: { x: number; y: number };
-    cartographic: Cartographic;
   };
-  cesiumCameraMoveStart: CesiumEvent;
 };
 
 export const eventBus = mitt<Events>();

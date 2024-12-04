@@ -19,19 +19,24 @@ async function connectDisconnect() {
   }
 
   try {
+    connectDisconnectRef.value.$el.disabled = true;
+
     if (droneCollection.getNumDrones() === 0) {
+      showToast(`Connecting ...`, ToastSeverity.Info);
+
       const drone = droneCollection.addDrone(new Drone(new UdpOptions()));
 
       await droneCollection.connectAll();
 
       showToast(
-        `Connected! (sysid: ${drone.sysid}, compid: ${drone.compid})`,
+        `Connected! (sysid: ${drone.getSysId()}, compid: ${drone.getCompId()})`,
         ToastSeverity.Success,
       );
 
       connectDisconnectRef.value.$el.textContent = "Disconnect";
 
       eventBus.emit("droneConnected", drone);
+      connectDisconnectRef.value.$el.disabled = false;
     } else {
       await droneCollection.disconnectAll();
       droneCollection.removeAllDrones();
@@ -41,6 +46,7 @@ async function connectDisconnect() {
       connectDisconnectRef.value.$el.textContent = "Connect";
 
       eventBus.emit("allDronesDisconnected");
+      connectDisconnectRef.value.$el.disabled = false;
     }
   } catch (e) {
     if (e instanceof Error) {
@@ -48,6 +54,10 @@ async function connectDisconnect() {
     } else {
       showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
     }
+
+    await droneCollection.disconnectAll();
+    droneCollection.removeAllDrones();
+    connectDisconnectRef.value.$el.disabled = false;
   }
 }
 </script>
@@ -61,7 +71,7 @@ async function connectDisconnect() {
       style="
         display: flex;
         align-items: flex-start;
-        flex-direction: column;
+        flex-direction: row;
         gap: 5px;
         position: absolute;
         top: 5px;

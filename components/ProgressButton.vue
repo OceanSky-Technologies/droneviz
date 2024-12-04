@@ -1,25 +1,7 @@
-<template>
-  <div class="button-container">
-    <Button
-      :label="label"
-      class="progress-button"
-      :style="{ background: backgroundStyle }"
-      @mousedown="startProgress"
-      @mouseup="resetProgress"
-      @mouseleave="resetProgress"
-    >
-      <template #default>
-        <div class="button-content">
-          <slot name="icon" />
-          <span>{{ label }}</span>
-        </div>
-      </template>
-    </Button>
-  </div>
-</template>
+<!-- A button that shows a progress bar when clicked and emits a click event when the progress bar is filled. -->
 
 <script lang="ts" setup>
-import { ref, computed, defineProps, defineEmits } from "vue";
+import { ref, computed } from "vue";
 import { Button } from "primevue";
 
 const props = defineProps({
@@ -41,7 +23,7 @@ const progress = ref<number>(0);
 let interval: NodeJS.Timeout | null = null;
 const isHolding = ref<boolean>(false);
 
-const updateInterval = 20; // Update every 50ms
+const updateInterval = 20; // ms
 
 // Dynamic gradient background
 const backgroundStyle = computed(() => {
@@ -78,6 +60,26 @@ const stopProgress = (): void => {
   isHolding.value = false;
 };
 </script>
+
+<template>
+  <div class="button-container">
+    <Button
+      :label="label"
+      class="progress-button"
+      :style="{ background: backgroundStyle }"
+      @mousedown="startProgress"
+      @mouseup="resetProgress"
+      @mouseleave="resetProgress"
+    >
+      <template #default>
+        <div class="button-content">
+          <slot name="icon" />
+          <span>{{ label }}</span>
+        </div>
+      </template>
+    </Button>
+  </div>
+</template>
 
 <style scoped lang="postcss">
 .button-container {

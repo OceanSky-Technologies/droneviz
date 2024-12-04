@@ -20,23 +20,17 @@ import type {
 } from "~/types/MessageInterface";
 import {
   Attitude,
-  AttitudeQuaternion,
-  AttitudeTarget,
   AutotuneAxis,
   CommandAck,
   CommandLong,
   DoRepositionCommand,
   GlobalPositionInt,
-  HomePosition,
-  LocalPositionNed,
   ManualControl,
   MavCmd,
   MavDoRepositionFlags,
   MavResult,
   Ping,
-  PositionTargetLocalNed,
   PrecisionLandMode,
-  ServoOutputRaw,
 } from "mavlink-mappings/dist/lib/common";
 import {
   Heartbeat,
@@ -48,28 +42,47 @@ import {
 
 const UINT16_MAX = 65535;
 
+// default fetch options for all requests to the server
 const defaultFetchOptions = {
   method: "POST" as any,
   baseURL: useRuntimeConfig().public.baseURL as string,
 };
 
+// Interface to store a message and its reception timestamp
+interface StoredMessage<T> {
+  message: T; // The message instance
+  timestamp: number; // Reception unix timestamp in milliseconds
+}
+
+/**
+ * Drone class to handle communication with the server and the drone.
+ * The class is responsible for sending messages to the server and receiving messages from the server.
+ */
 export class Drone {
-  connectionOptions: SerialOptions | TcpOptions | UdpOptions;
+  readonly connectionOptions: SerialOptions | TcpOptions | UdpOptions;
   private signatureKey?: string;
+
+  // EventSource for receiving messages from the server
   private eventSource?: EventSource;
 
-  sysid: number = NaN;
-  compid: number = NaN;
-
+  // cesium entity to represent the drone
   entity?: Entity;
-  lastGlobalPosition?: GlobalPositionInt;
-  lastHeartbeat?: Heartbeat;
-  homePosition?: HomePosition;
-  lastAttitude?: Attitude;
 
+  private sysid: number = NaN;
+  private compid: number = NaN;
+  private lastMessages: Map<string, StoredMessage<any>> = new Map();
+
+  // intervals for sending heartbeat and manual control data (if enabled)
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private manualControlInterval: NodeJS.Timeout | null = null;
 
+  /**
+   * Array of response callbacks for requests to the server.
+   * The callbacks are removed when
+   * a) a received message makes the matcher return `true` or
+   * b) a received message makes the onDenied callback return `true` or
+   * c) a timeout occurs: neither the matcher nor the onDenied callback return `true`.
+   */
   private responseCallbacks: Array<{
     matcher: (message: any, rawMessage: MavlinkMessageInterface) => boolean;
     onDenied?: (message: any) => [boolean, string?];
@@ -78,6 +91,11 @@ export class Drone {
     timeoutId: NodeJS.Timeout;
   }> = [];
 
+  /**
+   * Create a new Drone instance.
+   * @param {SerialOptions | TcpOptions | UdpOptions} connectionOptions - The connection options for the drone.
+   * @param {string} signatureKey - The signature key for the drone.
+   */
   constructor(
     connectionOptions: SerialOptions | TcpOptions | UdpOptions,
     signatureKey?: string,
@@ -86,7 +104,34 @@ export class Drone {
     this.signatureKey = signatureKey;
   }
 
-  async connect() {
+  /**
+   * Get the system ID of the drone. The value is NaN if the connection is not established.
+   * @returns {number} - The system ID of the drone.
+   */
+  getSysId(): number {
+    return this.sysid;
+  }
+
+  /**
+   * Get the component ID of the drone. The value is NaN if the connection is not established.
+   * @returns {number} - The component ID of the drone.
+   */
+  getCompId(): number {
+    return this.compid;
+  }
+
+  /**
+   * Connect to the server and establish a connection.
+   * @returns {Promise<void>} - A promise that resolves when the connection is successful.
+   */
+  async connect(): Promise<void> {
+    this.sysid = NaN;
+    this.compid = NaN;
+    this.lastMessages = new Map();
+
+    // Send connection request to server to establish a connection.
+    // The event source is used to receive messages from the server.
+    // sendAndExpectResponse is used to wait for the first message (of any kind) to be received and to read the sysid and compid from it.
     await this.sendAndExpectResponse(
       async () => {
         await this.send("/api/drone/connect", {
@@ -127,7 +172,7 @@ export class Drone {
       5000,
     );
 
-    // send heartbeat
+    // send heartbeats
     if (settings.heartbeatInterval.value > 0) {
       this.heartbeatInterval = setInterval(() => {
         this.sendHeartbeat();
@@ -142,16 +187,17 @@ export class Drone {
     }
   }
 
-  async disconnect() {
-    this.sysid = NaN;
-    this.compid = NaN;
-
-    if (this.heartbeatInterval !== null) {
+  /**
+   * Disconnect from the server and close the event source.
+   * @returns {Promise<void>} - A promise that resolves when the disconnection is successful.
+   */
+  async disconnect(): Promise<void> {
+    if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
     }
 
-    if (this.manualControlInterval !== null) {
+    if (this.manualControlInterval) {
       clearInterval(this.manualControlInterval);
       this.manualControlInterval = null;
     }
@@ -164,6 +210,10 @@ export class Drone {
     if (!data.success) throw new Error(`Disconnecting failed: ${data.message}`);
   }
 
+  /**
+   * Handle a received message from the server.
+   * @param {MavlinkMessageInterface} rawMessage - The received message from the server.
+   */
   private onMessage(rawMessage: MavlinkMessageInterface) {
     const clazz = REGISTRY[rawMessage.header.msgid]; // Lookup the class
 
@@ -174,6 +224,13 @@ export class Drone {
       // Create an instance of the class and populate it with data
       const message = Object.assign(new clazz(), rawMessage.data);
 
+      // Store the last message for the given class
+      this.lastMessages.set(clazz.name, {
+        message: message,
+        timestamp: Date.now(),
+      });
+
+      const responseCallbacksToRemove: typeof this.responseCallbacks = [];
       // check if the message is a response to a request
       for (const callback of this.responseCallbacks) {
         // check if the denied callback returns true
@@ -186,10 +243,7 @@ export class Drone {
               ),
             );
             clearTimeout(callback.timeoutId);
-            this.responseCallbacks = this.responseCallbacks.filter(
-              (cb) => cb !== callback,
-            );
-            break;
+            responseCallbacksToRemove.push(callback);
           }
         }
 
@@ -197,43 +251,52 @@ export class Drone {
         if (callback.matcher(message, rawMessage)) {
           callback.resolve(message);
           clearTimeout(callback.timeoutId);
-          this.responseCallbacks = this.responseCallbacks.filter(
-            (cb) => cb !== callback,
-          );
-          break;
+          responseCallbacksToRemove.push(callback);
         }
       }
 
+      // remove the resolved and denied callbacks
+      if (responseCallbacksToRemove.length > 0) {
+        this.responseCallbacks = this.responseCallbacks.filter(
+          (cb) => !responseCallbacksToRemove.includes(cb),
+        );
+      }
+
       if (message instanceof GlobalPositionInt) {
-        this.lastGlobalPosition = message as GlobalPositionInt;
-        this.updateEntityPosition(message as GlobalPositionInt);
-      } else if (message instanceof Heartbeat) {
-        this.lastHeartbeat = message as Heartbeat;
-      } else if (message instanceof HomePosition) {
-        this.homePosition = message as HomePosition;
+        this.updateEntityPosition(message);
       } else if (message instanceof Attitude) {
-        this.lastAttitude = message as Attitude;
-        this.updateEntityOrientation(message as Attitude);
-      } else if (message instanceof AttitudeQuaternion) {
-        // do nothing
-      } else if (message instanceof ServoOutputRaw) {
-        // do nothing
-      } else if (message instanceof AttitudeTarget) {
-        // do nothing
-      } else if (message instanceof PositionTargetLocalNed) {
-        // do nothing
-      } else if (message instanceof LocalPositionNed) {
-        // do nothing
+        this.updateEntityOrientation(message);
       } else if (message instanceof Ping) {
         this.replyToPing(message);
       } else {
-        // console.log(message);
+        //console.log(message);
       }
     } else {
-      console.warn(`Unknown message ID: ${rawMessage.header.msgid}`);
+      console.warn(
+        `Unknown message received with ID: ${rawMessage.header.msgid}`,
+      );
     }
   }
 
+  /**
+   * Get the last message for the given class.
+   * @param {new () => T} messageClass - The class of the message.
+   * @returns {StoredMessage<T> | undefined} - The last message for the given class.
+   */
+  public getLastMessage<T>(
+    messageClass: new () => T,
+  ): StoredMessage<T> | undefined {
+    // Retrieve the last message for the given class
+    const messageType = messageClass.name;
+    return this.lastMessages.get(messageType) as StoredMessage<T> | undefined;
+  }
+
+  /**
+   * Send a message to the server.
+   * @param {string} api - The API endpoint to send the message to.
+   * @param {T} data - The data to send.
+   * @returns {Promise<QueryResult>} - A promise that resolves with the query result.
+   */
   private send<T>(api: string, data?: T): Promise<QueryResult> {
     const promise = $fetch(api, {
       ...defaultFetchOptions,
@@ -245,7 +308,21 @@ export class Drone {
     return promise as Promise<QueryResult>;
   }
 
-  private sendAndExpectResponse<T, R>(
+  /**
+   * Send a message to the server and wait for a response.
+   * For every received message from the server, the matcher and onDenied callbacks are called.
+   * If the matcher callback returns `true`, the promise is resolved with the message.
+   * If the onDenied callback returns `true`, the promise is rejected with the denied message.
+   * If a timeout occurs, the promise is rejected with the timeout message.
+   *
+   * @param {() => void} sendMessageToServer - The function to send the message to the server.
+   * @param {(message: T, rawMessage: MavlinkMessageInterface) => boolean} matcher - The function to match the response message.
+   * @param {(message: T) => [boolean, string?]} onDenied - The function to check if the response message is denied.
+   * @param {string} timeoutMessage - The message to show when a timeout occurs.
+   * @param {number} timeoutMs - The timeout in milliseconds.
+   * @returns {Promise<any>} - A promise that resolves with the response or rejects with an error if the response is denied or a timeout occurs.
+   */
+  private sendAndExpectResponse<T>(
     sendMessageToServer: () => void,
     matcher: (message: T, rawMessage: MavlinkMessageInterface) => boolean,
     onDenied?: (message: T) => [boolean, string?],
@@ -276,7 +353,11 @@ export class Drone {
     });
   }
 
-  private async sendHeartbeat() {
+  /**
+   * Send a heartbeat message to the server.
+   * @returns {Promise<void>} - A promise that resolves when the heartbeat is sent successfully.
+   */
+  private async sendHeartbeat(): Promise<void> {
     const command = new Heartbeat();
     command.type = MavType.GCS;
     command.autopilot = MavAutopilot.INVALID;
@@ -291,7 +372,11 @@ export class Drone {
       throw new Error(`Sending heartbeat failed: ${data.message}`);
   }
 
-  async sendManualControl() {
+  /**
+   * Send manual control data to the server.
+   * @returns {Promise<void>} - A promise that resolves when the manual control data is sent successfully.
+   */
+  async sendManualControl(): Promise<void> {
     const command = new ManualControl();
     command.target = 254;
     command.z = 500;
@@ -302,25 +387,38 @@ export class Drone {
       throw new Error(`Manual control failed: ${data.message}`);
   }
 
-  private replyToPing(ping: Ping) {
+  /**
+   * Reply to a ping message.
+   * @param {Ping} ping - The ping message to reply to.
+   * @returns {Promise<QueryResult>} - A promise that resolves when the reply is sent successfully.
+   */
+  private replyToPing(ping: Ping): Promise<QueryResult> {
     const pingReply = new Ping();
     pingReply.timeUsec = ping.timeUsec;
     pingReply.seq = ping.seq;
     pingReply.targetSystem = 42; // fixme: hardcoded
     pingReply.targetComponent = 42; // fixme: hardcoded
 
-    this.send("/api/drone/ping", ping);
+    return this.send("/api/drone/ping", ping);
   }
 
+  /**
+   * Update the orientation of the entity based on the attitude message.
+   * @param {Attitude} message - The attitude message to update the orientation with.
+   */
   private updateEntityOrientation(message: Attitude) {
     if (!this.entity) return;
     if (!this.entity.position || !this.entity.position.getValue()) return;
-    if (!this.lastGlobalPosition) return;
 
-    if (this.lastGlobalPosition.hdg === UINT16_MAX) return;
+    const lastglobalPositionMessage = this.getLastMessage(GlobalPositionInt);
+    if (!lastglobalPositionMessage) return;
 
-    const heading = Math.toRadians(this.lastGlobalPosition.hdg / 100 - 90.0);
-    const pitch = message.pitch - Math.toRadians(-30); // skywinger has 30 degrees pitch
+    if (lastglobalPositionMessage.message.hdg === UINT16_MAX) return;
+
+    const heading = Math.toRadians(
+      lastglobalPositionMessage.message.hdg / 100 - 90.0,
+    );
+    const pitch = message.pitch - Math.toRadians(-30); // skywinger has 30 degrees pitch. TODO: fix in model
     const roll = message.roll;
     const orientation = Transforms.headingPitchRollQuaternion(
       this.entity.position.getValue()!,
@@ -332,6 +430,10 @@ export class Drone {
     getCesiumViewer().scene.requestRender();
   }
 
+  /**
+   * Update the position of the entity based on the global position message.
+   * @param {GlobalPositionInt} message - The global position message to update the position with.
+   */
   private updateEntityPosition(message: GlobalPositionInt) {
     if (!this.entity) return;
 
@@ -340,13 +442,16 @@ export class Drone {
     getCesiumViewer().scene.requestRender();
   }
 
-  async arm() {
+  /**
+   * Arm the drone.
+   * @returns {Promise<void>} - A promise that resolves when the drone is armed successfully.
+   */
+  async arm(): Promise<void> {
     const command = new CommandLong();
     command.command = MavCmd.COMPONENT_ARM_DISARM;
     command.targetSystem = 1;
     command._param1 = 1; // arm
-    // command._param2 = 21196; // force
-    command._param2 = NaN;
+    command._param2 = NaN; // 21196 means "force"
     command._param3 = NaN;
     command._param4 = NaN;
     command._param5 = NaN;
@@ -381,6 +486,11 @@ export class Drone {
     );
   }
 
+  /**
+   * Disarm the drone.
+   * @param {boolean} force - Whether to force disarm
+   * @returns {Promise<void>} - A promise that resolves when the drone is disarmed successfully.
+   */
   async disarm(force?: boolean) {
     const command = new CommandLong();
     command.command = MavCmd.COMPONENT_ARM_DISARM;
@@ -421,7 +531,11 @@ export class Drone {
     );
   }
 
-  async takeoff() {
+  /**
+   * Takeoff the drone.
+   * @returns {Promise<void>} - A promise that resolves when the drone is taken off successfully.
+   */
+  async takeoff(): Promise<void> {
     const command = new CommandLong();
     command.command = MavCmd.NAV_TAKEOFF;
     command.targetSystem = 1;
@@ -461,6 +575,10 @@ export class Drone {
     );
   }
 
+  /**
+   * Land the drone.
+   * @returns {Promise<void>} - A promise that resolves when the drone is landed successfully.
+   */
   async land() {
     const command = new CommandLong();
     command.command = MavCmd.NAV_LAND;
@@ -501,12 +619,23 @@ export class Drone {
     );
   }
 
-  async doReposition(latitude: number, longitude: number, altitude: number) {
+  /**
+   * Reposition the drone to the given coordinates.
+   * @param {number} latitude - The latitude to reposition the drone to.
+   * @param {number} longitude - The longitude to reposition the drone to.
+   * @param {number} altitude - The altitude to reposition the drone to (MSL).
+   * @returns {Promise<void>} - A promise that resolves when the drone is repositioned successfully.
+   * @throws {Error} - Throws an error if the coordinates are invalid.
+   */
+  async doReposition(
+    latitude: number,
+    longitude: number,
+    altitude: number,
+  ): Promise<void> {
     if (
       isNaN(latitude) ||
       isNaN(longitude) ||
       isNaN(altitude) ||
-      altitude < 0 ||
       latitude <= 0 ||
       longitude <= 0
     )
@@ -552,7 +681,11 @@ export class Drone {
     );
   }
 
-  async autotune() {
+  /**
+   * Start the autotuning process.
+   * @returns {Promise<void>} - A promise that resolves when the autotuning is completed successfully.
+   */
+  async autotune(): Promise<void> {
     const command = new CommandLong();
     command.command = MavCmd.DO_AUTOTUNE_ENABLE;
     command.targetSystem = 1;

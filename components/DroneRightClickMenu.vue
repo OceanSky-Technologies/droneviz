@@ -2,28 +2,48 @@
 import { onMounted } from "vue";
 import { eventBus } from "~/utils/Eventbus";
 import type { CSSProperties } from "vue";
-import { Math, type Cartographic, type Entity } from "cesium";
+import {
+  Cartesian3,
+  Cartographic,
+  Math,
+  SceneTransforms,
+  type Entity,
+} from "cesium";
 import { droneCollection } from "./DroneCollection";
 import * as egm96 from "egm96-universal";
 import FlyToIcon from "@/components/icons/FlyTo.vue";
 import ProgressButton from "@/components/ProgressButton.vue";
+import { getCesiumViewer } from "./CesiumViewerWrapper";
 
 const visible = ref(false);
+const menu = ref(null);
+const menuPosition = reactive({ x: 0, y: 0 });
 
-const menuPosition = ref({ x: 0, y: 0 });
+const animationKey = ref(0); // Used to force the transition if the menu is already open
 
-let coordinates: Cartographic | undefined = undefined;
-
+// computed style for the popup menu
 const popupStyle = computed<CSSProperties>(() => ({
-  top: `${menuPosition.value.y}px`,
-  left: `${menuPosition.value.x}px`,
+  top: `${menuPosition.y}px`,
+  left: `${menuPosition.x}px`,
 }));
 
-async function flyTo() {
-  console.log("Fly to clicked");
+// coordinates of the right-clicked position
+let positionCartesian: Cartesian3;
+let positionCartographic: Cartographic = new Cartographic();
 
-  if (!coordinates) {
-    showToast("Coordinates are null", ToastSeverity.Error);
+// interval to update the overlay position when the camera moves
+let updateInterval: NodeJS.Timeout;
+
+// remove callbacks for cesium listeners (destroyed when component is unmounted)
+let cesiumListenerCbs: (() => void)[] = [];
+
+async function flyTo() {
+  if (
+    positionCartographic.latitude === 0 &&
+    positionCartographic.longitude === 0 &&
+    positionCartographic.height === 0
+  ) {
+    showToast("Invalid coordinates", ToastSeverity.Error);
     closeMenu();
     return;
   }
@@ -38,13 +58,13 @@ async function flyTo() {
 
   try {
     await drone.doReposition(
-      Math.toDegrees(coordinates.latitude),
-      Math.toDegrees(coordinates.longitude),
-      coordinates.height,
+      Math.toDegrees(positionCartographic.latitude),
+      Math.toDegrees(positionCartographic.longitude),
+      positionCartographic.height,
     );
 
     showToast(
-      `Repositioning drone:\n- latitude: ${coordinates.latitude}\n- longitude: ${coordinates.longitude}\n- height: ${coordinates.height}`,
+      `Repositioning drone:\n- latitude: ${positionCartographic.latitude}\n- longitude: ${positionCartographic.longitude}\n- height: ${positionCartographic.height}`,
       ToastSeverity.Success,
     );
   } catch (e) {
@@ -57,9 +77,9 @@ async function flyTo() {
   closeMenu();
 }
 
-function showMenu(coords: { x: number; y: number }) {
-  menuPosition.value = coords;
+function showMenu() {
   visible.value = true;
+  animationKey.value++;
 }
 
 const closeMenu = () => {
@@ -68,71 +88,95 @@ const closeMenu = () => {
 
 function handleCesiumRightClick({
   entity,
-  position,
-  cartographic,
+  cartesian3,
 }: {
   entity: Entity | undefined;
+  cartesian3: Cartesian3;
   position: { x: number; y: number };
-  cartographic: Cartographic;
 }) {
   // don't show menu if no drone is selected
-  if (!droneCollection.selectedEntity) return;
+  if (!droneCollection.selectedEntity.value) return;
 
-  // save new gps coordinates
-  coordinates = cartographic;
-
+  // right click somewhere on the map (but not on an entity) to show the menu
   if (!entity) {
-    showMenu({ x: position.x, y: position.y });
+    // save new gps coordinates of the right clicked location
+    positionCartesian = cartesian3;
+    positionCartographic =
+      Cartographic.fromCartesian(cartesian3) ?? new Cartographic();
+
+    updateOverlayPosition();
+
+    showMenu();
   } else {
     closeMenu();
   }
 }
 
-function formatCoordinates(coordinate?: number) {
-  if (!coordinate) return "unknown";
+const updateOverlayPosition = () => {
+  if (!getCesiumViewer() || !menu.value || !positionCartesian) return;
 
-  // 6 decimal places equal 10 cm resolution. 12 digits are maximum.
-  return Math.toDegrees(coordinate).toFixed(6).padStart(12, " ") + "°";
-}
-
-function formatHeight(coordinates?: Cartographic) {
-  if (!coordinates) return "unknown";
-
-  return (
-    egm96
-      .meanSeaLevel(
-        Math.toDegrees(coordinates.latitude),
-        Math.toDegrees(coordinates.longitude),
-      )
-      .toFixed(2)
-      .padStart(12, " ") + "m"
+  // Convert WGS84 position to screen coordinates
+  const screenPosition = SceneTransforms.worldToWindowCoordinates(
+    getCesiumViewer().scene,
+    positionCartesian,
   );
-}
+
+  if (screenPosition) {
+    menuPosition.x = screenPosition.x;
+    menuPosition.y = screenPosition.y;
+  } else {
+    // Hide the overlay if the position is off-screen
+    menuPosition.x = -9999;
+    menuPosition.y = -9999;
+  }
+};
 
 onMounted(() => {
   eventBus.on("cesiumRightClick", handleCesiumRightClick);
   eventBus.on("cesiumLeftClick", closeMenu);
-  eventBus.on("cesiumCameraMoveStart", closeMenu);
 
   eventBus.on("droneDisconnected", closeMenu);
   eventBus.on("allDronesDisconnected", closeMenu);
+
+  // Add a camera move listeners to update the overlay position
+  cesiumListenerCbs.push(
+    getCesiumViewer().camera.changed.addEventListener(updateOverlayPosition),
+  );
+  cesiumListenerCbs.push(
+    getCesiumViewer().camera.moveStart.addEventListener(
+      () => (updateInterval = setInterval(updateOverlayPosition, 1)),
+    ),
+  );
+  cesiumListenerCbs.push(
+    getCesiumViewer().camera.moveEnd.addEventListener(() => {
+      clearInterval(updateInterval);
+      updateOverlayPosition();
+    }),
+  );
 });
 
 onBeforeUnmount(() => {
   eventBus.off("cesiumRightClick", handleCesiumRightClick);
   eventBus.off("cesiumLeftClick", closeMenu);
-  eventBus.off("cesiumCameraMoveStart", closeMenu);
 
   eventBus.off("droneDisconnected", closeMenu);
   eventBus.off("allDronesDisconnected", closeMenu);
+
+  // unregister all cesium listeners
+  while (cesiumListenerCbs.length > 0) {
+    const cb = cesiumListenerCbs.pop();
+    if (cb) cb();
+  }
 });
 </script>
 
 <template>
   <transition name="fade-slide">
     <div
-      v-if="visible"
+      v-show="visible"
+      ref="menu"
       :style="popupStyle"
+      :key="animationKey"
       class="popup-menu shadow-lg"
       @click.self="closeMenu"
     >
@@ -143,13 +187,23 @@ onBeforeUnmount(() => {
       <div style="padding-bottom: 5px">
         <p>
           Latitude:
-          {{ formatCoordinates(coordinates?.latitude) }}
+          {{ formatCoordinate(Math.toDegrees(positionCartographic.latitude)) }}
         </p>
         <p>
           Longitude:
-          {{ formatCoordinates(coordinates?.longitude) }}
+          {{ formatCoordinate(Math.toDegrees(positionCartographic.longitude)) }}
         </p>
-        <p>Height (MSL): {{ formatHeight(coordinates) }}</p>
+        <p>
+          Height (MSL):
+          {{
+            formatHeight(
+              egm96.meanSeaLevel(
+                Math.toDegrees(positionCartographic.latitude),
+                Math.toDegrees(positionCartographic.longitude),
+              ),
+            )
+          }}
+        </p>
       </div>
 
       <ProgressButton label="Fly to this location" @click="flyTo">
@@ -165,12 +219,12 @@ onBeforeUnmount(() => {
 .popup-menu {
   position: absolute;
   text-align: center;
-  border-radius: 5px;
+  border-radius: 10px;
   z-index: 1000;
   padding: 10px;
   background-color: var(--p-content-background);
   border-color: var(--p-content-border-color);
-  transform: translate(-50%, 8px);
+  transform: translate(-50%, 16px);
   transform-origin: top center;
   transition:
     transform 0.2s ease-out,
@@ -180,13 +234,13 @@ onBeforeUnmount(() => {
 /* Arrow styles */
 .popup-arrow {
   position: absolute;
-  top: -8px; /* Adjust based on menu placement */
-  left: calc(50% - 5px);
+  top: -16px; /* Adjust based on menu placement */
+  left: calc(50% - 10px);
   width: 0;
   height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-bottom: 8px solid white;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 16px solid white;
   z-index: 999;
 }
 

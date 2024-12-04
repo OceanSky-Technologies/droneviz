@@ -1,12 +1,10 @@
 import {
-  Cartographic,
-  Math,
+  Model,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   defined,
 } from "cesium";
 import { getCesiumViewer } from "./CesiumViewerWrapper";
-import { createViewerOptions } from "../utils/CesiumViewerOptions";
 
 let mouseClickHandler: ScreenSpaceEventHandler;
 
@@ -30,26 +28,32 @@ async function mouseClickListener(
   positionEvent: ScreenSpaceEventHandler.PositionedEvent,
 ) {
   const entity = await getCesiumViewer().scene.pick(positionEvent.position);
-  console.log("Right clicked entity:");
-  console.log(entity);
 
-  const cartesian = getCesiumViewer().scene.pickPosition(
+  const cartesian3 = getCesiumViewer().scene.pickPosition(
     positionEvent.position,
   );
-  const cartographic = Cartographic.fromCartesian(cartesian);
-  console.log(cartographic);
 
-  if (defined(entity)) {
+  if (
+    defined(entity) &&
+    defined(entity.primitive) &&
+    entity.primitive instanceof Model
+  ) {
+    console.log("Right clicked entity:");
+    console.log(entity);
+
     eventBus.emit("cesiumRightClick", {
       entity: entity,
       position: positionEvent.position,
-      cartographic: cartographic,
+      cartesian3: cartesian3,
     });
   } else {
+    console.log("Right clicked position:");
+    console.log(positionEvent.position);
+
     eventBus.emit("cesiumRightClick", {
       entity: undefined,
       position: positionEvent.position,
-      cartographic: cartographic,
+      cartesian3: cartesian3,
     });
   }
 }
