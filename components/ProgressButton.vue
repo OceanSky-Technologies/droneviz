@@ -20,10 +20,21 @@ const emit = defineEmits(["click"]);
 
 // Progress tracking
 const progress = ref<number>(0);
-let interval: NodeJS.Timeout | null = null;
 const isHolding = ref<boolean>(false);
 
-const updateInterval = 20; // ms
+// Animation frame scheduler: used to update the progress bar smoothly
+let animationStartTime: number;
+const animationFrameScheduler = new AnimationFrameScheduler(async () => {
+  if (progress.value < 100) {
+    progress.value = Math.min(
+      100,
+      ((performance.now() - animationStartTime) / (props.time * 1000)) * 100,
+    );
+  } else {
+    stopProgress();
+    emit("click"); // Emit the click event
+  }
+});
 
 // Dynamic gradient background
 const backgroundStyle = computed(() => {
@@ -35,14 +46,8 @@ const startProgress = (): void => {
   isHolding.value = true;
   progress.value = 0;
 
-  interval = setInterval(() => {
-    if (progress.value < 100) {
-      progress.value += 100 / ((props.time * 1000) / updateInterval);
-    } else {
-      stopProgress();
-      emit("click"); // Emit the click event
-    }
-  }, updateInterval);
+  animationStartTime = performance.now();
+  animationFrameScheduler.start();
 };
 
 // Reset progress
@@ -53,12 +58,13 @@ const resetProgress = (): void => {
 
 // Stop the progress bar
 const stopProgress = (): void => {
-  if (interval) {
-    clearInterval(interval);
-    interval = null;
-  }
+  animationFrameScheduler.stop();
   isHolding.value = false;
 };
+
+onUnmounted(() => {
+  stopProgress();
+});
 </script>
 
 <template>

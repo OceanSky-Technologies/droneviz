@@ -21,6 +21,11 @@ const menuPosition = reactive({ x: 0, y: 0 });
 
 const animationKey = ref(0); // Used to force the transition if the menu is already open
 
+// Animation frame scheduler: used to update the overlay position smoothly
+const animationFrameScheduler = new AnimationFrameScheduler(async () => {
+  if (visible.value) updateOverlayPosition();
+});
+
 // computed style for the popup menu
 const popupStyle = computed<CSSProperties>(() => ({
   top: `${menuPosition.y}px`,
@@ -30,9 +35,6 @@ const popupStyle = computed<CSSProperties>(() => ({
 // coordinates of the right-clicked position
 let positionCartesian: Cartesian3;
 let positionCartographic: Cartographic = new Cartographic();
-
-// interval to update the overlay position when the camera moves
-let updateInterval: NodeJS.Timeout;
 
 // remove callbacks for cesium listeners (destroyed when component is unmounted)
 let cesiumListenerCbs: (() => void)[] = [];
@@ -113,6 +115,7 @@ function handleCesiumRightClick({
 }
 
 const updateOverlayPosition = () => {
+  console.log("updateOverlayPosition");
   if (!getCesiumViewer() || !menu.value || !positionCartesian) return;
 
   // Convert WGS84 position to screen coordinates
@@ -140,16 +143,18 @@ onMounted(() => {
 
   // Add a camera move listeners to update the overlay position
   cesiumListenerCbs.push(
-    getCesiumViewer().camera.changed.addEventListener(updateOverlayPosition),
+    getCesiumViewer().camera.changed.addEventListener(() => {
+      if (visible.value) updateOverlayPosition;
+    }),
   );
   cesiumListenerCbs.push(
-    getCesiumViewer().camera.moveStart.addEventListener(
-      () => (updateInterval = setInterval(updateOverlayPosition, 1)),
-    ),
+    getCesiumViewer().camera.moveStart.addEventListener(() => {
+      animationFrameScheduler.start();
+    }),
   );
   cesiumListenerCbs.push(
     getCesiumViewer().camera.moveEnd.addEventListener(() => {
-      clearInterval(updateInterval);
+      animationFrameScheduler.stop();
       updateOverlayPosition();
     }),
   );
@@ -167,6 +172,8 @@ onBeforeUnmount(() => {
     const cb = cesiumListenerCbs.pop();
     if (cb) cb();
   }
+
+  animationFrameScheduler.stop();
 });
 </script>
 
