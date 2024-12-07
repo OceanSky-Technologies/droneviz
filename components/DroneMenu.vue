@@ -42,8 +42,8 @@ watch(droneCollection.selectedDrone, (newValue) => {
 });
 
 async function arm() {
-  if (droneCollection.getNumDrones() === 0) {
-    showToast("No drone connected", ToastSeverity.Error);
+  if (!droneCollection.selectedDrone.value) {
+    showToast("No drone selected", ToastSeverity.Error);
     return;
   }
 
@@ -71,8 +71,8 @@ async function arm() {
 }
 
 async function disarm() {
-  if (droneCollection.getNumDrones() === 0) {
-    showToast("No drone connected", ToastSeverity.Error);
+  if (!droneCollection.selectedDrone.value) {
+    showToast("No drone selected", ToastSeverity.Error);
     return;
   }
 
@@ -100,8 +100,8 @@ async function disarm() {
 }
 
 async function takeoff() {
-  if (droneCollection.getNumDrones() === 0) {
-    showToast("No drone connected", ToastSeverity.Error);
+  if (!droneCollection.selectedDrone.value) {
+    showToast("No drone selected", ToastSeverity.Error);
     return;
   }
 
@@ -128,8 +128,8 @@ async function takeoff() {
 }
 
 async function land() {
-  if (droneCollection.getNumDrones() === 0) {
-    showToast("No drone connected", ToastSeverity.Error);
+  if (!droneCollection.selectedDrone.value) {
+    showToast("No drone selected", ToastSeverity.Error);
     return;
   }
 
@@ -156,8 +156,8 @@ async function land() {
 }
 
 async function autotune() {
-  if (droneCollection.getNumDrones() === 0) {
-    showToast("No drone connected", ToastSeverity.Error);
+  if (!droneCollection.selectedDrone.value) {
+    showToast("No drone selected", ToastSeverity.Error);
     return;
   }
 

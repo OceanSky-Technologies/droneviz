@@ -78,3 +78,5 @@ Alternatively, the `vscode` configuration comes with the `Testing` tab fully set
 ## Development
 
 Icons: Use svgs (material outline rounded) from <https://icones.js.org/collection/material-symbols>.
+
+`mavproxy.exe --out=udp:127.0.0.1:14550`

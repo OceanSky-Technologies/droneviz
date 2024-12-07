@@ -45,13 +45,11 @@ async function mouseClickListener(
   positionEvent: ScreenSpaceEventHandler.PositionedEvent,
 ) {
   const entity = await getCesiumViewer().scene.pick(positionEvent.position);
-  // console.log("Selected entity:");
-  // console.log(entity);
-  // getCesiumViewer().trackedEntity = entity.id;
+
   if (
     !defined(entity) ||
     !defined(entity.primitive) ||
-    !defined(entity.primitive instanceof Model)
+    !(entity.primitive instanceof Model)
   ) {
     console.log("Unselected all entities");
     selectedEntityHighlighter.clear();

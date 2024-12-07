@@ -7,7 +7,10 @@ import MainToolbar from "@/components/MainToolbar.vue";
 import { cesiumInitialized } from "@/components/CesiumViewerWrapper";
 import { Drone } from "@/core/Drone";
 import { droneCollection } from "@/core/DroneCollection";
-import { UdpOptions } from "@/types/DroneConnectionOptions";
+import { SerialOptions, UdpOptions } from "@/types/DroneConnectionOptions";
+import { showToast, ToastSeverity } from "~/utils/ToastService";
+import { useTemplateRef, type ComponentPublicInstance } from "vue";
+import { eventBus } from "~/utils/Eventbus";
 
 const connectDisconnectRef =
   useTemplateRef<ComponentPublicInstance>("connectDisconnect");
@@ -25,6 +28,9 @@ async function connectDisconnect() {
       showToast(`Connecting ...`, ToastSeverity.Info);
 
       const drone = droneCollection.addDrone(new Drone(new UdpOptions()));
+      // const drone = droneCollection.addDrone(
+      //   new Drone(new SerialOptions("COM3", 57600)),
+      // );
 
       await droneCollection.connectAll();
 
@@ -55,9 +61,9 @@ async function connectDisconnect() {
       showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
     }
 
+    connectDisconnectRef.value.$el.disabled = false;
     await droneCollection.disconnectAll();
     droneCollection.removeAllDrones();
-    connectDisconnectRef.value.$el.disabled = false;
   }
 }
 </script>

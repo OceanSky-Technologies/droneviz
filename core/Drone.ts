@@ -25,6 +25,7 @@ import {
   CommandAck,
   CommandLong,
   DoRepositionCommand,
+  DoSetModeCommand,
   GlobalPositionInt,
   GpsRawInt,
   ManualControl,
@@ -33,6 +34,7 @@ import {
   MavResult,
   Ping,
   PrecisionLandMode,
+  SetMode,
 } from "mavlink-mappings/dist/lib/common";
 import {
   Heartbeat,
@@ -475,7 +477,7 @@ export class Drone {
    * @param {boolean} force - Whether to force disarm
    * @returns {Promise<void>} - A promise that resolves when the drone is disarmed successfully.
    */
-  async disarm(force?: boolean) {
+  async disarm(force?: boolean): Promise<void> {
     const command = new CommandLong();
     command.command = MavCmd.COMPONENT_ARM_DISARM;
     command.targetSystem = 1;
@@ -563,7 +565,7 @@ export class Drone {
    * Land the drone.
    * @returns {Promise<void>} - A promise that resolves when the drone is landed successfully.
    */
-  async land() {
+  async land(): Promise<void> {
     const command = new CommandLong();
     command.command = MavCmd.NAV_LAND;
     command.targetSystem = 1;

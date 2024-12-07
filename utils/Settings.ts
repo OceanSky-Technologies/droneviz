@@ -32,9 +32,9 @@ class Settings {
    * Constructs a new Settings class with default values.
    */
   constructor() {
-    this.google3DTilesEnabled = ref(false);
+    this.google3DTilesEnabled = ref(true);
     this.googleApiKey = ref(undefined); // empty because this will use Cesium's API key which doesn't cost anything.
-    this.bingEnabled = ref(false);
+    this.bingEnabled = ref(true);
     this.tileCacheSize = ref(1000);
     this.sceneMode = ref(SceneMode.SCENE3D);
     this.msaaSamples = ref(0);
