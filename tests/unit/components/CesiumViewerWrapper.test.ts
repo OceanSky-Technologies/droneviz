@@ -7,12 +7,12 @@ import {
   googleTilesEnabled,
   initCesium,
   isCesiumInitialized,
-} from "~/components/CesiumViewerWrapper";
+} from "@/components/CesiumViewerWrapper";
 import {
   createCesiumContainer,
   createTestViewerOptions,
-} from "~/tests/test-utils/MockUtils";
-import { settings } from "~/utils/Settings";
+} from "@/tests/test-utils/MockUtils";
+import { settings } from "@/utils/Settings";
 import { describe, expect, test } from "vitest";
 
 describe("CesiumViewer", () => {

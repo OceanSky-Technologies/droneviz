@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import "cesium/Build/Cesium/Widgets/widgets.css";
-import { createViewerOptions } from "~/utils/CesiumViewerOptions";
+import { createViewerOptions } from "@/utils/CesiumViewerOptions";
 import { getCesiumViewer, initCesium } from "./CesiumViewerWrapper";
-import { initDemo } from "~/demo/Demo";
+import { initDemo } from "@/demo/Demo";
 import { Math, Cartesian3 } from "cesium";
 import { onMounted } from "vue";
 import type { Viewer, Cesium3DTileset } from "cesium";

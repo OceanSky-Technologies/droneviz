@@ -1,5 +1,5 @@
 import { Cartesian3 } from "cesium";
-import { getCameraPosition, getEntity } from "~/demo/DroneInNewYork";
+import { getCameraPosition, getEntity } from "@/demo/DroneInNewYork";
 import { describe, expect, test } from "vitest";
 
 describe("DroneInNewYork", () => {

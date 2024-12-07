@@ -1,6 +1,6 @@
 import { ManualControl } from "mavlink-mappings/dist/lib/common";
 import { drones } from "./DroneCollection";
-import type { QueryResult } from "~/types/MessageInterface";
+import type { QueryResult } from "@/types/MessageInterface";
 
 interface Query {
   data: ManualControl;

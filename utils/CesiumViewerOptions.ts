@@ -11,7 +11,7 @@ import {
   Terrain,
   WebMercatorProjection,
 } from "cesium";
-import { settings } from "~/utils/Settings";
+import { settings } from "@/utils/Settings";
 
 /**
  * Create default imagery provider view models.

@@ -1,4 +1,4 @@
-import { almostEqual } from "~/utils/FuzzyCompare";
+import { almostEqual } from "@/utils/FuzzyCompare";
 
 describe("Almost equal (numbers)", () => {
   test("Same numbers are equal", () => {

@@ -19,9 +19,9 @@ import {
   SerialOptions,
   TcpOptions,
   UdpOptions,
-} from "~/types/DroneConnectionOptions";
-import { REGISTRY } from "~/types/MavlinkRegistry";
-import type { MavlinkMessageInterface } from "~/types/MessageInterface";
+} from "@/types/DroneConnectionOptions";
+import { REGISTRY } from "@/types/MavlinkRegistry";
+import type { MavlinkMessageInterface } from "@/types/MessageInterface";
 
 // fix BigInt serialization: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-953187833
 declare global {

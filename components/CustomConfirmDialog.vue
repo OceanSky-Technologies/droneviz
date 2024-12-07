@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import Warning from "~/components/icons/Warning.vue";
+import Warning from "@/components/icons/Warning.vue";
 
 // Format the message to replace \n with <br> for multi-line support
 function formattedMessage(message: string): string {

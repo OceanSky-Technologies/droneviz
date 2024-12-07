@@ -1,11 +1,11 @@
-import { DroneInterface } from "~/server/api/drone/DroneInterface";
+import { DroneInterface } from "@/server/api/drone/DroneInterface";
 import {
   SerialOptions,
   TcpOptions,
   UdpOptions,
-} from "~/types/DroneConnectionOptions";
+} from "@/types/DroneConnectionOptions";
 import { drones } from "./DroneCollection";
-import type { QueryResult } from "~/types/MessageInterface";
+import type { QueryResult } from "@/types/MessageInterface";
 
 interface QueryInterface {
   connectionOptions: string;

@@ -2,7 +2,7 @@ import * as ShipInHamburg from "./ShipInHamburg";
 import * as AircraftInSanFrancisco from "./AircraftInSanFrancisco";
 import * as VehiclesInUkraine from "./VehiclesInUkraine";
 import * as DroneInNewYork from "./DroneInNewYork";
-import { getCesiumViewer } from "~/components/CesiumViewerWrapper";
+import { getCesiumViewer } from "@/components/CesiumViewerWrapper";
 
 /**
  * Initializes demo functionalities.

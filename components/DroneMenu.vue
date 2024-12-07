@@ -1,16 +1,16 @@
 <script lang="ts" setup>
-import { defined } from "cesium";
+import { defined, Entity } from "cesium";
 import { ref, onMounted } from "vue";
-import { eventBus } from "~/utils/Eventbus";
+import { eventBus } from "@/utils/Eventbus";
 import {
   getCesiumViewer,
-  trackedEntityHighlighter,
   updateRequestRenderMode,
 } from "./CesiumViewerWrapper";
 import { Button } from "primevue";
 import Landing from "@/components/icons/Landing.vue";
 import Takeoff from "@/components/icons/Takeoff.vue";
 import Warning from "@/components/icons/Warning.vue";
+import DroneTelemetry from "@/components/DroneTelemetry.vue";
 import { useConfirm } from "primevue/useconfirm";
 import { droneCollection } from "@/core/DroneCollection";
 
@@ -33,7 +33,7 @@ function closeMenu() {
   isMenuOpen.value = false;
 }
 
-watch(droneCollection.selectedEntity, (newValue) => {
+watch(droneCollection.selectedDrone, (newValue) => {
   if (newValue) {
     showMenu();
   } else {
@@ -57,8 +57,7 @@ async function arm() {
     acceptClass: "p-button-danger",
     accept: async () => {
       try {
-        const drone = droneCollection.getDrone(0);
-        await drone.arm();
+        await droneCollection.selectedDrone.value?.arm();
         showToast("Armed!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
@@ -87,8 +86,7 @@ async function disarm() {
     acceptClass: "p-button-danger",
     accept: async () => {
       try {
-        const drone = droneCollection.getDrone(0);
-        await drone.disarm(true);
+        await droneCollection.selectedDrone.value?.disarm(true);
         showToast("Disarmed!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
@@ -116,8 +114,7 @@ async function takeoff() {
     acceptClass: "p-button-success",
     accept: async () => {
       try {
-        const drone = droneCollection.getDrone(0);
-        await drone.takeoff();
+        await droneCollection.selectedDrone.value?.takeoff();
         showToast("Takeoff!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
@@ -145,8 +142,7 @@ async function land() {
     acceptClass: "p-button-success",
     accept: async () => {
       try {
-        const drone = droneCollection.getDrone(0);
-        await drone.land();
+        await droneCollection.selectedDrone.value?.land();
         showToast("Landing!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
@@ -175,9 +171,8 @@ async function autotune() {
     acceptClass: "p-button-danger",
     accept: async () => {
       try {
-        const drone = droneCollection.getDrone(0);
         showToast("Autotuning...", ToastSeverity.Info);
-        await drone.autotune();
+        await droneCollection.selectedDrone.value?.autotune();
       } catch (e) {
         if (e instanceof Error) {
           showToast(e.message, ToastSeverity.Error);
@@ -199,14 +194,10 @@ function trackUntrack() {
     return;
   }
 
-  if (
-    !defined(droneCollection.selectedEntity) ||
-    !defined(droneCollection.selectedEntity.value)
-  ) {
+  if (!defined(droneCollection.selectedDrone.value?.entity)) {
     console.log("No entity selected to track.");
 
     getCesiumViewer().trackedEntity = undefined;
-    trackedEntityHighlighter.clear();
     trackUntrackButtonLabel.value = "Track";
     trackUntrackButtonIcon.value = "pi pi-lock-open";
 
@@ -216,23 +207,19 @@ function trackUntrack() {
     return;
   }
 
-  console.log("Tracking entity:");
-  console.log(droneCollection.selectedEntity.value);
+  console.log("Tracking drone:");
+  console.log(droneCollection.selectedDrone.value);
 
-  if (
-    !trackedEntityHighlighter.contains(droneCollection.selectedEntity.value)
-  ) {
+  if (!getCesiumViewer().trackedEntity) {
     getCesiumViewer().trackedEntity = toRaw(
-      droneCollection.selectedEntity.value.id,
+      droneCollection.selectedDrone.value?.entity,
     );
 
-    trackedEntityHighlighter.add(droneCollection.selectedEntity.value);
     trackUntrackButtonLabel.value = "Untrack";
     trackUntrackButtonIcon.value = "pi pi-lock";
   } else {
     // the same entity was already tracked, so remove tracking
     getCesiumViewer().trackedEntity = undefined;
-    trackedEntityHighlighter.clear();
     trackUntrackButtonLabel.value = "Track";
     trackUntrackButtonIcon.value = "pi pi-lock-open";
   }
@@ -284,6 +271,8 @@ onUnmounted(() => {
         :icon="trackUntrackButtonIcon"
         @click="trackUntrack"
       />
+
+      <DroneTelemetry style="width: 50%" />
     </div>
   </div>
 </template>
@@ -309,7 +298,7 @@ onUnmounted(() => {
 
 .menu {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 10px;

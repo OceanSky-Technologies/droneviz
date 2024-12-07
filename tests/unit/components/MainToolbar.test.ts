@@ -1,12 +1,12 @@
 import { Cesium3DTileset, SceneMode } from "cesium";
-import { getCesiumViewer, initCesium } from "~/components/CesiumViewerWrapper";
+import { getCesiumViewer, initCesium } from "@/components/CesiumViewerWrapper";
 import {
   createCesiumContainer,
   createTestViewerOptions,
-} from "~/tests/test-utils/MockUtils";
+} from "@/tests/test-utils/MockUtils";
 import { describe, expect, test } from "vitest";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
-import MainToolbar from "~/components/MainToolbar.vue";
+import MainToolbar from "@/components/MainToolbar.vue";
 
 describe("MainToolbar", () => {
   test("Mounting toolbar", async () => {

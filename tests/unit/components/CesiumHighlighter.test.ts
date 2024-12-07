@@ -1,9 +1,9 @@
-import CesiumHighlighter from "~/components/CesiumHighlighter.vue";
+import CesiumHighlighter from "@/components/CesiumHighlighter.vue";
 import { Color, Entity, Scene } from "cesium";
-import { Colors } from "~/utils/Colors";
-import { createEntityWithModel } from "~/tests/test-utils/MockUtils";
+import { Colors } from "@/utils/Colors";
+import { createEntityWithModel } from "@/tests/test-utils/MockUtils";
 import { describe, expect, test } from "vitest";
-import getWebGLStub from "~/tests/test-utils/getWebGLStub";
+import getWebGLStub from "@/tests/test-utils/getWebGLStub";
 
 describe("CesiumHighlighter", () => {
   test("Create CesiumHighlighter", () => {

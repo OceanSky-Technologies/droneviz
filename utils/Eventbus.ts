@@ -1,6 +1,6 @@
 import type { Entity, Cartesian3 } from "cesium";
 import mitt from "mitt";
-import type { Drone } from "~/core/Drone";
+import type { Drone } from "@/core/Drone";
 
 export type Events = {
   // drone events

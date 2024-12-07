@@ -7,7 +7,7 @@ import {
   defined,
   JulianDate,
 } from "cesium";
-import { almostEqual } from "~/utils/FuzzyCompare";
+import { almostEqual } from "@/utils/FuzzyCompare";
 
 export interface Silhouette {
   color: Color;

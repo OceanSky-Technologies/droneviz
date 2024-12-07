@@ -1,4 +1,4 @@
-import { createViewerOptions } from "~/utils/CesiumViewerOptions";
+import { createViewerOptions } from "@/utils/CesiumViewerOptions";
 import { describe, expect, test } from "vitest";
 
 describe("CesiumViewerOptions", () => {

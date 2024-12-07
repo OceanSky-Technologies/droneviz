@@ -3,16 +3,16 @@ import {
   mockCesiumModel,
   mountCesiumViewerMock,
   silenceConsole,
-} from "~/tests/test-utils/MockUtils";
+} from "@/tests/test-utils/MockUtils";
 import { Cartesian2, Cartesian3, Entity, Model } from "cesium";
-import CesiumMouseHandler from "~/components/CesiumMouseHandler";
+import CesiumMouseHandler from "@/components/CesiumMouseHandler";
 import {
   destroyCesium,
   getCesiumViewer,
-} from "~/components/CesiumViewerWrapper";
+} from "@/components/CesiumViewerWrapper";
 import { cleanup } from "@testing-library/vue";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { settings } from "~/utils/Settings";
+import { settings } from "@/utils/Settings";
 
 // global cleanup somehow does not work so do it here ?!
 afterEach(() => {

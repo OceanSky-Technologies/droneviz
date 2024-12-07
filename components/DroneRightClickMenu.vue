@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { onMounted } from "vue";
-import { eventBus } from "~/utils/Eventbus";
+import { eventBus } from "@/utils/Eventbus";
 import type { CSSProperties } from "vue";
 import {
   Cartesian3,
@@ -49,15 +49,14 @@ async function flyTo() {
     return;
   }
 
-  const drone = droneCollection.getDrone(0);
-  if (!drone) {
+  if (!droneCollection.selectedDrone.value) {
     showToast("Drone is not connected", ToastSeverity.Error);
     closeMenu();
     return;
   }
 
   try {
-    await drone.doReposition(
+    await droneCollection.selectedDrone.value.doReposition(
       Math.toDegrees(positionCartographic.latitude),
       Math.toDegrees(positionCartographic.longitude),
       positionCartographic.height,
@@ -95,7 +94,7 @@ function handleCesiumRightClick({
   position: { x: number; y: number };
 }) {
   // don't show menu if no drone is selected
-  if (!droneCollection.selectedEntity.value) return;
+  if (!droneCollection.selectedDrone.value) return;
 
   // right click somewhere on the map (but not on an entity) to show the menu
   if (!entity) {
@@ -104,14 +103,14 @@ function handleCesiumRightClick({
     positionCartographic = Cartographic.fromCartesian(cartesian3);
 
     // get drone altitude and update the position (height)
-    const drone = droneCollection.getDrone(0);
-    if (!drone) {
+    if (!droneCollection.selectedDrone.value) {
       showToast("Drone is not connected", ToastSeverity.Error);
       closeMenu();
       return;
     }
 
-    const currentAltitude = drone.lastMessages.altitude;
+    const currentAltitude =
+      droneCollection.selectedDrone.value.lastMessages.altitude;
     if (!currentAltitude || !currentAltitude.message.altitudeAmsl) {
       showToast("Drone altitude is unknown", ToastSeverity.Error);
       closeMenu();

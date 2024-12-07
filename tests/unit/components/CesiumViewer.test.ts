@@ -1,10 +1,10 @@
 import {
   mountCesiumViewerMock,
   silenceConsole,
-} from "~/tests/test-utils/MockUtils";
+} from "@/tests/test-utils/MockUtils";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { cleanup } from "@testing-library/vue";
-import { destroyCesium } from "~/components/CesiumViewerWrapper";
+import { destroyCesium } from "@/components/CesiumViewerWrapper";
 
 // global cleanup somehow does not work so do it here ?!
 afterEach(() => {

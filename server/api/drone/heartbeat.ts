@@ -1,4 +1,4 @@
-import type { QueryResult } from "~/types/MessageInterface";
+import type { QueryResult } from "@/types/MessageInterface";
 import { drones } from "./DroneCollection";
 import { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
 

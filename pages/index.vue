@@ -1,13 +1,13 @@
 <script lang="ts" setup>
-import CesiumViewer from "~/components/CesiumViewer.vue";
-import DarkToggle from "~/components/DarkToggle.vue";
-import DroneMenu from "~/components/DroneMenu.vue";
-import DroneRightClickMenu from "~/components/DroneRightClickMenu.vue";
-import MainToolbar from "~/components/MainToolbar.vue";
-import { cesiumInitialized } from "~/components/CesiumViewerWrapper";
-import { Drone } from "~/core/Drone";
+import CesiumViewer from "@/components/CesiumViewer.vue";
+import DarkToggle from "@/components/DarkToggle.vue";
+import DroneMenu from "@/components/DroneMenu.vue";
+import DroneRightClickMenu from "@/components/DroneRightClickMenu.vue";
+import MainToolbar from "@/components/MainToolbar.vue";
+import { cesiumInitialized } from "@/components/CesiumViewerWrapper";
+import { Drone } from "@/core/Drone";
 import { droneCollection } from "@/core/DroneCollection";
-import { UdpOptions } from "~/types/DroneConnectionOptions";
+import { UdpOptions } from "@/types/DroneConnectionOptions";
 
 const connectDisconnectRef =
   useTemplateRef<ComponentPublicInstance>("connectDisconnect");

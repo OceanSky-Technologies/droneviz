@@ -55,7 +55,7 @@ async function mouseClickListener(
   ) {
     console.log("Unselected all entities");
     selectedEntityHighlighter.clear();
-    droneCollection.selectedEntity.value = undefined;
+    droneCollection.selectedDrone.value = undefined;
     eventBus.emit("cesiumLeftClick", undefined);
     return;
   }
@@ -65,7 +65,7 @@ async function mouseClickListener(
     console.log(entity);
 
     selectedEntityHighlighter.add(entity);
-    droneCollection.selectedEntity.value = entity;
+    droneCollection.selectDrone(0);
 
     eventBus.emit("cesiumLeftClick", entity);
   } else {
@@ -73,7 +73,7 @@ async function mouseClickListener(
     console.log(entity);
 
     selectedEntityHighlighter.remove(entity);
-    droneCollection.selectedEntity.value = undefined;
+    droneCollection.selectedDrone.value = undefined;
 
     eventBus.emit("cesiumLeftClick", entity);
   }

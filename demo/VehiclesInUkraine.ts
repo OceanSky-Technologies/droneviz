@@ -8,7 +8,7 @@ import {
   Transforms,
 } from "cesium";
 
-import { getLatLonFromCartesian3, move } from "~/utils/CoordinateUtils";
+import { getLatLonFromCartesian3, move } from "@/utils/CoordinateUtils";
 
 export const text = "Vehicles in Crimea, Ukraine";
 export const id = "vehicles-in-crimea-ukraine";

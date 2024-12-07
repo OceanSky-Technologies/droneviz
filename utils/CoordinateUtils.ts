@@ -55,21 +55,21 @@ export function getLatLonFromCartesian3(pos: Cartesian3): {
  * @returns {string} Formatted coordinate (degrees)
  */
 export function formatCoordinate(coordinate?: number): string {
-  if (coordinate === undefined) throw Error("No coordinate provided!");
+  if (coordinate === undefined) return "undefined";
 
   // 6 decimal places equal 10 cm resolution. 12 digits are maximum.
   return coordinate.toFixed(6).padStart(12, " ") + "°";
 }
 
 /**
- * Formats a height to a string.
- * @param {number} height Height (meters)
- * @returns {string} Formatted height
+ * Formats an altitude to a string.
+ * @param {number} altitude Altitude (meters)
+ * @returns {string} Formatted altitude
  */
-export function formatHeight(height?: number): string {
-  if (!height) throw Error("No coordinates provided!");
+export function formatAltitude(altitude?: number): string {
+  if (!altitude) return "undefined";
 
-  return height.toFixed(2).padStart(12, " ") + "m";
+  return altitude.toFixed(2).padStart(12, " ") + "m";
 }
 
 export function setAltitude(entity: Entity, message: GlobalPositionInt) {

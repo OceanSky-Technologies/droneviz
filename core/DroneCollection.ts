@@ -3,7 +3,11 @@ import type { Drone } from "./Drone";
 
 class DroneCollection {
   private drones: Drone[] = [];
-  selectedEntity: Ref<any> = ref(undefined);
+  selectedDrone = ref<Drone | undefined>(undefined);
+
+  selectDrone(id: number) {
+    this.selectedDrone.value = this.getDrone(id);
+  }
 
   addDrone(drone: Drone): Drone {
     const num = this.drones.push(drone);
@@ -23,9 +27,8 @@ class DroneCollection {
     return this.drones[num - 1];
   }
 
-  getDrone(index: number) {
-    if (index < 0 || index >= this.drones.length)
-      throw Error("Index out of bounds!");
+  getDrone(index: number): Drone | undefined {
+    if (index < 0 || index >= this.drones.length) return undefined;
 
     return this.drones[index];
   }

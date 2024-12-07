@@ -2,11 +2,11 @@ import type {
   SerialOptions,
   TcpOptions,
   UdpOptions,
-} from "~/types/DroneConnectionOptions";
-import { showToast, ToastSeverity } from "~/utils/ToastService";
-import { REGISTRY } from "~/types/MavlinkRegistry";
+} from "@/types/DroneConnectionOptions";
+import { showToast, ToastSeverity } from "@/utils/ToastService";
+import { REGISTRY } from "@/types/MavlinkRegistry";
 import { getCesiumViewer } from "../components/CesiumViewerWrapper";
-import { setAltitude } from "~/utils/CoordinateUtils";
+import { setAltitude } from "@/utils/CoordinateUtils";
 import {
   ConstantProperty,
   HeadingPitchRoll,
@@ -17,14 +17,16 @@ import {
 import type {
   MavlinkMessageInterface,
   QueryResult,
-} from "~/types/MessageInterface";
+} from "@/types/MessageInterface";
 import {
+  Altitude,
   Attitude,
   AutotuneAxis,
   CommandAck,
   CommandLong,
   DoRepositionCommand,
   GlobalPositionInt,
+  GpsRawInt,
   ManualControl,
   MavCmd,
   MavDoRepositionFlags,
@@ -61,7 +63,7 @@ export class Drone {
   private eventSource?: EventSource;
 
   // cesium entity to represent the drone
-  entity?: Entity;
+  entity?: any;
 
   private sysid: number = NaN;
   private compid: number = NaN;

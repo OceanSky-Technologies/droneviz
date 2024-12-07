@@ -1,4 +1,4 @@
-import DarkToggle from "~/components/DarkToggle.vue";
+import DarkToggle from "@/components/DarkToggle.vue";
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { describe, expect, test } from "vitest";
 

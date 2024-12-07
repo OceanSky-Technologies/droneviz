@@ -19,7 +19,6 @@ Ion.defaultAccessToken =
 
 let viewer: Viewer | undefined;
 let googleTileset: Cesium3DTileset | undefined;
-export let trackedEntityHighlighter: CesiumHighlighter;
 
 export let cesiumInitialized: Ref<boolean> = ref(false);
 
@@ -51,11 +50,6 @@ export async function initCesium(
   getCesiumViewer().scene.globe.depthTestAgainstTerrain = true;
 
   if (settings.google3DTilesEnabled.value) await initGoogleTileset(tilesetMock);
-
-  trackedEntityHighlighter = new CesiumHighlighter(
-    getCesiumViewer().scene,
-    Color.fromCssColorString(Colors.GOLD),
-  );
 
   cesiumInitialized.value = true;
 }
@@ -193,16 +187,7 @@ export function updateRequestRenderMode() {
     return;
   }
 
-  if (!trackedEntityHighlighter) {
-    console.log("trackedEntityHighlighter is undefined");
-    return;
-  }
-
-  if (
-    !selectedEntityHighlighter.empty() ||
-    !mouseOverHighlighter.empty() ||
-    !trackedEntityHighlighter.empty()
-  ) {
+  if (!selectedEntityHighlighter.empty() || !mouseOverHighlighter.empty()) {
     getCesiumViewer().scene.requestRenderMode = false;
   } else {
     getCesiumViewer().scene.requestRenderMode = true;
