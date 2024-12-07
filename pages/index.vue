@@ -5,8 +5,8 @@ import DroneMenu from "~/components/DroneMenu.vue";
 import DroneRightClickMenu from "~/components/DroneRightClickMenu.vue";
 import MainToolbar from "~/components/MainToolbar.vue";
 import { cesiumInitialized } from "~/components/CesiumViewerWrapper";
-import { Drone } from "~/components/Drone";
-import { droneCollection } from "~/components/DroneCollection";
+import { Drone } from "~/core/Drone";
+import { droneCollection } from "@/core/DroneCollection";
 import { UdpOptions } from "~/types/DroneConnectionOptions";
 
 const connectDisconnectRef =

@@ -9,8 +9,7 @@ import {
   SceneTransforms,
   type Entity,
 } from "cesium";
-import { droneCollection } from "./DroneCollection";
-import * as egm96 from "egm96-universal";
+import { droneCollection } from "@/core/DroneCollection";
 import FlyToIcon from "@/components/icons/FlyTo.vue";
 import ProgressButton from "@/components/ProgressButton.vue";
 import { getCesiumViewer } from "./CesiumViewerWrapper";
@@ -34,7 +33,7 @@ const popupStyle = computed<CSSProperties>(() => ({
 
 // coordinates of the right-clicked position
 let positionCartesian: Cartesian3;
-let positionCartographic: Cartographic = new Cartographic();
+let positionCartographic: Cartographic = new Cartographic(); // the height is the drone MSL altitude
 
 // remove callbacks for cesium listeners (destroyed when component is unmounted)
 let cesiumListenerCbs: (() => void)[] = [];
@@ -51,7 +50,6 @@ async function flyTo() {
   }
 
   const drone = droneCollection.getDrone(0);
-
   if (!drone) {
     showToast("Drone is not connected", ToastSeverity.Error);
     closeMenu();
@@ -66,7 +64,7 @@ async function flyTo() {
     );
 
     showToast(
-      `Repositioning drone:\n- latitude: ${positionCartographic.latitude}\n- longitude: ${positionCartographic.longitude}\n- height: ${positionCartographic.height}`,
+      `Repositioning drone:\n- latitude: ${formatCoordinate(Math.toDegrees(positionCartographic.latitude))}\n- longitude: ${formatCoordinate(Math.toDegrees(positionCartographic.longitude))}\n- height: ${positionCartographic.height.toFixed(2)}m`,
       ToastSeverity.Success,
     );
   } catch (e) {
@@ -103,8 +101,24 @@ function handleCesiumRightClick({
   if (!entity) {
     // save new gps coordinates of the right clicked location
     positionCartesian = cartesian3;
-    positionCartographic =
-      Cartographic.fromCartesian(cartesian3) ?? new Cartographic();
+    positionCartographic = Cartographic.fromCartesian(cartesian3);
+
+    // get drone altitude and update the position (height)
+    const drone = droneCollection.getDrone(0);
+    if (!drone) {
+      showToast("Drone is not connected", ToastSeverity.Error);
+      closeMenu();
+      return;
+    }
+
+    const currentAltitude = drone.lastMessages.altitude;
+    if (!currentAltitude || !currentAltitude.message.altitudeAmsl) {
+      showToast("Drone altitude is unknown", ToastSeverity.Error);
+      closeMenu();
+      return;
+    }
+
+    positionCartographic.height = currentAltitude.message.altitudeAmsl;
 
     updateOverlayPosition();
 
@@ -115,7 +129,6 @@ function handleCesiumRightClick({
 }
 
 const updateOverlayPosition = () => {
-  console.log("updateOverlayPosition");
   if (!getCesiumViewer() || !menu.value || !positionCartesian) return;
 
   // Convert WGS84 position to screen coordinates
@@ -202,14 +215,7 @@ onBeforeUnmount(() => {
         </p>
         <p>
           Height (MSL):
-          {{
-            formatHeight(
-              egm96.meanSeaLevel(
-                Math.toDegrees(positionCartographic.latitude),
-                Math.toDegrees(positionCartographic.longitude),
-              ),
-            )
-          }}
+          {{ positionCartographic.height.toFixed(2) + "m" }}
         </p>
       </div>
 
@@ -226,6 +232,10 @@ onBeforeUnmount(() => {
 .popup-menu {
   position: absolute;
   text-align: center;
+  white-space: nowrap; /* Prevent text wrapping */
+  min-width: max-content; /* Ensure the width accommodates the content */
+  min-height: fit-content; /* Ensure the height accommodates the content */
+  overflow: visible; /* Prevent clipping */
   border-radius: 10px;
   z-index: 1000;
   padding: 10px;

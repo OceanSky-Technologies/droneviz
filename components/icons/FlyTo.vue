@@ -13,8 +13,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from "vue";
-
 defineProps({
   width: {
     type: [String, Number],

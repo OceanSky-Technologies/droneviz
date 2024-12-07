@@ -36,6 +36,10 @@
   --p-primary-950: var(--p-sky-950) !important;
 }
 
+body {
+  overflow: hidden; /* Disable scrolling globally */
+}
+
 svg {
   fill: #ffffff;
 }

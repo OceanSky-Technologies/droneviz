@@ -26,7 +26,6 @@ export class AnimationFrameScheduler {
    * Starts the scheduler. Tasks will execute periodically until the scheduler is stopped.
    */
   async start(): Promise<void> {
-    console.log("Starting scheduler");
     this.stopFlag = false;
     this.runTask();
   }
@@ -67,7 +66,6 @@ export class AnimationFrameScheduler {
    * Stops the scheduler. The task will not execute until start() is called again.
    */
   stop(): void {
-    console.log("stopping scheduler");
     this.stopFlag = true;
   }
 }

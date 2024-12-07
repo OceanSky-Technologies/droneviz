@@ -5,7 +5,7 @@ import type {
 } from "~/types/DroneConnectionOptions";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
 import { REGISTRY } from "~/types/MavlinkRegistry";
-import { getCesiumViewer } from "./CesiumViewerWrapper";
+import { getCesiumViewer } from "../components/CesiumViewerWrapper";
 import { setAltitude } from "~/utils/CoordinateUtils";
 import {
   ConstantProperty,
@@ -39,6 +39,7 @@ import {
   MavState,
   MavType,
 } from "mavlink-mappings/dist/lib/minimal";
+import { MessageMap } from "./MessageMap";
 
 const UINT16_MAX = 65535;
 
@@ -47,12 +48,6 @@ const defaultFetchOptions = {
   method: "POST" as any,
   baseURL: useRuntimeConfig().public.baseURL as string,
 };
-
-// Interface to store a message and its reception timestamp
-interface StoredMessage<T> {
-  message: T; // The message instance
-  timestamp: number; // Reception unix timestamp in milliseconds
-}
 
 /**
  * Drone class to handle communication with the server and the drone.
@@ -70,7 +65,7 @@ export class Drone {
 
   private sysid: number = NaN;
   private compid: number = NaN;
-  private lastMessages: Map<string, StoredMessage<any>> = new Map();
+  lastMessages = new MessageMap();
 
   // intervals for sending heartbeat and manual control data (if enabled)
   private heartbeatInterval: NodeJS.Timeout | null = null;
@@ -127,7 +122,7 @@ export class Drone {
   async connect(): Promise<void> {
     this.sysid = NaN;
     this.compid = NaN;
-    this.lastMessages = new Map();
+    this.lastMessages = new MessageMap();
 
     // Send connection request to server to establish a connection.
     // The event source is used to receive messages from the server.
@@ -279,19 +274,6 @@ export class Drone {
   }
 
   /**
-   * Get the last message for the given class.
-   * @param {new () => T} messageClass - The class of the message.
-   * @returns {StoredMessage<T> | undefined} - The last message for the given class.
-   */
-  public getLastMessage<T>(
-    messageClass: new () => T,
-  ): StoredMessage<T> | undefined {
-    // Retrieve the last message for the given class
-    const messageType = messageClass.name;
-    return this.lastMessages.get(messageType) as StoredMessage<T> | undefined;
-  }
-
-  /**
    * Send a message to the server.
    * @param {string} api - The API endpoint to send the message to.
    * @param {T} data - The data to send.
@@ -410,7 +392,7 @@ export class Drone {
     if (!this.entity) return;
     if (!this.entity.position || !this.entity.position.getValue()) return;
 
-    const lastglobalPositionMessage = this.getLastMessage(GlobalPositionInt);
+    const lastglobalPositionMessage = this.lastMessages.globalPositionInt;
     if (!lastglobalPositionMessage) return;
 
     if (lastglobalPositionMessage.message.hdg === UINT16_MAX) return;
@@ -719,7 +701,7 @@ export class Drone {
                 message.result === MavResult.IN_PROGRESS
               ) {
                 if (message.progress === 100) {
-                  showToast("Autotuning completed", ToastSeverity.Success);
+                  showToast("Autotuning completed!", ToastSeverity.Success);
                   return true;
                 } else {
                   if (!landingInProgress) {

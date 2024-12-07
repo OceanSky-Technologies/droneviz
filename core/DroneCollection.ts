@@ -1,4 +1,4 @@
-import { getCesiumViewer } from "./CesiumViewerWrapper";
+import { getCesiumViewer } from "@/components/CesiumViewerWrapper";
 import type { Drone } from "./Drone";
 
 class DroneCollection {

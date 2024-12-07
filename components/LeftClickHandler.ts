@@ -10,8 +10,7 @@ import {
   getCesiumViewer,
   updateRequestRenderMode,
 } from "./CesiumViewerWrapper";
-import { droneCollection } from "./DroneCollection";
-import CesiumViewer from "./CesiumViewer.vue";
+import { droneCollection } from "@/core/DroneCollection";
 
 let mouseClickHandler: ScreenSpaceEventHandler;
 export let selectedEntityHighlighter: CesiumHighlighter;

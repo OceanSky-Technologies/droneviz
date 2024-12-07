@@ -8,11 +8,11 @@ import {
   updateRequestRenderMode,
 } from "./CesiumViewerWrapper";
 import { Button } from "primevue";
-import { droneCollection } from "./DroneCollection";
 import Landing from "@/components/icons/Landing.vue";
 import Takeoff from "@/components/icons/Takeoff.vue";
 import Warning from "@/components/icons/Warning.vue";
 import { useConfirm } from "primevue/useconfirm";
+import { droneCollection } from "@/core/DroneCollection";
 
 const confirm = useConfirm();
 
@@ -52,8 +52,8 @@ async function arm() {
       "Are you sure you want to arm the aircraft?\nPlease ensure the environment is safe, and all pre-flight checks are complete before proceeding.",
     header: "Arming",
     icon: markRaw(Warning) as any,
-    rejectLabel: "CANCEL",
-    acceptLabel: "ARM",
+    rejectLabel: "Cancel",
+    acceptLabel: "Arm",
     acceptClass: "p-button-danger",
     accept: async () => {
       try {
@@ -82,8 +82,8 @@ async function disarm() {
       "Are you sure you want to disarm the aircraft?\nDisarming while airborne will cause the aircraft to fall immediately. Proceed only if it is safe to do so.",
     header: "Disarming",
     icon: markRaw(Warning) as any,
-    rejectLabel: "CANCEL",
-    acceptLabel: "DISARM",
+    rejectLabel: "Cancel",
+    acceptLabel: "Disarm",
     acceptClass: "p-button-danger",
     accept: async () => {
       try {
@@ -111,8 +111,8 @@ async function takeoff() {
     message: "Ensure that the takeoff area is clear.",
     header: "Takeoff",
     icon: markRaw(Takeoff) as any,
-    rejectLabel: "CANCEL",
-    acceptLabel: "TAKEOFF",
+    rejectLabel: "Cancel",
+    acceptLabel: "Takeoff",
     acceptClass: "p-button-success",
     accept: async () => {
       try {
@@ -140,8 +140,8 @@ async function land() {
     message: "Confirm that the landing area is safe and clear of obstacles.",
     header: "Land",
     icon: markRaw(Landing) as any,
-    rejectLabel: "CANCEL",
-    acceptLabel: "LAND",
+    rejectLabel: "Cancel",
+    acceptLabel: "Land",
     acceptClass: "p-button-success",
     accept: async () => {
       try {
@@ -165,17 +165,28 @@ async function autotune() {
     return;
   }
 
-  try {
-    const drone = droneCollection.getDrone(0);
-    showToast("Autotuning...", ToastSeverity.Info);
-    await drone.autotune();
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(e.message, ToastSeverity.Error);
-    } else {
-      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
-    }
-  }
+  confirm.require({
+    message:
+      "Are you sure you want to start autotuning the flight controller?\nPlease ensure the aircraft can fly stable enough and you are ready to abort the autotuning process at any time.\nOnce autotuning is complete the aircraft will land automatically.\n\nMore infos: <a href='https://docs.px4.io/main/en/config/autotune_mc.html' target='_blank'>here</a>.",
+    header: "Autotune",
+    icon: markRaw(Warning) as any,
+    rejectLabel: "Cancel",
+    acceptLabel: "Start",
+    acceptClass: "p-button-danger",
+    accept: async () => {
+      try {
+        const drone = droneCollection.getDrone(0);
+        showToast("Autotuning...", ToastSeverity.Info);
+        await drone.autotune();
+      } catch (e) {
+        if (e instanceof Error) {
+          showToast(e.message, ToastSeverity.Error);
+        } else {
+          showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+        }
+      }
+    },
+  });
 }
 
 function trackUntrack() {
@@ -247,17 +258,31 @@ onUnmounted(() => {
 
     <Button class="close-button" @click="toggleMenu">x</Button>
     <div class="menu">
-      <Button label="Arm" @click="arm" severity="danger" />
-      <Button label="Disarm" @click="disarm" severity="danger" />
-      <Button label="Takeoff" @click="takeoff" />
-      <Button label="Land" @click="land" />
-      <Button label="Autotune" @click="autotune" severity="warn" />
-      <CameraWindow />
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 10px;
+          align-items: flex-start;
+        "
+      >
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <Button label="Arm" @click="arm" severity="danger" />
+          <Button label="Disarm" @click="disarm" severity="danger" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <Button label="Takeoff" @click="takeoff" />
+          <Button label="Land" @click="land" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <Button label="Autotune" @click="autotune" severity="warn" />
+          <CameraWindow />
+        </div>
+      </div>
       <Button
         :label="trackUntrackButtonLabel"
         :icon="trackUntrackButtonIcon"
         @click="trackUntrack"
-        style="margin-top: auto"
       />
     </div>
   </div>
@@ -266,27 +291,27 @@ onUnmounted(() => {
 <style scoped lang="postcss">
 .menu-wrapper {
   position: fixed;
-  top: 0;
-  right: 0;
-  height: 100%;
-  width: 300px;
-  transform: translateX(100%); /* Hide by default */
-  transition: transform 0.2s ease-in-out;
+  bottom: 0; /* Element is positioned at the bottom but hidden via transform */
+  left: 0;
+  height: 300px;
+  width: 100%;
+  transform: translateY(100%); /* Start off-screen */
+  transition: transform 0.2s ease-in-out; /* Smooth sliding effect */
   z-index: 1000;
   overflow: hidden;
   background-color: var(--p-content-background);
-  border-color: var(--p-content-border-color);
+  border: 1px solid var(--p-content-border-color); /* Added solid border syntax */
 }
 
 .menu-wrapper.open {
-  transform: translateX(0); /* Slide in */
+  transform: translateY(0); /* Slide in */
 }
 
 .menu {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding-bottom: 50px;
   height: 100%;
