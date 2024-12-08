@@ -105,7 +105,16 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
-    "/api/**": { cors: true },
+    "/api/**": {
+      cors: true,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "*",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "*",
+      },
+    },
   },
   pwa: {
     devOptions: {
@@ -281,9 +290,12 @@ export default defineNuxtConfig({
         target: "esnext",
       },
     },
+    externals: {
+      inline: ["mavlink-mappings"], // make sure mavlink-mappings can be imported by the server with tauri in production mode
+    },
     publicAssets: [
       {
-        //Nuxt will copy the files here and serve them publicly
+        // Nuxt will copy the files here and serve them publicly
         baseURL: "_nuxt/Cesium/Assets",
         dir: "../node_modules/cesium/Build/Cesium/Assets",
       },

@@ -44,13 +44,10 @@ async function init() {
  * Resets the camera.
  */
 async function resetCamera() {
-  // wait for Cesium to initialize for a smooth transition
-  await new Promise((r) => setTimeout(r, 1000));
-
   getCesiumViewer().scene.requestRender();
   const options = {
-    enableHighAccuracy: true,
-    timeout: 1000,
+    enableHighAccuracy: false,
+    timeout: 5000,
     maximumAge: 0,
   };
 

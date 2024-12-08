@@ -5,6 +5,7 @@ import {
   UdpOptions,
 } from "@/types/DroneConnectionOptions";
 import { drones } from "./DroneCollection";
+import { setHttpHeaders } from "~/server/utils/headers";
 import type { QueryResult } from "@/types/MessageInterface";
 
 interface QueryInterface {
@@ -15,6 +16,8 @@ interface QueryInterface {
 export default defineEventHandler(async (event): Promise<QueryResult> => {
   const query = await readBody<QueryInterface>(event);
   console.log("Received connection request:", JSON.stringify(query));
+
+  setHttpHeaders(event);
 
   if (drones.length !== 0) {
     return { success: false, message: "A drone is already connected." };

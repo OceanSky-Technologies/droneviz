@@ -1,7 +1,10 @@
 import NodeGeocoder, { type Options } from "node-geocoder";
+import { setHttpHeaders } from "~/server/utils/headers";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
+
+  setHttpHeaders(event);
 
   const options = {
     provider: "openstreetmap",

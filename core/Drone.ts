@@ -7,34 +7,24 @@ import { showToast, ToastSeverity } from "@/utils/ToastService";
 import { REGISTRY } from "@/types/MavlinkRegistry";
 import { getCesiumViewer } from "../components/CesiumViewerWrapper";
 import { setAltitude } from "@/utils/CoordinateUtils";
-import {
-  ConstantProperty,
-  HeadingPitchRoll,
-  Math,
-  Transforms,
-  type Entity,
-} from "cesium";
+import { ConstantProperty, HeadingPitchRoll, Math, Transforms } from "cesium";
 import type {
   MavlinkMessageInterface,
   QueryResult,
 } from "@/types/MessageInterface";
 import {
-  Altitude,
   Attitude,
   AutotuneAxis,
   CommandAck,
   CommandLong,
   DoRepositionCommand,
-  DoSetModeCommand,
   GlobalPositionInt,
-  GpsRawInt,
   ManualControl,
   MavCmd,
   MavDoRepositionFlags,
   MavResult,
   Ping,
   PrecisionLandMode,
-  SetMode,
 } from "mavlink-mappings/dist/lib/common";
 import {
   Heartbeat,
@@ -283,15 +273,15 @@ export class Drone {
    * @param {T} data - The data to send.
    * @returns {Promise<QueryResult>} - A promise that resolves with the query result.
    */
-  private send<T>(api: string, data?: T): Promise<QueryResult> {
-    const promise = $fetch(api, {
+  private async send<T>(api: string, data?: T): Promise<QueryResult> {
+    const response = await $fetch(api, {
       ...defaultFetchOptions,
       body: {
         ...data,
       },
     });
 
-    return promise as Promise<QueryResult>;
+    return JSON.parse(response);
   }
 
   /**
@@ -348,11 +338,14 @@ export class Drone {
     command.type = MavType.GCS;
     command.autopilot = MavAutopilot.INVALID;
     command.baseMode =
-      MavModeFlag.MANUAL_INPUT_ENABLED | MavModeFlag.SAFETY_ARMED;
+      (settings.manualControlInterval ? MavModeFlag.MANUAL_INPUT_ENABLED : 0) |
+      MavModeFlag.SAFETY_ARMED;
     command.systemStatus = MavState.ACTIVE;
     command.mavlinkVersion = 3;
 
     const data = await this.send("/api/drone/heartbeat", { data: command });
+    console.log(data);
+    console.log(data.success);
 
     if (!data.success)
       throw new Error(`Sending heartbeat failed: ${data.message}`);

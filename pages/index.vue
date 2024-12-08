@@ -62,7 +62,7 @@ async function connectDisconnect() {
     }
 
     connectDisconnectRef.value.$el.disabled = false;
-    await droneCollection.disconnectAll();
+    droneCollection.disconnectAll();
     droneCollection.removeAllDrones();
   }
 }

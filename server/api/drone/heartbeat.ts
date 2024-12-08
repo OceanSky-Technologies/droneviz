@@ -1,13 +1,16 @@
 import type { QueryResult } from "@/types/MessageInterface";
 import { drones } from "./DroneCollection";
+import { setHttpHeaders } from "~/server/utils/headers";
 import { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
 
-interface Query {
+interface QueryInterface {
   data: Heartbeat;
 }
 
 export default defineEventHandler(async (event): Promise<QueryResult> => {
-  const query = await readBody<Query>(event);
+  const query = await readBody<QueryInterface>(event);
+
+  setHttpHeaders(event);
 
   if (drones.length !== 1) {
     return { success: false, message: `${drones.length} drones connected.` };
@@ -20,6 +23,7 @@ export default defineEventHandler(async (event): Promise<QueryResult> => {
   try {
     await drone.send(data);
   } catch (e) {
+    console.log(e);
     if (e instanceof Error) return { success: false, message: e.message };
     else return { success: false, message: JSON.stringify(e) };
   }

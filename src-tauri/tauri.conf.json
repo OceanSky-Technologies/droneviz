@@ -15,18 +15,27 @@
         "label": "main",
         "width": 1280,
         "height": 720,
-        "resizable": true
+        "resizable": true,
+        "additionalBrowserArgs": "--disable-web-security"
       },
       {
         "title": "Video window",
         "label": "video",
         "width": 640,
         "height": 480,
-        "visible": false
+        "visible": false,
+        "additionalBrowserArgs": "--disable-web-security"
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "headers": {
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "*",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "*"
+
+      }
     }
   },
   "bundle": {

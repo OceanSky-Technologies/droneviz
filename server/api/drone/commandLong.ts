@@ -1,5 +1,6 @@
 import { CommandLong } from "mavlink-mappings/dist/lib/common";
 import { drones } from "./DroneCollection";
+import { setHttpHeaders } from "~/server/utils/headers";
 import type { QueryResult } from "@/types/MessageInterface";
 
 interface QueryInterface {
@@ -9,6 +10,8 @@ interface QueryInterface {
 export default defineEventHandler(async (event): Promise<QueryResult> => {
   const query = await readBody<QueryInterface>(event);
   console.log("Received long command: ", JSON.stringify(query));
+
+  setHttpHeaders(event);
 
   if (drones.length !== 1) {
     return { success: false, message: `${drones.length} drones connected.` };
