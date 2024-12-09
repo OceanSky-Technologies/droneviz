@@ -23,7 +23,6 @@ export default defineEventHandler(async (event): Promise<QueryResult> => {
   try {
     await drone.send(data);
   } catch (e) {
-    console.log(e);
     if (e instanceof Error) return { success: false, message: e.message };
     else return { success: false, message: JSON.stringify(e) };
   }

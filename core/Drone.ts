@@ -34,6 +34,7 @@ import {
   MavType,
 } from "mavlink-mappings/dist/lib/minimal";
 import { MessageMap } from "./MessageMap";
+import { settings } from "@/utils/Settings";
 
 const UINT16_MAX = 65535;
 
@@ -344,8 +345,6 @@ export class Drone {
     command.mavlinkVersion = 3;
 
     const data = await this.send("/api/drone/heartbeat", { data: command });
-    console.log(data);
-    console.log(data.success);
 
     if (!data.success)
       throw new Error(`Sending heartbeat failed: ${data.message}`);
