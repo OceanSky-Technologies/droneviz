@@ -35,6 +35,9 @@ import {
 } from "mavlink-mappings/dist/lib/minimal";
 import { MessageMap } from "./MessageMap";
 import { settings } from "@/utils/Settings";
+import { fixBigIntSerialization } from "@/types/bigIntSerializationHelper";
+
+fixBigIntSerialization();
 
 const UINT16_MAX = 65535;
 
@@ -275,14 +278,15 @@ export class Drone {
    * @returns {Promise<QueryResult>} - A promise that resolves with the query result.
    */
   private async send<T>(api: string, data?: T): Promise<QueryResult> {
-    const response = await $fetch(api, {
+    const response: any = await $fetch(api, {
       ...defaultFetchOptions,
       body: {
         ...data,
       },
     });
 
-    return JSON.parse(response);
+    if (typeof response === "string") return JSON.parse(response);
+    else return response;
   }
 
   /**
@@ -344,7 +348,7 @@ export class Drone {
     command.systemStatus = MavState.ACTIVE;
     command.mavlinkVersion = 3;
 
-    const data = await this.send("/api/drone/heartbeat", { data: command });
+    const data = await this.send("/api/drone/heartbeat", command);
 
     if (!data.success)
       throw new Error(`Sending heartbeat failed: ${data.message}`);
@@ -359,7 +363,7 @@ export class Drone {
     command.target = 254;
     command.z = 500;
 
-    const data = await this.send("/api/drone/manualControl", { data: command });
+    const data = await this.send("/api/drone/manualControl", command);
 
     if (!data.success)
       throw new Error(`Manual control failed: ${data.message}`);
@@ -377,7 +381,7 @@ export class Drone {
     pingReply.targetSystem = 42; // fixme: hardcoded
     pingReply.targetComponent = 42; // fixme: hardcoded
 
-    return this.send("/api/drone/ping", ping);
+    return this.send("/api/drone/ping", pingReply);
   }
 
   /**
@@ -437,7 +441,7 @@ export class Drone {
     command._param7 = NaN;
 
     await this.sendAndExpectResponse(
-      () => this.send("/api/drone/commandLong", { data: command }),
+      () => this.send("/api/drone/commandLong", command),
       (message) => {
         if (message instanceof CommandAck) {
           if (message.command === command.command) {
@@ -482,7 +486,7 @@ export class Drone {
     command._param7 = NaN;
 
     await this.sendAndExpectResponse(
-      () => this.send("/api/drone/commandLong", { data: command }),
+      () => this.send("/api/drone/commandLong", command),
       (message) => {
         if (message instanceof CommandAck) {
           if (message.command === command.command) {
@@ -526,7 +530,7 @@ export class Drone {
     command._param7 = NaN;
 
     await this.sendAndExpectResponse(
-      () => this.send("/api/drone/commandLong", { data: command }),
+      () => this.send("/api/drone/commandLong", command),
       (message) => {
         if (message instanceof CommandAck) {
           if (message.command === command.command) {
@@ -570,7 +574,7 @@ export class Drone {
     command._param7 = NaN;
 
     await this.sendAndExpectResponse(
-      () => this.send("/api/drone/commandLong", { data: command }),
+      () => this.send("/api/drone/commandLong", command),
       (message) => {
         if (message instanceof CommandAck) {
           if (message.command === command.command) {
@@ -629,7 +633,7 @@ export class Drone {
     command.bitmask = MavDoRepositionFlags.CHANGE_MODE;
 
     await this.sendAndExpectResponse(
-      () => this.send("/api/drone/commandInt", { data: command }),
+      () => this.send("/api/drone/commandInt", command),
       (message) => {
         if (message instanceof CommandAck) {
           if (message.command === command.command) {
@@ -679,10 +683,10 @@ export class Drone {
     let pollingInterval;
     let landingInProgress = false;
 
-    await this.send("/api/drone/commandLong", { data: command });
+    await this.send("/api/drone/commandLong", command);
 
     pollingInterval = setInterval(() => {
-      this.send("/api/drone/commandLong", { data: command });
+      this.send("/api/drone/commandLong", command);
     }, 1000);
 
     try {

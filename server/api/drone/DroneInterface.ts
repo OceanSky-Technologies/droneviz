@@ -22,18 +22,9 @@ import {
 } from "@/types/DroneConnectionOptions";
 import { REGISTRY } from "@/types/MavlinkRegistry";
 import type { MavlinkMessageInterface } from "@/types/MessageInterface";
+import { fixBigIntSerialization } from "@/types/bigIntSerializationHelper";
 
-// fix BigInt serialization: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-953187833
-declare global {
-  interface BigInt {
-    toJSON: () => string;
-  }
-}
-
-BigInt.prototype.toJSON = function () {
-  return this.toString();
-};
-// fix BigInt serialization end
+fixBigIntSerialization();
 
 export class DroneInterface {
   private connectionOption: SerialOptions | TcpOptions | UdpOptions;

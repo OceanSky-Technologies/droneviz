@@ -2,13 +2,10 @@ import { ManualControl } from "mavlink-mappings/dist/lib/common";
 import { drones } from "./DroneCollection";
 import { setHttpHeaders } from "~/server/utils/headers";
 import type { QueryResult } from "@/types/MessageInterface";
-
-interface Query {
-  data: ManualControl;
-}
+import { defineEventHandler, readBody } from "h3";
 
 export default defineEventHandler(async (event): Promise<QueryResult> => {
-  const query = await readBody<Query>(event);
+  const query: ManualControl = await readBody<ManualControl>(event);
 
   setHttpHeaders(event);
 
@@ -18,7 +15,7 @@ export default defineEventHandler(async (event): Promise<QueryResult> => {
 
   const drone = drones[0];
 
-  const data = Object.assign(new ManualControl(), query.data);
+  const data = Object.assign(new ManualControl(), query);
 
   try {
     await drone.send(data);

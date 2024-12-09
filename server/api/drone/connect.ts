@@ -7,6 +7,7 @@ import {
 import { drones } from "./DroneCollection";
 import { setHttpHeaders } from "~/server/utils/headers";
 import type { QueryResult } from "@/types/MessageInterface";
+import { defineEventHandler, readBody } from "h3";
 
 interface QueryInterface {
   connectionOptions: string;

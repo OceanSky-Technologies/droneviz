@@ -1,15 +1,19 @@
 import { drones } from "./DroneCollection";
 import { setHttpHeaders } from "~/server/utils/headers";
-import { createEventStream } from "h3";
-
-interface QueryInterface {}
+import {
+  createEventStream,
+  defineEventHandler,
+  getQuery,
+  setResponseStatus,
+  setHeader,
+} from "h3";
 
 export default defineEventHandler(async (event): Promise<any> => {
   try {
-    const query = getQuery<QueryInterface>(event);
+    const query = getQuery(event);
     console.log("streaming request", query);
 
-    setHttpHeaders(event);
+    setHttpHeaders(event, true, "text/event-stream");
 
     if (drones.length !== 1) {
       return { success: false, message: `${drones.length} drones connected.` };

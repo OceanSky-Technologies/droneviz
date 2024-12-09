@@ -1,13 +1,10 @@
 import type { QueryResult } from "@/types/MessageInterface";
 import { drones } from "./DroneCollection";
 import { setHttpHeaders } from "~/server/utils/headers";
-
-interface QueryInterface {
-  connectionOptions: string;
-}
+import { defineEventHandler, readBody } from "h3";
 
 export default defineEventHandler(async (event): Promise<QueryResult> => {
-  const query = await readBody<QueryInterface>(event);
+  const query: string = await readBody<string>(event);
   console.log("Received disconnect request:", JSON.stringify(query));
 
   setHttpHeaders(event);

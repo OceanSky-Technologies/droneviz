@@ -2,13 +2,10 @@ import { CommandInt } from "mavlink-mappings/dist/lib/common";
 import { drones } from "./DroneCollection";
 import { setHttpHeaders } from "~/server/utils/headers";
 import type { QueryResult } from "@/types/MessageInterface";
-
-interface QueryInterface {
-  data: CommandInt;
-}
+import { defineEventHandler, readBody } from "h3";
 
 export default defineEventHandler(async (event): Promise<QueryResult> => {
-  const query = await readBody<QueryInterface>(event);
+  const query: CommandInt = await readBody<CommandInt>(event);
   console.log("Received int command: ", JSON.stringify(query));
 
   setHttpHeaders(event);
@@ -19,7 +16,7 @@ export default defineEventHandler(async (event): Promise<QueryResult> => {
 
   const drone = drones[0];
 
-  const data = Object.assign(new CommandInt(), query.data);
+  const data = Object.assign(new CommandInt(), query);
 
   // Convert all `null` values to `NaN`
   for (const key in data) {

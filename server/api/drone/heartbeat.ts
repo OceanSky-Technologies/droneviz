@@ -2,13 +2,10 @@ import type { QueryResult } from "@/types/MessageInterface";
 import { drones } from "./DroneCollection";
 import { setHttpHeaders } from "~/server/utils/headers";
 import { Heartbeat } from "mavlink-mappings/dist/lib/minimal";
-
-interface QueryInterface {
-  data: Heartbeat;
-}
+import { defineEventHandler, readBody } from "h3";
 
 export default defineEventHandler(async (event): Promise<QueryResult> => {
-  const query = await readBody<QueryInterface>(event);
+  const query: Heartbeat = await readBody<Heartbeat>(event);
 
   setHttpHeaders(event);
 
@@ -18,7 +15,7 @@ export default defineEventHandler(async (event): Promise<QueryResult> => {
 
   const drone = drones[0];
 
-  const data = Object.assign(new Heartbeat(), query.data);
+  const data = Object.assign(new Heartbeat(), query);
 
   try {
     await drone.send(data);

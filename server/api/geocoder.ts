@@ -1,8 +1,13 @@
 import NodeGeocoder, { type Options } from "node-geocoder";
 import { setHttpHeaders } from "~/server/utils/headers";
+import { defineEventHandler, getQuery } from "h3";
+
+interface QueryInterface {
+  text: string;
+}
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
+  const query: QueryInterface = getQuery<QueryInterface>(event);
 
   setHttpHeaders(event);
 

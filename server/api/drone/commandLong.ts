@@ -2,13 +2,10 @@ import { CommandLong } from "mavlink-mappings/dist/lib/common";
 import { drones } from "./DroneCollection";
 import { setHttpHeaders } from "~/server/utils/headers";
 import type { QueryResult } from "@/types/MessageInterface";
-
-interface QueryInterface {
-  data: CommandLong;
-}
+import { defineEventHandler, readBody } from "h3";
 
 export default defineEventHandler(async (event): Promise<QueryResult> => {
-  const query = await readBody<QueryInterface>(event);
+  const query: CommandLong = await readBody<CommandLong>(event);
   console.log("Received long command: ", JSON.stringify(query));
 
   setHttpHeaders(event);
@@ -19,7 +16,7 @@ export default defineEventHandler(async (event): Promise<QueryResult> => {
 
   const drone = drones[0];
 
-  const data = Object.assign(new CommandLong(), query.data);
+  const data = Object.assign(new CommandLong(), query);
 
   // Convert all `null` values to `NaN`
   for (const key in data) {
