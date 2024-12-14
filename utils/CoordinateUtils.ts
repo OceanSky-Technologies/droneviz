@@ -9,7 +9,7 @@ import {
   Matrix4,
   Transforms,
 } from "cesium";
-import { meanSeaLevel } from "egm96-universal";
+import { egm96ToEllipsoid } from "egm96-universal";
 import type { GlobalPositionInt } from "mavlink-mappings/dist/lib/common";
 
 /**
@@ -72,16 +72,16 @@ export function formatAltitude(altitude?: number): string {
   return altitude.toFixed(2).padStart(12, " ") + "m";
 }
 
-export function setAltitude(entity: Entity, message: GlobalPositionInt) {
+export function setPosition(entity: Entity, message: GlobalPositionInt) {
   const longitude = message.lon / 1e7;
   const latitude = message.lat / 1e7;
 
-  // GlobalPosition data is relative to MSL so calculate the difference to get the altitude
-  const altitude = message.alt / 1000 - meanSeaLevel(latitude, longitude);
+  const altitude = egm96ToEllipsoid(latitude, longitude, message.alt / 1000);
 
-  // clamp model to ground if it's below terrain
+  // TODO: clamp model to ground if it's below terrain. Use correct reference instead of "0"
   if (entity.model) {
     if (altitude < 0) {
+      // TODO: replace 0 with terrain / 3D tile height
       if (
         entity.model.heightReference?.getValue() !==
         HeightReference.CLAMP_TO_GROUND
@@ -90,12 +90,9 @@ export function setAltitude(entity: Entity, message: GlobalPositionInt) {
           HeightReference.CLAMP_TO_GROUND,
         );
     } else {
-      if (
-        entity.model.heightReference?.getValue() !==
-        HeightReference.RELATIVE_TO_GROUND
-      )
+      if (entity.model.heightReference?.getValue() !== HeightReference.NONE)
         entity.model.heightReference = new ConstantProperty(
-          HeightReference.RELATIVE_TO_GROUND,
+          HeightReference.NONE,
         );
     }
   }

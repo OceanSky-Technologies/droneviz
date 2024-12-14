@@ -6,7 +6,7 @@ import type {
 import { showToast, ToastSeverity } from "@/utils/ToastService";
 import { REGISTRY } from "@/types/MavlinkRegistry";
 import { getCesiumViewer } from "../components/CesiumViewerWrapper";
-import { setAltitude } from "@/utils/CoordinateUtils";
+import { setPosition } from "@/utils/CoordinateUtils";
 import { ConstantProperty, HeadingPitchRoll, Math, Transforms } from "cesium";
 import type {
   MavlinkMessageInterface,
@@ -419,7 +419,7 @@ export class Drone {
   private updateEntityPosition(message: GlobalPositionInt) {
     if (!this.entity) return;
 
-    setAltitude(this.entity, message);
+    setPosition(this.entity, message);
 
     getCesiumViewer().scene.requestRender();
   }
@@ -432,13 +432,15 @@ export class Drone {
     const command = new CommandLong();
     command.command = MavCmd.COMPONENT_ARM_DISARM;
     command.targetSystem = 1;
+    command.targetComponent = 1;
+    command.confirmation = 0;
     command._param1 = 1; // arm
-    command._param2 = NaN; // 21196 means "force"
-    command._param3 = NaN;
-    command._param4 = NaN;
-    command._param5 = NaN;
-    command._param6 = NaN;
-    command._param7 = NaN;
+    command._param2 = 0; // 21196 means "force"
+    command._param3 = 0;
+    command._param4 = 0;
+    command._param5 = 0;
+    command._param6 = 0;
+    command._param7 = 0;
 
     await this.sendAndExpectResponse(
       () => this.send("/api/drone/commandLong", command),
@@ -477,13 +479,15 @@ export class Drone {
     const command = new CommandLong();
     command.command = MavCmd.COMPONENT_ARM_DISARM;
     command.targetSystem = 1;
-    command._param1 = 0; // arm
+    command.targetComponent = 1;
+    command.confirmation = 0;
+    command._param1 = 0; // disarm
     command._param2 = force ? 21196 : 0;
-    command._param3 = NaN;
-    command._param4 = NaN;
-    command._param5 = NaN;
-    command._param6 = NaN;
-    command._param7 = NaN;
+    command._param3 = 0;
+    command._param4 = 0;
+    command._param5 = 0;
+    command._param6 = 0;
+    command._param7 = 0;
 
     await this.sendAndExpectResponse(
       () => this.send("/api/drone/commandLong", command),

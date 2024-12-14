@@ -316,7 +316,11 @@ export class DroneInterface {
 
     if (this.port instanceof dgram.Socket || this.port instanceof Socket) {
       if (this.signatureKey === undefined) {
-        return mavlinkSend(this.writeStream, command, new MavLinkProtocolV1());
+        return mavlinkSend(
+          this.writeStream,
+          command,
+          new MavLinkProtocolV2(255, 190), // make the system and component ID configurable (they go in the message's header)
+        );
       } else {
         return mavlinkSendSigned(this.writeStream, command, this.signatureKey);
       }
