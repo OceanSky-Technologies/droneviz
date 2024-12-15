@@ -30,8 +30,7 @@ export class UdpOptions {
   readonly sourceIp?: string; // empty IP means 0.0.0.0
   readonly sourcePort: number = 14550;
   readonly targetIp?: string; // empty IP means automatically determine IP
-  readonly targetPort: number = 14555; // MAVLink default port
-  // readonly targetPort: number = 18570; // PX4 simulator
+  readonly targetPort?: number; // empty means send the data to the port it was received from. 14555: MAVLink default port, 18570: PX4 simulator
 
   constructor(
     autoBindInterface?: boolean,
@@ -47,6 +46,6 @@ export class UdpOptions {
     this.sourceIp = sourceIp;
     if (sourcePort !== undefined) this.sourcePort = sourcePort;
     this.targetIp = targetIp;
-    if (targetPort !== undefined) this.targetPort = targetPort;
+    this.targetPort = targetPort;
   }
 }
