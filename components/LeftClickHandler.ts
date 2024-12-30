@@ -11,6 +11,7 @@ import {
   updateRequestRenderMode,
 } from "./CesiumViewerWrapper";
 import { droneCollection } from "@/core/DroneCollection";
+import { eventBus } from "@/utils/Eventbus";
 
 let mouseClickHandler: ScreenSpaceEventHandler;
 export let selectedEntityHighlighter: CesiumHighlighter;

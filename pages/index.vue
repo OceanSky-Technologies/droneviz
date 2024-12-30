@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import CesiumViewer from "@/components/CesiumViewer.vue";
-import DarkToggle from "@/components/DarkToggle.vue";
+import DarkModeToggle from "@/components/DarkModeToggle.vue";
 import DroneMenu from "@/components/DroneMenu.vue";
 import DroneRightClickMenu from "@/components/DroneRightClickMenu.vue";
 import MainToolbar from "@/components/MainToolbar.vue";
@@ -84,7 +84,7 @@ async function connectDisconnect() {
         left: 5px;
       "
     >
-      <DarkToggle />
+      <DarkModeToggle />
       <Button
         label="Connect"
         @click="connectDisconnect"

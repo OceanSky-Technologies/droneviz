@@ -13,14 +13,16 @@
       {
         "title": "droneviz",
         "label": "main",
+        "url": "/",
         "width": 1280,
         "height": 720,
         "resizable": true,
         "additionalBrowserArgs": "--disable-web-security"
       },
       {
-        "title": "Video window",
-        "label": "video",
+        "title": "VideoAI",
+        "label": "video-ai",
+        "url": "/video-ai",
         "width": 640,
         "height": 480,
         "visible": false,

@@ -38,7 +38,7 @@ class Settings {
     this.tileCacheSize = ref(1000);
     this.sceneMode = ref(SceneMode.SCENE3D);
     this.msaaSamples = ref(0);
-    this.fxaa = ref(true);
+    this.fxaa = ref(false);
     this.showFramesPerSecond = ref(true);
     this.demoMode = ref(false);
     this.enableMousePositionInfo = ref(true);

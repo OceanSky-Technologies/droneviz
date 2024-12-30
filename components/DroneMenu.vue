@@ -14,6 +14,11 @@ import DroneTelemetry from "@/components/DroneTelemetry.vue";
 import { useConfirm } from "primevue/useconfirm";
 import { droneCollection } from "@/core/DroneCollection";
 
+import { isTauri } from "@tauri-apps/api/core";
+import { registerDarkModeWindow } from "@/core/DarkMode";
+
+// import { createWindow } from "@tauri-apps/api/window";
+
 const confirm = useConfirm();
 
 const isMenuOpen = ref(false);
@@ -228,6 +233,40 @@ function trackUntrack() {
   updateRequestRenderMode();
 }
 
+function openVideo() {
+  try {
+    const inTauri = isTauri(); // Determine if the app is running in Tauri
+
+    // if (inTauri) {
+    //   // Tauri: Create a new window
+    //   await createWindow({
+    //     label: "webcam-window",
+    //     url: "/webcam",
+    //     width: 800,
+    //     height: 600,
+    //     resizable: true,
+    //     title: "Webcam with AI",
+    //   });
+    // } else {
+    // Browser fallback: Open a new browser tab/window
+    const newWindow = window.open(
+      "/video-ai",
+      "_blank",
+      "width=800,height=600,resizable",
+    );
+
+    if (!newWindow) {
+      showToast("Error opening video window", ToastSeverity.Error);
+      return;
+    }
+
+    registerDarkModeWindow(newWindow);
+    // }
+  } catch (error) {
+    showToast("Error opening video window: " + error, ToastSeverity.Error);
+  }
+}
+
 onMounted(() => {
   eventBus.on("droneDisconnected", closeMenu);
   eventBus.on("allDronesDisconnected", closeMenu);
@@ -263,7 +302,8 @@ onUnmounted(() => {
         </div>
         <div style="display: flex; flex-direction: column; gap: 10px">
           <Button label="Autotune" @click="autotune" severity="warn" />
-          <CameraWindow />
+          <!-- <CameraWindow /> -->
+          <Button @click="openVideo">Open Video</Button>
         </div>
       </div>
       <Button

@@ -1,40 +1,6 @@
 <script setup lang="ts">
-import "primeicons/primeicons.css";
 import Button from "primevue/button";
-import { ref } from "vue";
-import { DarkMode, settings } from "../utils/Settings";
-
-let darkMode: Ref<boolean>;
-
-if (settings.darkMode.value === DarkMode.System) {
-  // get system scheme
-  if (import.meta.client) {
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      darkMode = ref(true);
-    } else {
-      darkMode = ref(false);
-    }
-  } else {
-    darkMode = ref(true);
-  }
-} else {
-  darkMode = ref(settings.darkMode.value === DarkMode.Dark);
-}
-
-if (darkMode.value) {
-  document.documentElement.classList.add("dark");
-}
-
-const toggleDarkMode = () => {
-  document.documentElement.classList.toggle("dark");
-  darkMode.value = !darkMode.value;
-
-  if (darkMode.value) {
-    console.log("Dark mode enabled");
-  } else {
-    console.log("Dark mode disabled");
-  }
-};
+import { darkMode, toggleDarkMode } from "@/core/DarkMode";
 </script>
 
 <template>

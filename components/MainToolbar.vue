@@ -15,7 +15,7 @@ import {
 } from "./CesiumViewerWrapper";
 import type { Cesium3DTileset, ProviderViewModel } from "cesium";
 import { Cartesian3, SceneMode } from "cesium";
-import { showToast, ToastSeverity } from "../utils/ToastService";
+import { showToast, ToastSeverity } from "@/utils/ToastService";
 import type { ComponentPublicInstance } from "vue";
 
 // list of all available map data sources
@@ -79,14 +79,9 @@ watch(
   },
 );
 
-watch(
-  () => map3DEnabled.value,
-  (newVal: boolean) => {
-    getCesiumViewer().scene.mode = newVal
-      ? SceneMode.SCENE3D
-      : SceneMode.SCENE2D;
-  },
-);
+watch(map3DEnabled, (newVal: boolean) => {
+  getCesiumViewer().scene.mode = newVal ? SceneMode.SCENE3D : SceneMode.SCENE2D;
+});
 
 watch(
   () => mapDataSourceSelection.value,

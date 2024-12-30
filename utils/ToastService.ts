@@ -38,7 +38,7 @@ export function showToast(detail?: string, severity?: ToastSeverity) {
     toastService.add({
       severity: severity,
       detail: detail,
-      life: 3000,
+      life: 5000,
     });
   } else {
     console.error("ToastService not available!");
