@@ -1,4 +1,5 @@
 import { defineNuxtConfig } from "nuxt/config";
+import tsconfigPaths from "tsconfig-paths";
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
@@ -270,6 +271,11 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     // typeCheck: true, // breaks Nuxt
+    tsConfig: {
+      compilerOptions: {
+        types: ["@types/wicg-file-system-access"],
+      },
+    },
   },
   vite: {
     // Better support for Tauri CLI output

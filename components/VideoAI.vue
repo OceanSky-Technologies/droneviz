@@ -1,7 +1,11 @@
 <template>
   <div class="app-container">
     <div class="button-container">
-      <select v-model="selectedDeviceId" @change="changeWebcam">
+      <select
+        v-model="selectedDeviceId"
+        @change="changeWebcam"
+        :disabled="isRecording"
+      >
         <option
           v-for="device in videoDevices"
           :key="device.deviceId"
@@ -19,7 +23,7 @@
         "
       >
         <div>AI</div>
-        <ToggleSwitch v-model="aiEnabled" />
+        <ToggleSwitch v-model="aiEnabled" :disabled="isRecording" />
       </div>
       <Button
         :icon="recordingIcon"
@@ -48,7 +52,7 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { getFormattedDate } from "@/utils/DateUtils";
 import { showToast, ToastSeverity } from "@/utils/ToastService";
-import { Button } from "primevue";
+import { Button, ToggleSwitch } from "primevue";
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import "@tensorflow/tfjs";
 
@@ -113,6 +117,9 @@ const startWebcam = async (deviceId: string | undefined = undefined) => {
 
   // Play the video
   await webcam.value.play();
+
+  // if AI was enabled before the video started, run the AI loop now
+  if (aiEnabled.value) runAIWithFrameCallback();
 };
 
 const stopWebcam = () => {
@@ -162,7 +169,7 @@ function setCanvasSize() {
   }
 }
 
-watch(aiEnabled, (newVal: boolean) => {
+watch(aiEnabled, async (newVal: boolean) => {
   if (newVal) {
     runAIWithFrameCallback(); // Start detection loop with frame callback
   } else {
@@ -191,7 +198,7 @@ async function startRecording() {
     });
 
     writableStream = await fileHandle!.createWritable();
-    console.log(fileHandle);
+
     // Ensure the resolution matches the canvas resolution
     canvas.value.width = webcam.value.videoWidth;
     canvas.value.height = webcam.value.videoHeight;
@@ -304,8 +311,8 @@ const runAIWithFrameCallback = () => {
 
 onMounted(async () => {
   await listVideoDevices();
-  await startWebcam();
   model = await cocoSsd.load();
+  await startWebcam();
   setCanvasSize();
   window.addEventListener("resize", handleResize);
 });

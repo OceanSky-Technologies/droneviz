@@ -58,6 +58,7 @@
     "@types/tar": "^6.1.13",
     "@types/unzipper": "^0.10.10",
     "@types/whatwg-url": "^11.0.5",
+    "@types/wicg-file-system-access": "^2023.10.5",
     "@vitest/coverage-istanbul": "^2.1.8",
     "@vue/test-utils": "^2.4.6",
     "copyfiles": "^2.4.1",

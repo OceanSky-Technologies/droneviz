@@ -7,14 +7,18 @@ let childWindows: WindowProxy[] = [];
 export function setDarkMode(value: boolean) {
   darkMode.value = value;
 
+  cleanupClosedWindows();
+
   if (value) {
     eventBus.emit("darkMode", true);
+
     document.documentElement.classList.add("dark");
     for (const window of childWindows) {
       window.document.documentElement.classList.add("dark");
     }
   } else {
     eventBus.emit("darkMode", false);
+
     document.documentElement.classList.remove("dark");
     for (const window of childWindows) {
       window.document.documentElement.classList.remove("dark");
@@ -56,4 +60,8 @@ export function registerDarkModeWindow(window: WindowProxy) {
   };
 
   childWindows.push(window);
+}
+
+export function cleanupClosedWindows() {
+  childWindows = childWindows.filter((win) => !win.closed);
 }

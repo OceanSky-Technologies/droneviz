@@ -8,6 +8,7 @@
   ],
   "permissions": [
     "core:app:default",
-    "shell:default"
+    "shell:default",
+    "core:webview:allow-create-webview-window"
   ]
 }

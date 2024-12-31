@@ -13,11 +13,10 @@ import Warning from "@/components/icons/Warning.vue";
 import DroneTelemetry from "@/components/DroneTelemetry.vue";
 import { useConfirm } from "primevue/useconfirm";
 import { droneCollection } from "@/core/DroneCollection";
-
-import { isTauri } from "@tauri-apps/api/core";
 import { registerDarkModeWindow } from "@/core/DarkMode";
 
-// import { createWindow } from "@tauri-apps/api/window";
+import { isTauri } from "@tauri-apps/api/core";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 const confirm = useConfirm();
 
@@ -237,31 +236,50 @@ function openVideo() {
   try {
     const inTauri = isTauri(); // Determine if the app is running in Tauri
 
-    // if (inTauri) {
-    //   // Tauri: Create a new window
-    //   await createWindow({
-    //     label: "webcam-window",
-    //     url: "/webcam",
-    //     width: 800,
-    //     height: 600,
-    //     resizable: true,
-    //     title: "Webcam with AI",
-    //   });
-    // } else {
-    // Browser fallback: Open a new browser tab/window
-    const newWindow = window.open(
-      "/video-ai",
-      "_blank",
-      "width=800,height=600,resizable",
-    );
+    if (inTauri) {
+      const webview = new WebviewWindow(
+        "video-ai-" +
+          droneCollection.selectedDrone.value?.getSysId() +
+          "-" +
+          droneCollection.selectedDrone.value?.getCompId(),
+        {
+          url: "/video-ai",
+          title: "Droneviz - Video AI",
+        },
+      );
+      webview.once("tauri://error", function (e) {
+        console.log(e.payload);
+        if (e.payload && (e.payload as string).includes("already exists")) {
+          showToast(
+            "Video AI window for this drone is already open",
+            ToastSeverity.Info,
+          );
+        } else {
+          showToast(
+            "Error opening video window: " + JSON.stringify(e),
+            ToastSeverity.Error,
+          );
+        }
+      });
 
-    if (!newWindow) {
-      showToast("Error opening video window", ToastSeverity.Error);
-      return;
+      // registerDarkModeWindow(newWindow);
+    } else {
+      // Browser fallback: Open a new browser tab/window
+      const newWindow = window.open(
+        "/video-ai",
+        "_blank",
+        "width=800,height=600,resizable",
+      );
+
+      if (!newWindow) {
+        showToast("Error opening video window", ToastSeverity.Error);
+        return;
+      }
+
+      newWindow.document.title = "Droneviz - Video AI";
+
+      registerDarkModeWindow(newWindow);
     }
-
-    registerDarkModeWindow(newWindow);
-    // }
   } catch (error) {
     showToast("Error opening video window: " + error, ToastSeverity.Error);
   }
