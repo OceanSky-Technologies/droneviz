@@ -50,12 +50,16 @@ svg {
 }
 
 /* cascadeselect */
+.p-select-label,
+.p-select-dropdown,
+.p-select-list,
 .p-cascadeselect-label,
 .p-cascadeselect-dropdown,
 .p-cascadeselect-list {
   padding: 0 !important;
 }
 
+.p-select-option-content,
 .p-cascadeselect-option-content div {
   column-gap: 7px !important;
 }

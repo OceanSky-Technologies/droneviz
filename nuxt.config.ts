@@ -1,5 +1,4 @@
 import { defineNuxtConfig } from "nuxt/config";
-import tsconfigPaths from "tsconfig-paths";
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
@@ -106,7 +105,7 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
-    "/api/**": {
+    "/**": {
       cors: true,
       headers: {
         "Access-Control-Allow-Origin": "*",
@@ -114,6 +113,8 @@ export default defineNuxtConfig({
         "Access-Control-Allow-Methods": "*",
         "Access-Control-Allow-Credentials": "true",
         "Access-Control-Expose-Headers": "*",
+        "Access-Control-Request-Method": "*",
+        "Access-Control-Request-Headers": "*",
       },
     },
   },

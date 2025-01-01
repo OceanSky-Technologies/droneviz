@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { defined, Entity } from "cesium";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, toRaw } from "vue";
 import { eventBus } from "@/utils/Eventbus";
 import {
   getCesiumViewer,
@@ -13,10 +13,11 @@ import Warning from "@/components/icons/Warning.vue";
 import DroneTelemetry from "@/components/DroneTelemetry.vue";
 import { useConfirm } from "primevue/useconfirm";
 import { droneCollection } from "@/core/DroneCollection";
-import { registerDarkModeWindow } from "@/core/DarkMode";
 
 import { isTauri } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { resolveResource } from "@tauri-apps/api/path";
+import { showToast, ToastSeverity } from "~/utils/ToastService";
 
 const confirm = useConfirm();
 
@@ -232,7 +233,7 @@ function trackUntrack() {
   updateRequestRenderMode();
 }
 
-function openVideo() {
+async function openVideo() {
   try {
     const inTauri = isTauri(); // Determine if the app is running in Tauri
 
@@ -247,8 +248,8 @@ function openVideo() {
           title: "Droneviz - Video AI",
         },
       );
+
       webview.once("tauri://error", function (e) {
-        console.log(e.payload);
         if (e.payload && (e.payload as string).includes("already exists")) {
           showToast(
             "Video AI window for this drone is already open",
@@ -261,8 +262,6 @@ function openVideo() {
           );
         }
       });
-
-      // registerDarkModeWindow(newWindow);
     } else {
       // Browser fallback: Open a new browser tab/window
       const newWindow = window.open(
@@ -275,10 +274,6 @@ function openVideo() {
         showToast("Error opening video window", ToastSeverity.Error);
         return;
       }
-
-      newWindow.document.title = "Droneviz - Video AI";
-
-      registerDarkModeWindow(newWindow);
     }
   } catch (error) {
     showToast("Error opening video window: " + error, ToastSeverity.Error);
@@ -288,6 +283,10 @@ function openVideo() {
 onMounted(() => {
   eventBus.on("droneDisconnected", closeMenu);
   eventBus.on("allDronesDisconnected", closeMenu);
+
+  if (droneCollection.selectedDrone.value) {
+    showMenu();
+  }
 });
 
 onUnmounted(() => {

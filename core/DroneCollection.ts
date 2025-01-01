@@ -1,5 +1,6 @@
 import { getCesiumViewer } from "@/components/CesiumViewerWrapper";
 import type { Drone } from "./Drone";
+import { ref } from "vue";
 
 class DroneCollection {
   private drones: Drone[] = [];

@@ -47,7 +47,7 @@ async function resetCamera() {
   getCesiumViewer().scene.requestRender();
   const options = {
     enableHighAccuracy: false,
-    timeout: 5000,
+    timeout: 10000,
     maximumAge: 0,
   };
 

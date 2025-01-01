@@ -1,28 +1,24 @@
-import { eventBus } from "@/utils/Eventbus";
-
 export let darkMode: Ref<boolean | null> = ref(null);
 
-let childWindows: WindowProxy[] = [];
+// using localStorage the dark mode setting is synchronized between windows
+//
+// react to changes to it like this:
+//   window.addEventListener("storage", (event) => {
+//     if (event.key === "dark-mode") {
+//       const isDarkMode = event.newValue === "true";
+//       document.documentElement.classList.toggle("dark", isDarkMode);
+//     }
+//   });
 
 export function setDarkMode(value: boolean) {
   darkMode.value = value;
 
-  cleanupClosedWindows();
-
   if (value) {
-    eventBus.emit("darkMode", true);
-
     document.documentElement.classList.add("dark");
-    for (const window of childWindows) {
-      window.document.documentElement.classList.add("dark");
-    }
+    localStorage.setItem("dark-mode", true.toString());
   } else {
-    eventBus.emit("darkMode", false);
-
     document.documentElement.classList.remove("dark");
-    for (const window of childWindows) {
-      window.document.documentElement.classList.remove("dark");
-    }
+    localStorage.setItem("dark-mode", false.toString());
   }
 }
 
@@ -49,19 +45,4 @@ export function initDarkMode() {
   } else {
     setDarkMode(settings.darkMode.value === DarkMode.Dark);
   }
-}
-
-export function registerDarkModeWindow(window: WindowProxy) {
-  // When the new window opens, copy the dark mode class if it's already enabled in the main window
-  window.onload = () => {
-    if (document.body.classList.contains("dark")) {
-      window.document.documentElement.classList.add("dark");
-    }
-  };
-
-  childWindows.push(window);
-}
-
-export function cleanupClosedWindows() {
-  childWindows = childWindows.filter((win) => !win.closed);
 }

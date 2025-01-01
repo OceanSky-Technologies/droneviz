@@ -16,8 +16,6 @@ export type Events = {
     cartesian3: Cartesian3;
     position: { x: number; y: number };
   };
-
-  darkMode: boolean;
 };
 
 export const eventBus = mitt<Events>();

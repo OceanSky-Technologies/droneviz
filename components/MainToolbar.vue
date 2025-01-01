@@ -83,22 +83,19 @@ watch(map3DEnabled, (newVal: boolean) => {
   getCesiumViewer().scene.mode = newVal ? SceneMode.SCENE3D : SceneMode.SCENE2D;
 });
 
-watch(
-  () => mapDataSourceSelection.value,
-  (newVal: MapDataSource | null) => {
-    if (newVal) {
-      if (newVal.tileset) {
-        if (settings.google3DTilesEnabled.value) enableGoogleTiles();
-      } else if (newVal.viewModel) {
-        if (settings.google3DTilesEnabled.value) disableGoogleTiles();
+function changeMapDataSource() {
+  if (mapDataSourceSelection.value) {
+    if (mapDataSourceSelection.value.tileset) {
+      if (settings.google3DTilesEnabled.value) enableGoogleTiles();
+    } else if (mapDataSourceSelection.value.viewModel) {
+      if (settings.google3DTilesEnabled.value) disableGoogleTiles();
 
-        // show the selected imagery provider
-        getCesiumViewer().baseLayerPicker.viewModel.selectedImagery =
-          newVal.viewModel as ProviderViewModel;
-      }
+      // show the selected imagery provider
+      getCesiumViewer().baseLayerPicker.viewModel.selectedImagery =
+        mapDataSourceSelection.value.viewModel as ProviderViewModel;
     }
-  },
-);
+  }
+}
 
 /**
  * Position the geolocation results listbox under the search input field.
@@ -463,6 +460,7 @@ onMounted(async () => {
             :option-group-children="['options']"
             style="width: 15rem"
             placeholder="Select a data source"
+            @change="changeMapDataSource"
           >
             <template #option="slotProps">
               <div class="flex items-center">

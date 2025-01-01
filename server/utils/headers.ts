@@ -15,11 +15,4 @@ export function setHttpHeaders(
   } else if (contentType) {
     setHeader(event, "content-type", contentType);
   }
-
-  // CORS
-  setHeader(event, "Access-Control-Allow-Origin", "*");
-  setHeader(event, "Access-Control-Allow-Headers", "*");
-  setHeader(event, "Access-Control-Allow-Methods", "*");
-  setHeader(event, "Access-Control-Allow-Credentials", "true");
-  setHeader(event, "Access-Control-Expose-Headers", "*");
 }

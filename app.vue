@@ -4,6 +4,13 @@ import Toast from "primevue/toast";
 import { initDarkMode } from "@/core/DarkMode";
 
 initDarkMode();
+
+window.addEventListener("storage", (event) => {
+  if (event.key === "dark-mode") {
+    const isDarkMode = event.newValue === "true";
+    document.documentElement.classList.toggle("dark", isDarkMode);
+  }
+});
 </script>
 
 <template>

@@ -36,6 +36,7 @@ import {
 import { MessageMap } from "./MessageMap";
 import { settings } from "@/utils/Settings";
 import { fixBigIntSerialization } from "@/types/bigIntSerializationHelper";
+import { useRuntimeConfig } from "nuxt/app";
 
 fixBigIntSerialization();
 
@@ -278,7 +279,7 @@ export class Drone {
    * @returns {Promise<QueryResult>} - A promise that resolves with the query result.
    */
   private async send<T>(api: string, data?: T): Promise<QueryResult> {
-    const response: any = await $fetch(api, {
+    const response = await $fetch(api, {
       ...defaultFetchOptions,
       body: {
         ...data,

@@ -1,19 +1,15 @@
 <template>
   <div class="app-container">
     <div class="button-container">
-      <select
-        v-model="selectedDeviceId"
-        @change="changeWebcam"
+      <Select
+        v-model="selectedDevice"
+        :options="videoDevices"
+        option-label="label"
+        placeholder="Select a video device"
         :disabled="isRecording"
-      >
-        <option
-          v-for="device in videoDevices"
-          :key="device.deviceId"
-          :value="device.deviceId"
-        >
-          {{ device.label }}
-        </option>
-      </select>
+        @change="changeVideoDevice"
+      />
+
       <div
         style="
           display: flex;
@@ -23,7 +19,10 @@
         "
       >
         <div>AI</div>
-        <ToggleSwitch v-model="aiEnabled" :disabled="isRecording" />
+        <ToggleSwitch
+          v-model="aiEnabled"
+          :disabled="isRecording || aiModelInitializing"
+        />
       </div>
       <Button
         :icon="recordingIcon"
@@ -32,18 +31,20 @@
         iconPos="right"
         :severity="recordButtonSeverity"
       />
+
+      <p>{{ videoInfo ? videoInfoToString(videoInfo) : "" }}</p>
     </div>
     <div class="video-container">
       <!-- Video element (visible when AI is off) -->
       <video
-        ref="webcam"
+        ref="videoHtmlElement"
         autoplay
         muted
         v-show="!aiEnabled"
         class="video"
       ></video>
-      <!-- Canvas element (visible when AI is on) -->
-      <canvas ref="canvas" v-show="aiEnabled" class="video"></canvas>
+      <!-- canvas element (visible when AI is on) -->
+      <canvas ref="canvasHtmlElement" v-show="aiEnabled" class="video"></canvas>
     </div>
   </div>
 </template>
@@ -52,16 +53,31 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { getFormattedDate } from "@/utils/DateUtils";
 import { showToast, ToastSeverity } from "@/utils/ToastService";
-import { Button, ToggleSwitch } from "primevue";
+import { Button, ToggleSwitch, Select } from "primevue";
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import "@tensorflow/tfjs";
 
-const videoDevices = ref<MediaDeviceInfo[]>([]); // List of webcams
-const selectedDeviceId = ref<string>(""); // Currently selected webcam
+interface DeviceInfo {
+  label: string;
+  deviceId: string;
+  groupId: string;
+  kind: string;
+}
 
-const webcam = ref<HTMLVideoElement | null>(null);
-const canvas = ref<HTMLCanvasElement | null>(null);
+const videoDevices = ref<DeviceInfo[]>([]);
+const selectedDevice = ref<DeviceInfo | null>(null);
+
+interface VideoInfo {
+  width?: number;
+  height?: number;
+  frameRate?: number;
+}
+const videoInfo = ref<VideoInfo | null>(null);
+
+const videoHtmlElement = ref<HTMLVideoElement | null>(null);
+const canvasHtmlElement = ref<HTMLCanvasElement | null>(null);
 const aiEnabled = ref(false);
+const aiModelInitializing = ref(true);
 const isRecording = ref(false);
 let mediaRecorder: MediaRecorder | null = null;
 let writableStream: FileSystemWritableFileStream | null = null;
@@ -71,77 +87,112 @@ const recordButtonSeverity = ref("");
 
 let model: cocoSsd.ObjectDetection | null = null;
 
-// List available video devices
-const listVideoDevices = async () => {
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  videoDevices.value = devices.filter((device) => device.kind === "videoinput");
+function videoInfoToString(info: VideoInfo) {
+  return `${info.width}x${info.height} @ ${info.frameRate}fps`;
+}
 
-  // Set the first device as the default selected device
-  if (videoDevices.value.length > 0 && !selectedDeviceId.value) {
-    selectedDeviceId.value = videoDevices.value[0].deviceId;
+const listVideoDevices = async () => {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+
+    for (const device of devices) {
+      if (device.kind === "videoinput") {
+        videoDevices.value.push({
+          label: device.label || "Unknown device",
+          deviceId: device.deviceId,
+          groupId: device.groupId,
+          kind: device.kind,
+        });
+      }
+    }
+
+    if (videoDevices.value.length > 0) {
+      selectedDevice.value = videoDevices.value[0]; // Default device
+    }
+  } catch (error) {
+    showToast(
+      "No video devices found: " + JSON.stringify(error),
+      ToastSeverity.Error,
+    );
+    videoDevices.value = [
+      {
+        label: "No devices found",
+        deviceId: "",
+        groupId: "",
+        kind: "videoinput",
+      },
+    ];
   }
 };
 
-const startWebcam = async (deviceId: string | undefined = undefined) => {
-  if (!webcam.value) return;
+const startVideo = async (device: DeviceInfo) => {
+  if (!videoHtmlElement.value) {
+    showToast("Can't open video: No video device found.", ToastSeverity.Error);
+    return;
+  }
+
+  if (!device.deviceId || device.deviceId.length === 0) {
+    showToast("Can't open video: Device ID unknown.", ToastSeverity.Error);
+    return;
+  }
 
   const constraints: MediaStreamConstraints = {
     audio: false,
-    video: deviceId
-      ? {
-          deviceId: { exact: deviceId },
-          width: { ideal: 1920, max: 3840 },
-          height: { ideal: 1080 },
-        }
-      : {
-          width: { ideal: 1920, max: 3840 },
-          height: { ideal: 1080 },
-        },
+    video: {
+      deviceId: { exact: device.deviceId },
+      width: { ideal: 1920, max: 3840 },
+      height: { ideal: 1080 },
+    },
   };
 
   const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-  // Set video element source to webcam
-  webcam.value.srcObject = stream;
+  // Set video element source to videoHtmlElement
+  videoHtmlElement.value.srcObject = stream;
 
   // Wait for video metadata to ensure correct video dimensions
   await new Promise((resolve) => {
-    webcam.value!.onloadedmetadata = () => resolve(undefined);
+    videoHtmlElement.value!.onloadedmetadata = () => resolve(undefined);
   });
 
   const track = stream.getVideoTracks()[0];
-  const { width, height } = track.getSettings();
-  console.log(`Using resolution: ${width}x${height}`);
+  const { width, height, frameRate } = track.getSettings();
+  videoInfo.value = { width, height, frameRate };
 
   setCanvasSize();
 
   // Play the video
-  await webcam.value.play();
+  await videoHtmlElement.value.play();
 
   // if AI was enabled before the video started, run the AI loop now
   if (aiEnabled.value) runAIWithFrameCallback();
 };
 
-const stopWebcam = () => {
-  const stream = (webcam.value?.srcObject as MediaStream) || null;
+const stopVideo = () => {
+  stopRecording();
+
+  const stream = (videoHtmlElement.value?.srcObject as MediaStream) || null;
   stream?.getTracks().forEach((track) => track.stop());
+  videoInfo.value = null;
 };
 
-// Change the currently active webcam
-const changeWebcam = async () => {
-  stopWebcam();
-  await startWebcam(selectedDeviceId.value);
+const changeVideoDevice = async () => {
+  if (!selectedDevice.value) return;
+
+  stopVideo();
+
+  await startVideo(selectedDevice.value);
 };
 
 function setCanvasSize() {
-  if (webcam.value && canvas.value) {
-    const { videoWidth, videoHeight } = webcam.value;
+  if (videoHtmlElement.value && canvasHtmlElement.value) {
+    const { videoWidth, videoHeight } = videoHtmlElement.value;
 
     if (videoWidth && videoHeight) {
       const aspectRatio = videoWidth / videoHeight;
 
-      // Get canvas container dimensions
-      const container = canvas.value.parentElement;
+      // Get canvasHtmlElement container dimensions
+      const container = canvasHtmlElement.value.parentElement;
       const containerWidth = container?.clientWidth || window.innerWidth;
       const containerHeight = container?.clientHeight || window.innerHeight;
 
@@ -158,13 +209,13 @@ function setCanvasSize() {
         width = containerHeight * aspectRatio;
       }
 
-      // Apply calculated dimensions to the canvas
-      canvas.value.width = videoWidth; // Intrinsic dimensions for drawing
-      canvas.value.height = videoHeight;
+      // Apply calculated dimensions to the canvasHtmlElement
+      canvasHtmlElement.value.width = videoWidth; // Intrinsic dimensions for drawing
+      canvasHtmlElement.value.height = videoHeight;
 
       // Apply scaled dimensions for display
-      canvas.value.style.width = `${width}px`;
-      canvas.value.style.height = `${height}px`;
+      canvasHtmlElement.value.style.width = `${width}px`;
+      canvasHtmlElement.value.style.height = `${height}px`;
     }
   }
 }
@@ -173,44 +224,103 @@ watch(aiEnabled, async (newVal: boolean) => {
   if (newVal) {
     runAIWithFrameCallback(); // Start detection loop with frame callback
   } else {
-    // Clear the canvas when stopping AI
-    const ctx = canvas.value?.getContext("2d");
-    if (canvas.value)
-      ctx?.clearRect(0, 0, canvas.value.width, canvas.value.height);
+    // Clear the canvasHtmlElement when stopping AI
+    const ctx = canvasHtmlElement.value?.getContext("2d");
+    if (canvasHtmlElement.value)
+      ctx?.clearRect(
+        0,
+        0,
+        canvasHtmlElement.value.width,
+        canvasHtmlElement.value.height,
+      );
   }
 });
 
 async function startRecording() {
-  if (!webcam.value || !canvas.value) return;
+  if (!videoHtmlElement.value || !canvasHtmlElement.value) return;
 
   recordingIcon.value = "pi pi-spin pi-spinner";
   recordButtonSeverity.value = "danger";
 
   try {
     fileHandle = await window.showSaveFilePicker({
-      suggestedName: `video_${getFormattedDate()}.webm`,
+      suggestedName: `video_${getFormattedDate()}`,
       types: [
         {
           description: "WebM video file",
           accept: { "video/webm": [".webm"] },
         },
+        // mp4 doesn't work on Chrome as of today
+        // {
+        //   description: "MP4 video File",
+        //   accept: { "video/mp4": [".mp4"] },
+        // },
       ],
     });
 
     writableStream = await fileHandle!.createWritable();
 
-    // Ensure the resolution matches the canvas resolution
-    canvas.value.width = webcam.value.videoWidth;
-    canvas.value.height = webcam.value.videoHeight;
+    // Ensure the resolution matches the canvasHtmlElement resolution
+    canvasHtmlElement.value.width = videoHtmlElement.value.videoWidth;
+    canvasHtmlElement.value.height = videoHtmlElement.value.videoHeight;
 
     const stream = aiEnabled.value
-      ? canvas.value.captureStream()
-      : (webcam.value.srcObject as MediaStream);
-    mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+      ? canvasHtmlElement.value.captureStream()
+      : (videoHtmlElement.value.srcObject as MediaStream);
+
+    const file = await fileHandle.getFile();
+
+    // calculate the bitrate
+    let bitrate = 4000000; // Default bitrate
+    if (
+      !videoInfo.value?.width ||
+      !videoInfo.value?.height ||
+      !videoInfo.value?.frameRate
+    ) {
+      showToast(
+        "Video info not available. Using default bitrate: " +
+          Math.trunc(bitrate / 1000000) +
+          "Mbps.",
+        ToastSeverity.Warn,
+      );
+    } else {
+      const pixelsPerSecond =
+        videoInfo.value.width *
+        videoInfo.value.height *
+        videoInfo.value.frameRate;
+
+      const fileFormat = file.name.split(".").pop();
+
+      let bitsPerPixel;
+
+      if (fileFormat === "webm") {
+        bitsPerPixel = 0.175; // good quality H.265
+        bitrate = pixelsPerSecond * bitsPerPixel;
+      } else if (fileFormat === "mp4" || fileFormat === "m4v") {
+        bitsPerPixel = 0.25; // good quality H.264
+        bitrate = pixelsPerSecond * bitsPerPixel;
+      } else {
+        showToast(
+          "Unsupported file format. Using default bitrate: " +
+            Math.trunc(bitrate / 1000000) +
+            "Mbps.",
+          ToastSeverity.Warn,
+        );
+      }
+    }
+
+    mediaRecorder = new MediaRecorder(stream, {
+      mimeType: file.type,
+      videoBitsPerSecond: bitrate,
+    });
 
     mediaRecorder.ondataavailable = async (event) => {
       if (event.data.size > 0 && writableStream) {
-        await writableStream.write(event.data);
+        try {
+          await writableStream.write(event.data);
+        } catch (error) {
+          // if the stream has been closed, skip the write
+        }
       }
     };
 
@@ -240,6 +350,8 @@ const stopRecording = async () => {
 
   if (fileHandle)
     showToast(`Video recoding saved:\n${fileHandle?.name}`, ToastSeverity.Info);
+
+  fileHandle = null;
 };
 
 const toggleRecording = () => {
@@ -255,36 +367,50 @@ const handleResize = () => {
 };
 
 const runAIWithFrameCallback = () => {
-  if (!webcam.value || !canvas.value || !model || !aiEnabled.value) return;
+  if (
+    !videoHtmlElement.value ||
+    !canvasHtmlElement.value ||
+    !model ||
+    !aiEnabled.value
+  )
+    return;
 
-  const ctx = canvas.value.getContext("2d");
+  const ctx = canvasHtmlElement.value.getContext("2d");
   if (!ctx) return;
 
   const processFrame = async () => {
-    if (!webcam.value || !canvas.value || !model || !aiEnabled.value) return;
+    if (
+      !videoHtmlElement.value ||
+      !canvasHtmlElement.value ||
+      !model ||
+      !aiEnabled.value
+    )
+      return;
 
-    if (webcam.value.readyState >= 2) {
+    if (videoHtmlElement.value.readyState >= 2) {
       ctx.drawImage(
-        webcam.value,
+        videoHtmlElement.value,
         0,
         0,
-        canvas.value.width,
-        canvas.value.height,
+        canvasHtmlElement.value.width,
+        canvasHtmlElement.value.height,
       );
 
-      const predictions = await model.detect(webcam.value);
+      const predictions = await model.detect(videoHtmlElement.value);
 
       predictions.forEach((prediction) => {
         const [x, y, width, height] = prediction.bbox;
 
-        const scaleX = canvas.value!.width / webcam.value!.videoWidth;
-        const scaleY = canvas.value!.height / webcam.value!.videoHeight;
+        const scaleX =
+          canvasHtmlElement.value!.width / videoHtmlElement.value!.videoWidth;
+        const scaleY =
+          canvasHtmlElement.value!.height / videoHtmlElement.value!.videoHeight;
 
         ctx.strokeStyle = "red";
         ctx.lineWidth = 2;
         ctx.strokeRect(x * scaleX, y * scaleY, width * scaleX, height * scaleY);
         ctx.fillStyle = "red";
-        ctx.font = "16px Tahoma";
+        ctx.font = "3vh Tahoma";
         ctx.fillText(
           `${prediction.class} (${(prediction.score * 100).toFixed(1)}%)`,
           x * scaleX,
@@ -293,13 +419,13 @@ const runAIWithFrameCallback = () => {
       });
     }
 
-    if (aiEnabled.value && webcam.value?.requestVideoFrameCallback) {
-      webcam.value.requestVideoFrameCallback(processFrame);
+    if (aiEnabled.value && videoHtmlElement.value?.requestVideoFrameCallback) {
+      videoHtmlElement.value.requestVideoFrameCallback(processFrame);
     }
   };
 
-  if (webcam.value?.requestVideoFrameCallback) {
-    webcam.value.requestVideoFrameCallback(processFrame);
+  if (videoHtmlElement.value?.requestVideoFrameCallback) {
+    videoHtmlElement.value.requestVideoFrameCallback(processFrame);
   } else {
     const fallbackLoop = async () => {
       await processFrame();
@@ -310,17 +436,22 @@ const runAIWithFrameCallback = () => {
 };
 
 onMounted(async () => {
-  await listVideoDevices();
-  model = await cocoSsd.load();
-  await startWebcam();
-  setCanvasSize();
   window.addEventListener("resize", handleResize);
+
+  listVideoDevices().then(() => {
+    if (selectedDevice.value) startVideo(selectedDevice.value);
+  });
+
+  cocoSsd.load().then((loadedModel) => {
+    model = loadedModel;
+    aiModelInitializing.value = false;
+  });
 });
 
 onBeforeUnmount(() => {
-  stopWebcam();
-  window.removeEventListener("resize", handleResize);
   stopRecording();
+  stopVideo();
+  window.removeEventListener("resize", handleResize);
 });
 </script>
 
@@ -346,17 +477,21 @@ onBeforeUnmount(() => {
 .video-container {
   flex: 1;
   display: flex;
-  align-content: start;
+  text-align: center;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
   width: 100%;
+  height: 100%;
   overflow: hidden;
   display: block;
   margin: 0 auto;
 }
 
 .video {
+  align-self: center;
   display: block;
-  vertical-align: middle;
   margin: 0 auto;
-  max-height: 100%;
+  height: 100%;
 }
 </style>
