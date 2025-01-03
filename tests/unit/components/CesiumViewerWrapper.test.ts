@@ -29,7 +29,7 @@ describe("CesiumViewer", () => {
     createCesiumContainer();
 
     settings.google3DTilesEnabled.value = true;
-    await initCesium(createTestViewerOptions(), new Cesium3DTileset({})); // stay below cesium quota by disabling tileset);
+    await initCesium(await createTestViewerOptions(), new Cesium3DTileset({})); // stay below cesium quota by disabling tileset);
 
     expect(isCesiumInitialized()).toBeTruthy();
     expect(getCesiumViewer()).toBeDefined();

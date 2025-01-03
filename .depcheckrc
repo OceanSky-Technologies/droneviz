@@ -4,7 +4,6 @@
 #   - "@vue/eslint-config-prettier"
 #   - "@cesium/engine" # getWebGLStub.js
 #   - "playwright" # vitest
-#   - "virtual:pwa-register" # pwa.ts
 #   - "autoprefixer" # postcss.config.js
 #   - "cssnano" # postcss.config.js
 #   - "postcss" # postcss.config.js

@@ -12,7 +12,7 @@ describe("MainToolbar", () => {
   test("Mounting toolbar", async () => {
     createCesiumContainer();
 
-    await initCesium(createTestViewerOptions(), new Cesium3DTileset({})); // stay below cesium quota by disabling tileset);
+    await initCesium(await createTestViewerOptions(), new Cesium3DTileset({})); // stay below cesium quota by disabling tileset);
 
     const wrapper = await mountSuspended(MainToolbar);
 

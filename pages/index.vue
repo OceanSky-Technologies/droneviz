@@ -9,8 +9,14 @@ import { Drone } from "@/core/Drone";
 import { droneCollection } from "@/core/DroneCollection";
 import { SerialOptions, UdpOptions } from "@/types/DroneConnectionOptions";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
-import { useTemplateRef, type ComponentPublicInstance } from "vue";
+import { useTemplateRef, type ComponentPublicInstance, onMounted } from "vue";
 import { eventBus } from "~/utils/Eventbus";
+import { getCacheStatistics, clearCache } from "~/utils/cache-utils";
+
+const cacheQuota = ref(0);
+const cacheTotalUsed = ref(0);
+const cacheUsedPercent = ref(0);
+const cacheDetails = ref<CacheStatistics[]>([]);
 
 const connectDisconnectRef =
   useTemplateRef<ComponentPublicInstance>("connectDisconnect");
@@ -66,6 +72,33 @@ async function connectDisconnect() {
     droneCollection.removeAllDrones();
   }
 }
+
+onMounted(() => {
+  try {
+    getCacheStatistics().then((stats) => {
+      cacheQuota.value = stats.cacheQuota;
+      cacheTotalUsed.value = stats.totalUsedCache;
+      cacheUsedPercent.value = stats.cachePercentageUsed;
+      cacheDetails.value = stats.cacheDetails;
+    });
+
+    // refresh stats every second
+    setInterval(() => {
+      getCacheStatistics().then((stats) => {
+        cacheQuota.value = stats.cacheQuota;
+        cacheTotalUsed.value = stats.totalUsedCache;
+        cacheUsedPercent.value = stats.cachePercentageUsed;
+        cacheDetails.value = stats.cacheDetails;
+      });
+    }, 1_000);
+  } catch (e) {
+    if (e instanceof Error) {
+      showToast(e.message, ToastSeverity.Error);
+    } else {
+      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+    }
+  }
+});
 </script>
 
 <template>
@@ -90,6 +123,25 @@ async function connectDisconnect() {
         @click="connectDisconnect"
         ref="connectDisconnect"
       />
+
+      <div>
+        <button @click="clearCache">Clear cache</button>
+        <p>Available cache quota: {{ formatBytes(cacheQuota) }}</p>
+        <p>Total cache size: {{ formatBytes(cacheTotalUsed) }}</p>
+        <p>
+          Cache usage:
+          {{ (Math.round(cacheUsedPercent * 100) / 100).toFixed(2) }}%
+        </p>
+
+        <div
+          v-for="cache in cacheDetails"
+          :key="cache.cacheName"
+          style="border: 1px solid black"
+        >
+          <h3>{{ cache.cacheName }}</h3>
+          <p>Number of cached requests: {{ cache.requestCount }}</p>
+        </div>
+      </div>
 
       <div id="demoMenu" />
     </div>

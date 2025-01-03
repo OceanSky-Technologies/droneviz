@@ -2,8 +2,8 @@ import { createViewerOptions } from "@/utils/CesiumViewerOptions";
 import { describe, expect, test } from "vitest";
 
 describe("CesiumViewerOptions", () => {
-  test("Bing not enabled by default", () => {
-    const viewerOptions = createViewerOptions();
+  test("Bing not enabled by default", async () => {
+    const viewerOptions = await createViewerOptions();
 
     // count bing providers
     let bingImageProvidersFound = 0;

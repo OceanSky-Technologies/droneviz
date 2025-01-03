@@ -18,8 +18,15 @@ import { settings } from "@/utils/Settings";
  * Taken from https://github.com/CesiumGS/cesium/blob/main/packages/widgets/Source/BaseLayerPicker/createDefaultImageryProviderViewModels.js.
  * @returns {ProviderViewModel[]} Default imagery provider view models
  */
-function createDefaultImageryProviderViewModels(): ProviderViewModel[] {
+async function createDefaultImageryProviderViewModels(): Promise<
+  ProviderViewModel[]
+> {
   const providerViewModels = [];
+
+  // wait until the service worker is ready because otherwise the ProviderViewModels will not be created if network is offline and shall be served from the service worker
+  if ("serviceWorker" in navigator) {
+    await navigator.serviceWorker.ready;
+  }
 
   // const useRetinaTiles = devicePixelRatio >= 2.0;
 
@@ -323,9 +330,9 @@ of the world.\nhttp://www.openstreetmap.org",
  * Create Cesium Viewer default options.
  * @returns {Viewer.ConstructorOptions} Default options
  */
-export function createViewerOptions(): Viewer.ConstructorOptions {
+export async function createViewerOptions(): Promise<Viewer.ConstructorOptions> {
   const imageryViewModels: ProviderViewModel[] =
-    createDefaultImageryProviderViewModels();
+    await createDefaultImageryProviderViewModels();
 
   return {
     useBrowserRecommendedResolution: false,

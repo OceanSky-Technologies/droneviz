@@ -21,9 +21,9 @@ import { vi } from "vitest";
  * - no baseLayerPicker/imageProviderViewModels to reduce Bing Map quota
  * @returns {Viewer.ConstructorOptions} new Viewer.ConstructorOptions
  */
-export function createTestViewerOptions(): Viewer.ConstructorOptions {
+export async function createTestViewerOptions(): Promise<Viewer.ConstructorOptions> {
   return {
-    ...createViewerOptions(),
+    ...(await createViewerOptions()),
     contextOptions: { getWebGLStub },
 
     imageryProviderViewModels: [
@@ -60,7 +60,7 @@ export async function mountCesiumViewerMock() {
   const wrapper = await mountSuspended(CesiumViewer, {
     route: "/",
     props: {
-      mockViewerOptions: createTestViewerOptions(),
+      mockViewerOptions: await createTestViewerOptions(),
       googleTilesetMock: new Cesium3DTileset({}), // stay below cesium quota by disabling tileset
     },
     attachTo: root,

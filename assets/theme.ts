@@ -1,6 +1,5 @@
 import { definePreset } from "@primevue/themes";
 import Aura from "@primevue/themes/aura";
-import { DarkMode } from "../utils/Settings";
 
 const ColorPreset = definePreset(Aura, {
   semantic: {

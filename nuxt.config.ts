@@ -1,10 +1,11 @@
 import { defineNuxtConfig } from "nuxt/config";
+import { baseURL, baseHost } from "./baseURL.config";
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false, // tauri needs this
   // Enables the development server to be discoverable by other devices when running on iOS physical devices
-  devServer: { host: process.env.TAURI_DEV_HOST || "127.0.0.1" },
+  devServer: { host: process.env.TAURI_DEV_HOST || baseHost },
   telemetry: false,
   compatibilityDate: "2024-10-14",
   modules: [
@@ -31,94 +32,11 @@ export default defineNuxtConfig({
       },
     },
   },
-  app: {
-    head: {
-      title: "Droneviz",
-      htmlAttrs: {
-        lang: "en",
-      },
-      link: [
-        {
-          rel: "icon",
-          href: "/oceansky-logo.svg",
-          sizes: "any",
-          type: "image/svg+xml",
-        },
-        {
-          rel: "apple-touch-icon",
-          href: "/oceansky-logo.svg",
-          sizes: "any",
-          type: "image/svg+xml",
-        },
-        {
-          rel: "mask-icon",
-          href: "/oceansky-logo.svg",
-          color: "#242424",
-        },
-        {
-          rel: "dns-prefetch",
-          href: "https://tile.googleapis.com",
-        },
-        {
-          rel: "preconnect",
-          href: "https://tile.googleapis.com",
-          crossorigin: "anonymous",
-        },
-        {
-          rel: "dns-prefetch",
-          href: "https://assets.ion.cesium.com",
-        },
-        {
-          rel: "preconnect",
-          href: "https://assets.ion.cesium.com",
-          crossorigin: "anonymous",
-        },
-        {
-          rel: "dns-prefetch",
-          href: "https://dev.virtualearth.net",
-        },
-        {
-          rel: "preconnect",
-          href: "https://dev.virtualearth.net",
-          crossorigin: "anonymous",
-        },
-      ],
-      meta: [{ name: "theme-color", content: "#242424" }],
-      script: [
-        {
-          //must match the nitro config below for where the files are being served publicly
-          children: `window.CESIUM_BASE_URL='_nuxt/Cesium';`,
-        },
-        {
-          // Prevent right-click context menu globally
-          children:
-            'document.addEventListener("contextmenu", (event) => { \
-               event.preventDefault(); \
-             });',
-        },
-      ],
-    },
-  },
-  runtimeConfig: {
-    public: {
-      baseURL: "http://127.0.0.1:3000",
-    },
-  },
-  routeRules: {
-    "/**": {
-      cors: true,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "*",
-        "Access-Control-Allow-Methods": "*",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Expose-Headers": "*",
-        "Access-Control-Request-Method": "*",
-        "Access-Control-Request-Headers": "*",
-      },
-    },
-  },
   pwa: {
+    registerType: "autoUpdate",
+    strategies: "injectManifest",
+    srcDir: "",
+    filename: "serviceworker.ts",
     devOptions: {
       enabled: true,
       type: "module",
@@ -158,112 +76,135 @@ export default defineNuxtConfig({
         },
       ],
     },
-
     workbox: {
       disableDevLogs: true, // enable to identify caching problems
-      globPatterns: ["**/*"],
-      maximumFileSizeToCacheInBytes: 200000000,
-      navigateFallback: undefined,
-      runtimeCaching: [
+      sourcemap: true,
+      globPatterns: ["**/*.{html,js,ts,css,png,jpg,svg,glb}"],
+      cleanupOutdatedCaches: false,
+      // navigateFallback: undefined,
+    },
+  },
+  app: {
+    head: {
+      title: "Droneviz",
+      htmlAttrs: {
+        lang: "en",
+      },
+      link: [
         {
-          urlPattern: /^https:\/\/tile\.googleapis\.com\/.*/i,
-          handler: "CacheFirst",
-          options: {
-            cacheName: "google-tiles-cache",
-            expiration: {
-              maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
-            },
-            matchOptions: { ignoreVary: true },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
+          rel: "icon",
+          href: "/oceansky-logo.svg",
+          sizes: "any",
+          type: "image/svg+xml",
         },
         {
-          urlPattern: /^https:\/\/assets\.ion\.cesium\.com\/.*/i,
-          handler: "CacheFirst",
-          options: {
-            cacheName: "cesium-ion-cache",
-            expiration: {
-              maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
-            },
-            matchOptions: { ignoreVary: true },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
+          rel: "apple-touch-icon",
+          href: "/oceansky-logo.svg",
+          sizes: "any",
+          type: "image/svg+xml",
         },
         {
-          urlPattern: /^https:\/\/dev\.virtualearth\.net\/.*/i,
-          handler: "CacheFirst",
-          options: {
-            cacheName: "virtualearth-cache",
-            expiration: {
-              maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
-            },
-            matchOptions: { ignoreVary: true },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
+          rel: "mask-icon",
+          href: "/oceansky-logo.svg",
+          color: "#242424",
         },
         {
-          urlPattern: /^https:\/\/ibasemaps-api\.arcgis\.com\/.*/i,
-          handler: "NetworkFirst",
-          options: {
-            cacheName: "arcgis-cache",
-            expiration: {
-              maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
-            },
-            matchOptions: { ignoreVary: true },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
+          rel: "dns-prefetch",
+          href: "https://tile.googleapis.com",
         },
         {
-          urlPattern: /^https:\/\/tile\.openstreetmap\.org\/.*/i,
-          handler: "NetworkFirst",
-          options: {
-            cacheName: "openstreetmap-cache",
-            expiration: {
-              maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
-            },
-            matchOptions: { ignoreVary: true },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
+          rel: "dns-prefetch",
+          href: "https://assets.ion.cesium.com",
         },
         {
-          urlPattern: /^https:\/\/tiles\.stadiamaps\.com\/.*/i,
-          handler: "NetworkFirst",
-          options: {
-            cacheName: "stadiamaps-cache",
-            expiration: {
-              maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
-            },
-            matchOptions: { ignoreVary: true },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
+          rel: "dns-prefetch",
+          href: "https://api.cesium.com",
         },
         {
-          urlPattern: /^.*\/api\/geocoder.*/i,
-          handler: "NetworkFirst",
-          options: {
-            cacheName: "geocoder-cache",
-            expiration: {
-              maxAgeSeconds: 60 * 60 * 24 * 365 * 10, // <== 10 years
-            },
-            matchOptions: { ignoreVary: true },
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
+          rel: "dns-prefetch",
+          href: "https://dev.virtualearth.net",
+        },
+        {
+          rel: "dns-prefetch",
+          href: "https://ibasemaps-api.arcgis.com",
+        },
+        {
+          rel: "dns-prefetch",
+          href: "https://tile.openstreetmap.org",
+        },
+        {
+          rel: "dns-prefetch",
+          href: "https://tiles.stadiamaps.com",
+        },
+        {
+          rel: "preconnect",
+          href: "https://tile.googleapis.com",
+          crossorigin: "anonymous",
+        },
+        {
+          rel: "preconnect",
+          href: "https://assets.ion.cesium.com",
+          crossorigin: "anonymous",
+        },
+        {
+          rel: "preconnect",
+          href: "https://api.cesium.com",
+          crossorigin: "anonymous",
+        },
+        {
+          rel: "preconnect",
+          href: "https://dev.virtualearth.net",
+          crossorigin: "anonymous",
+        },
+        {
+          rel: "preconnect",
+          href: "https://ibasemaps-api.arcgis.com",
+          crossorigin: "anonymous",
+        },
+        {
+          rel: "preconnect",
+          href: "https://tile.openstreetmap.org",
+          crossorigin: "anonymous",
+        },
+        {
+          rel: "preconnect",
+          href: "https://tiles.stadiamaps.com",
+          crossorigin: "anonymous",
         },
       ],
+      meta: [{ name: "theme-color", content: "#242424" }],
+      script: [
+        {
+          //must match the nitro config below for where the files are being served publicly
+          children: `window.CESIUM_BASE_URL='_nuxt/Cesium';`,
+        },
+        {
+          // Prevent right-click context menu globally
+          children:
+            'document.addEventListener("contextmenu", (event) => { \
+               event.preventDefault(); \
+             });',
+        },
+      ],
+    },
+  },
+  runtimeConfig: {
+    public: {
+      baseURL: baseURL,
+    },
+  },
+  routeRules: {
+    "/**": {
+      cors: true,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "*",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": "*",
+        "Access-Control-Request-Method": "*",
+        "Access-Control-Request-Headers": "*",
+      },
     },
   },
   // imports: {

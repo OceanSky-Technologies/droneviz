@@ -37,6 +37,7 @@ import { MessageMap } from "./MessageMap";
 import { settings } from "@/utils/Settings";
 import { fixBigIntSerialization } from "@/types/bigIntSerializationHelper";
 import { useRuntimeConfig } from "nuxt/app";
+import { baseURL } from "@/baseURL.config";
 
 fixBigIntSerialization();
 
@@ -45,7 +46,7 @@ const UINT16_MAX = 65535;
 // default fetch options for all requests to the server
 const defaultFetchOptions = {
   method: "POST" as any,
-  baseURL: useRuntimeConfig().public.baseURL as string,
+  baseURL: baseURL,
 };
 
 /**
@@ -134,10 +135,7 @@ export class Drone {
         });
 
         this.eventSource = new EventSource(
-          new URL(
-            "/api/drone/stream",
-            useRuntimeConfig().public.baseURL as string,
-          ),
+          new URL("/api/drone/stream", baseURL),
         );
 
         this.eventSource.onmessage = (event) => {

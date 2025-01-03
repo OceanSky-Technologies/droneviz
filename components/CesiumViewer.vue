@@ -27,7 +27,7 @@ async function init() {
     console.info("Cesium setup using mockViewerOptions");
     await initCesium(props.mockViewerOptions, props.googleTilesetMock);
   } else {
-    await initCesium(createViewerOptions(), props.googleTilesetMock);
+    await initCesium(await createViewerOptions(), props.googleTilesetMock);
   }
 
   initLeftClickHandler();
@@ -36,8 +36,6 @@ async function init() {
   initMouseMoveHandler();
 
   if (settings.demoMode.value == true) initDemo();
-
-  resetCamera();
 }
 
 /**
@@ -51,7 +49,7 @@ async function resetCamera() {
     maximumAge: 0,
   };
 
-  navigator.geolocation.getCurrentPosition(
+  navigator.geolocation.watchPosition(
     // position successfully obtained
     (pos) => {
       const crd = pos.coords;
@@ -64,22 +62,11 @@ async function resetCamera() {
         },
       });
     },
-    // position successfully obtained
-    (err) => {
+    () => {
       showToast(
-        "Couldn't get your location. Please enable location services and make sure you're connected to the internet. " +
-          JSON.stringify(err),
+        "Couldn't get your location. Please enable location services and make sure you're connected to the internet.",
         ToastSeverity.Info,
       );
-
-      // fly the camera to San Francisco
-      getCesiumViewer().camera.flyTo({
-        destination: Cartesian3.fromDegrees(-122.4175, 37.655, 400),
-        orientation: {
-          heading: Math.toRadians(0.0),
-          pitch: Math.toRadians(-15.0),
-        },
-      });
     },
     options,
   );
@@ -88,6 +75,8 @@ async function resetCamera() {
 onMounted(async () => {
   try {
     await init();
+
+    await resetCamera();
   } catch (e) {
     if (e instanceof Error) {
       console.error("Error initializing Cesium viewer:", e.message);

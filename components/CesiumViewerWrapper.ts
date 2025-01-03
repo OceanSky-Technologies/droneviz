@@ -73,6 +73,14 @@ export function isCesiumInitialized(): boolean {
   return viewer !== undefined;
 }
 
+export function waitUntilCesiumInitialized(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (cesiumInitialized.value) {
+      resolve();
+    }
+  });
+}
+
 /**
  * Get Cesium viewer.
  * @returns {Viewer} Cesium viewer.

@@ -12,7 +12,10 @@ import {
 import { droneCollection } from "@/core/DroneCollection";
 import FlyToIcon from "@/components/icons/FlyTo.vue";
 import ProgressButton from "@/components/ProgressButton.vue";
-import { getCesiumViewer } from "./CesiumViewerWrapper";
+import {
+  getCesiumViewer,
+  waitUntilCesiumInitialized,
+} from "./CesiumViewerWrapper";
 
 const visible = ref(false);
 const menu = ref(null);
@@ -146,12 +149,14 @@ const updateOverlayPosition = () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   eventBus.on("cesiumRightClick", handleCesiumRightClick);
   eventBus.on("cesiumLeftClick", closeMenu);
 
   eventBus.on("droneDisconnected", closeMenu);
   eventBus.on("allDronesDisconnected", closeMenu);
+
+  await waitUntilCesiumInitialized();
 
   // Add a camera move listeners to update the overlay position
   cesiumListenerCbs.push(
