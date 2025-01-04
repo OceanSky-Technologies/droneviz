@@ -1,7 +1,11 @@
 <script lang="ts" setup>
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import { createViewerOptions } from "@/utils/CesiumViewerOptions";
-import { getCesiumViewer, initCesium } from "./CesiumViewerWrapper";
+import {
+  getCesiumViewer,
+  initCesium,
+  destroyCesium,
+} from "./CesiumViewerWrapper";
 import { initDemo } from "@/demo/Demo";
 import { Math, Cartesian3 } from "cesium";
 import { onMounted } from "vue";
@@ -83,6 +87,10 @@ onMounted(async () => {
       console.error(e.stack);
     }
   }
+});
+
+onUnmounted(() => {
+  destroyCesium();
 });
 </script>
 

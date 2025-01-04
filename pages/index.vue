@@ -18,17 +18,18 @@ const cacheTotalUsed = ref(0);
 const cacheUsedPercent = ref(0);
 const cacheDetails = ref<CacheStatistics[]>([]);
 
-const connectDisconnectRef =
-  useTemplateRef<ComponentPublicInstance>("connectDisconnect");
+const connectDisconnectRef = ref("connectDisconnectRef");
+const connectDisconnectDisabled = ref(false);
+const connectDisconnectText = ref("Connect");
 
 async function connectDisconnect() {
-  if (!connectDisconnectRef.value || !connectDisconnectRef.value.$el) {
+  if (!connectDisconnectRef.value) {
     showToast("connectDisconnectRef button not found", ToastSeverity.Error);
     return;
   }
 
   try {
-    connectDisconnectRef.value.$el.disabled = true;
+    connectDisconnectDisabled.value = true;
 
     if (droneCollection.getNumDrones() === 0) {
       showToast(`Connecting ...`, ToastSeverity.Info);
@@ -45,20 +46,20 @@ async function connectDisconnect() {
         ToastSeverity.Success,
       );
 
-      connectDisconnectRef.value.$el.textContent = "Disconnect";
+      connectDisconnectText.value = "Disconnect";
 
       eventBus.emit("droneConnected", drone);
-      connectDisconnectRef.value.$el.disabled = false;
+      connectDisconnectDisabled.value = false;
     } else {
       await droneCollection.disconnectAll();
       droneCollection.removeAllDrones();
 
       showToast("Disconnected!", ToastSeverity.Success);
 
-      connectDisconnectRef.value.$el.textContent = "Connect";
+      connectDisconnectText.value = "Connect";
 
       eventBus.emit("allDronesDisconnected");
-      connectDisconnectRef.value.$el.disabled = false;
+      connectDisconnectDisabled.value = false;
     }
   } catch (e) {
     if (e instanceof Error) {
@@ -67,7 +68,7 @@ async function connectDisconnect() {
       showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
     }
 
-    connectDisconnectRef.value.$el.disabled = false;
+    connectDisconnectDisabled.value = false;
     droneCollection.disconnectAll();
     droneCollection.removeAllDrones();
   }
@@ -110,7 +111,7 @@ onMounted(() => {
       style="
         display: flex;
         align-items: flex-start;
-        flex-direction: row;
+        flex-direction: column;
         gap: 5px;
         position: absolute;
         top: 5px;
@@ -119,20 +120,21 @@ onMounted(() => {
     >
       <DarkModeToggle />
       <Button
-        label="Connect"
+        :label="connectDisconnectText"
+        :disabled="connectDisconnectDisabled"
         @click="connectDisconnect"
-        ref="connectDisconnect"
+        ref="connectDisconnectRef"
       />
 
       <div>
-        <button @click="clearCache">Clear cache</button>
+        <Button @click="clearCache">Clear cache</Button>
         <p>Available cache quota: {{ formatBytes(cacheQuota) }}</p>
         <p>Total cache size: {{ formatBytes(cacheTotalUsed) }}</p>
         <p>
           Cache usage:
           {{ (Math.round(cacheUsedPercent * 100) / 100).toFixed(2) }}%
         </p>
-
+        <p>Cache details:</p>
         <div
           v-for="cache in cacheDetails"
           :key="cache.cacheName"

@@ -1,14 +1,8 @@
 import type { Cesium3DTileset } from "cesium";
-import {
-  Color,
-  createGooglePhotorealistic3DTileset,
-  Ion,
-  Viewer,
-} from "cesium";
+import { createGooglePhotorealistic3DTileset, Ion, Viewer } from "cesium";
 import { settings } from "../utils/Settings";
 import { selectedEntityHighlighter } from "./LeftClickHandler";
 import { mouseOverHighlighter } from "./MouseMoveHandler";
-import CesiumHighlighter from "./CesiumHighlighter.vue";
 
 Ion.defaultAccessToken =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTJmM2RmYi0wMDI3LTQxYmMtYjY1NS00MzhmYzg4Njk1NTMiLCJpZCI6MjExMDU5LCJpYXQiOjE3MTM5OTExNTh9.cgvEwVgVgDQRqLsZzWCubdKnui9qoZAXTPCRbtVzZmo";
@@ -33,6 +27,13 @@ export async function initCesium(
   tilesetMock?: Cesium3DTileset,
 ) {
   if (viewer) throw new Error("Cesium viewer already initialized");
+
+  // wait until the service worker is ready
+  console.log("Waiting for service worker to be ready...");
+  if ("serviceWorker" in navigator) {
+    await navigator.serviceWorker.ready;
+    console.log("Service worker is ready!");
+  }
 
   if (tilesetMock) console.log("Mocking tileset");
 

@@ -8,6 +8,9 @@
   "permissions": [
     "core:app:default",
     "shell:default",
-    "core:webview:allow-create-webview-window"
+    "core:webview:allow-create-webview-window",
+    "core:webview:allow-create-webview",
+    "core:webview:allow-webview-size",
+    "core:webview:allow-set-webview-size"
   ]
 }

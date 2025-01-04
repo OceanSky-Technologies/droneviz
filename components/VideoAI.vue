@@ -97,12 +97,14 @@ const listVideoDevices = async () => {
 
     for (const device of devices) {
       if (device.kind === "videoinput") {
-        videoDevices.value.push({
+        const videoDevice: DeviceInfo = {
           label: device.label || "Unknown device",
           deviceId: device.deviceId,
           groupId: device.groupId,
           kind: device.kind,
-        });
+        };
+        videoDevices.value.push(videoDevice);
+        console.log("Found video device:", videoDevice);
       }
     }
 
@@ -140,32 +142,37 @@ const startVideo = async (device: DeviceInfo) => {
     audio: false,
     video: {
       deviceId: { exact: device.deviceId },
-      width: { ideal: 1920, max: 3840 },
-      height: { ideal: 1080 },
+      width: { exact: 1920, max: 3840 },
+      height: { exact: 1080, max: 2160 },
     },
   };
 
-  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-  // Set video element source to videoHtmlElement
-  videoHtmlElement.value.srcObject = stream;
+    // // Wait for video metadata to ensure correct video dimensions
+    // await new Promise((resolve) => {
+    //   videoHtmlElement.value!.onloadedmetadata = () => resolve(undefined);
+    // });
 
-  // Wait for video metadata to ensure correct video dimensions
-  await new Promise((resolve) => {
-    videoHtmlElement.value!.onloadedmetadata = () => resolve(undefined);
-  });
+    // Set video element source to videoHtmlElement
+    videoHtmlElement.value.srcObject = stream;
 
-  const track = stream.getVideoTracks()[0];
-  const { width, height, frameRate } = track.getSettings();
-  videoInfo.value = { width, height, frameRate };
+    const track = stream.getVideoTracks()[0];
 
-  setCanvasSize();
+    // Play the video
+    await videoHtmlElement.value.play();
 
-  // Play the video
-  await videoHtmlElement.value.play();
+    setCanvasSize();
 
-  // if AI was enabled before the video started, run the AI loop now
-  if (aiEnabled.value) runAIWithFrameCallback();
+    const { width, height, frameRate } = track.getSettings();
+    videoInfo.value = { width, height, frameRate };
+
+    // if AI was enabled before the video started, run the AI loop now
+    if (aiEnabled.value) runAIWithFrameCallback();
+  } catch (error) {
+    showToast("Error starting video: " + error, ToastSeverity.Error);
+  }
 };
 
 const stopVideo = () => {

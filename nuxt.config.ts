@@ -1,5 +1,6 @@
 import { defineNuxtConfig } from "nuxt/config";
 import { baseURL, baseHost } from "./baseURL.config";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
@@ -35,53 +36,26 @@ export default defineNuxtConfig({
   pwa: {
     registerType: "autoUpdate",
     strategies: "injectManifest",
-    srcDir: "",
-    filename: "serviceworker.ts",
+    injectRegister: "auto",
+    srcDir: "service-worker",
+    filename: "sw.ts",
     devOptions: {
       enabled: true,
       type: "module",
       suppressWarnings: true,
     },
-    manifest: {
-      name: "Droneviz - OceanSky Technologies",
-      short_name: "Droneviz",
-      description: "Monitor and control software for OceanSky UAVs",
-      theme_color: "#242424",
-      id: "/",
-      icons: [
-        {
-          src: "oceansky-logo.svg",
-          sizes: "150x150",
-          type: "image/svg",
-        },
-        {
-          src: "oceansky-logo.png",
-          sizes: "512x512",
-          type: "image/png",
-        },
-      ],
-      screenshots: [
-        // todo: add real screenshots
-        {
-          src: "oceansky-logo.png",
-          sizes: "512x512",
-          type: "image/png",
-          form_factor: "wide",
-        },
-        {
-          src: "oceansky-logo.png",
-          sizes: "512x512",
-          type: "image/png",
-          form_factor: "narrow",
-        },
-      ],
-    },
+    manifest: false,
     workbox: {
       disableDevLogs: true, // enable to identify caching problems
-      sourcemap: true,
-      globPatterns: ["**/*.{html,js,ts,css,png,jpg,svg,glb}"],
+      sourcemap: process.env.NODE_ENV !== "production",
+      globPatterns: ["**/*.{html,mjs,js,ts,css,png,jpg,svg,glb}"],
       cleanupOutdatedCaches: false,
-      // navigateFallback: undefined,
+      navigateFallback: "/",
+      navigateFallbackAllowlist: [/^\/$/],
+    },
+    injectManifest: {
+      globPatterns: ["**/*.{html,mjs,js,ts,css,png,jpg,svg,glb}"],
+      maximumFileSizeToCacheInBytes: 1000 * 1024 * 1024,
     },
   },
   app: {
@@ -176,11 +150,11 @@ export default defineNuxtConfig({
       script: [
         {
           //must match the nitro config below for where the files are being served publicly
-          children: `window.CESIUM_BASE_URL='_nuxt/Cesium';`,
+          innerHTML: `window.CESIUM_BASE_URL='_nuxt/Cesium';`,
         },
         {
           // Prevent right-click context menu globally
-          children:
+          innerHTML:
             'document.addEventListener("contextmenu", (event) => { \
                event.preventDefault(); \
              });',
@@ -230,6 +204,7 @@ export default defineNuxtConfig({
       // Tauri requires a consistent port
       strictPort: true,
     },
+    plugins: [nodePolyfills()],
   },
   nitro: {
     sourceMap: process.env.NODE_ENV !== "production",
