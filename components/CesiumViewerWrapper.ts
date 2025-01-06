@@ -1,5 +1,11 @@
 import type { Cesium3DTileset } from "cesium";
-import { createGooglePhotorealistic3DTileset, Ion, Viewer } from "cesium";
+import {
+  Cartesian3,
+  Math,
+  createGooglePhotorealistic3DTileset,
+  Ion,
+  Viewer,
+} from "cesium";
 import { settings } from "../utils/Settings";
 import { selectedEntityHighlighter } from "./LeftClickHandler";
 import { mouseOverHighlighter } from "./MouseMoveHandler";
@@ -203,4 +209,45 @@ export function updateRequestRenderMode() {
   }
 
   getCesiumViewer().scene.requestRender();
+}
+
+/**
+ * Resets the camera to the browser geolocation.
+ */
+export function resetCameraToGeolocation(): Promise<void> {
+  const options = {
+    enableHighAccuracy: false,
+    timeout: 10000,
+    maximumAge: 0,
+  };
+
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position: GeolocationPosition) => {
+        console.log("Position fetched:", position);
+
+        getCesiumViewer().camera.flyTo({
+          destination: Cartesian3.fromDegrees(
+            position.coords.longitude,
+            position.coords.latitude,
+            400,
+          ),
+          orientation: {
+            heading: Math.toRadians(0.0),
+            pitch: Math.toRadians(-90.0),
+          },
+        });
+
+        resolve();
+      },
+      () => {
+        const errorMessage =
+          "Couldn't get your location. Please enable location services and make sure you're connected to the internet.";
+
+        showToast(errorMessage, ToastSeverity.Info);
+        reject(new Error(errorMessage)); // Reject with an error
+      },
+      options,
+    );
+  });
 }

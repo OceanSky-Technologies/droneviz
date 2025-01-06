@@ -40,7 +40,7 @@ pub fn run() {
             let child_clone = start_server(app.app_handle());
 
             let url = format!("http://127.0.0.1:{}", port).parse().unwrap();
-            WebviewWindowBuilder::new(app, "main".to_string(), WebviewUrl::External(url))
+            WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url))
                 .title("Droneviz - OceanSky Technologies")
                 .resizable(true)
                 .inner_size(1280.0, 720.0)

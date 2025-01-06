@@ -5,6 +5,7 @@ import {
   getCesiumViewer,
   initCesium,
   destroyCesium,
+  resetCameraToGeolocation,
 } from "./CesiumViewerWrapper";
 import { initDemo } from "@/demo/Demo";
 import { Math, Cartesian3 } from "cesium";
@@ -42,45 +43,11 @@ async function init() {
   if (settings.demoMode.value == true) initDemo();
 }
 
-/**
- * Resets the camera.
- */
-async function resetCamera() {
-  getCesiumViewer().scene.requestRender();
-  const options = {
-    enableHighAccuracy: false,
-    timeout: 10000,
-    maximumAge: 0,
-  };
-
-  navigator.geolocation.watchPosition(
-    // position successfully obtained
-    (pos) => {
-      const crd = pos.coords;
-
-      getCesiumViewer().camera.flyTo({
-        destination: Cartesian3.fromDegrees(crd.longitude, crd.latitude, 400),
-        orientation: {
-          heading: Math.toRadians(0.0),
-          pitch: Math.toRadians(-90.0),
-        },
-      });
-    },
-    () => {
-      showToast(
-        "Couldn't get your location. Please enable location services and make sure you're connected to the internet.",
-        ToastSeverity.Info,
-      );
-    },
-    options,
-  );
-}
-
 onMounted(async () => {
   try {
     await init();
 
-    await resetCamera();
+    await resetCameraToGeolocation();
   } catch (e) {
     if (e instanceof Error) {
       console.error("Error initializing Cesium viewer:", e.message);

@@ -33,7 +33,7 @@ const map3DEnabled = ref(true);
 const searchString = ref("");
 
 // search icon class
-const searchIconClass = ref("pi pi-search");
+const searchIcon = ref("pi pi-search");
 
 // geolocation search results
 interface GeoLocationResult {
@@ -131,7 +131,7 @@ async function doSearch() {
   const searchStringSanitized = searchString.value.trim();
   if (searchStringSanitized === "") return;
 
-  searchIconClass.value = "pi pi-spin pi-spinner";
+  searchIcon.value = "pi pi-spin pi-spinner";
 
   try {
     const config = useRuntimeConfig();
@@ -149,7 +149,7 @@ async function doSearch() {
         `No geolocation results found for: ${searchStringSanitized}`,
         ToastSeverity.Info,
       );
-      searchIconClass.value = "pi pi-search";
+      searchIcon.value = "pi pi-search";
       return;
     }
 
@@ -166,7 +166,7 @@ async function doSearch() {
       });
 
       searchString.value = "";
-      searchIconClass.value = "pi pi-search";
+      searchIcon.value = "pi pi-search";
 
       // remove foxus from the search input field
       (document.activeElement as HTMLElement)?.blur();
@@ -201,7 +201,7 @@ async function doSearch() {
     );
   }
 
-  searchIconClass.value = "pi pi-search";
+  searchIcon.value = "pi pi-search";
 }
 
 /**
@@ -212,7 +212,7 @@ function closeSearchListbox() {
   geolocationOptions.splice(0, geolocationOptions.length);
   showGeolocationListbox.value = false;
   searchString.value = "";
-  searchIconClass.value = "pi pi-search";
+  searchIcon.value = "pi pi-search";
 
   // remove foxus from the search input field
   (document.activeElement as HTMLElement)?.blur();
@@ -423,7 +423,7 @@ onMounted(async () => {
 
       <template #center>
         <InputGroup ref="searchBox" style="width: 18rem">
-          <Button :icon="searchIconClass" severity="info" @click="doSearch" />
+          <Button :icon="searchIcon" severity="info" @click="doSearch" />
 
           <FloatLabel variant="on">
             <InputText

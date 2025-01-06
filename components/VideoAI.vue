@@ -8,6 +8,8 @@
         placeholder="Select a video device"
         :disabled="isRecording"
         @change="changeVideoDevice"
+        @focus="listVideoDevices"
+        style="width: 300px"
       />
 
       <div
@@ -87,13 +89,36 @@ const recordButtonSeverity = ref("");
 
 let model: cocoSsd.ObjectDetection | null = null;
 
+const mediaConstraints: MediaStreamConstraints = {
+  audio: false,
+  video: {
+    width: { exact: 1920, max: 3840 },
+    height: { exact: 1080, max: 2160 },
+  },
+};
+
 function videoInfoToString(info: VideoInfo) {
   return `${info.width}x${info.height} @ ${info.frameRate}fps`;
 }
 
 const listVideoDevices = async () => {
+  if (videoDevices.value.length === 0) {
+    videoDevices.value = [];
+
+    videoDevices.value = [
+      {
+        label: "Loading ...",
+        deviceId: "",
+        groupId: "",
+        kind: "",
+      },
+    ];
+  }
+
   try {
+    await navigator.mediaDevices.getUserMedia(mediaConstraints);
     const devices = await navigator.mediaDevices.enumerateDevices();
+    videoDevices.value = [];
 
     for (const device of devices) {
       if (device.kind === "videoinput") {
@@ -138,22 +163,11 @@ const startVideo = async (device: DeviceInfo) => {
     return;
   }
 
-  const constraints: MediaStreamConstraints = {
-    audio: false,
-    video: {
-      deviceId: { exact: device.deviceId },
-      width: { exact: 1920, max: 3840 },
-      height: { exact: 1080, max: 2160 },
-    },
-  };
-
   try {
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-    // // Wait for video metadata to ensure correct video dimensions
-    // await new Promise((resolve) => {
-    //   videoHtmlElement.value!.onloadedmetadata = () => resolve(undefined);
-    // });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      ...mediaConstraints,
+      video: { deviceId: { exact: device.deviceId } },
+    });
 
     // Set video element source to videoHtmlElement
     videoHtmlElement.value.srcObject = stream;

@@ -235,9 +235,7 @@ function trackUntrack() {
 
 async function openVideo() {
   try {
-    const inTauri = isTauri(); // Determine if the app is running in Tauri
-
-    if (inTauri) {
+    if (isTauri()) {
       const webview = new WebviewWindow(
         "video-ai-" +
           droneCollection.selectedDrone.value?.getSysId() +
@@ -246,6 +244,8 @@ async function openVideo() {
         {
           url: "/video-ai",
           title: "Droneviz - Video AI",
+          width: 1280,
+          height: 720,
         },
       );
 
@@ -267,7 +267,7 @@ async function openVideo() {
       const newWindow = window.open(
         "/video-ai",
         "_blank",
-        "width=800,height=600,resizable",
+        "width=1280,height=720,resizable",
       );
 
       if (!newWindow) {

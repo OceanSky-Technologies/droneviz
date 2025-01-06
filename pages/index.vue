@@ -4,12 +4,15 @@ import DarkModeToggle from "@/components/DarkModeToggle.vue";
 import DroneMenu from "@/components/DroneMenu.vue";
 import DroneRightClickMenu from "@/components/DroneRightClickMenu.vue";
 import MainToolbar from "@/components/MainToolbar.vue";
-import { cesiumInitialized } from "@/components/CesiumViewerWrapper";
+import {
+  cesiumInitialized,
+  resetCameraToGeolocation,
+} from "@/components/CesiumViewerWrapper";
 import { Drone } from "@/core/Drone";
 import { droneCollection } from "@/core/DroneCollection";
 import { SerialOptions, UdpOptions } from "@/types/DroneConnectionOptions";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
-import { useTemplateRef, type ComponentPublicInstance, onMounted } from "vue";
+import { onMounted } from "vue";
 import { eventBus } from "~/utils/Eventbus";
 import { getCacheStatistics, clearCache } from "~/utils/cache-utils";
 
@@ -21,6 +24,8 @@ const cacheDetails = ref<CacheStatistics[]>([]);
 const connectDisconnectRef = ref("connectDisconnectRef");
 const connectDisconnectDisabled = ref(false);
 const connectDisconnectText = ref("Connect");
+
+const resetPositionButtonIcon = ref("pi pi-map-marker");
 
 async function connectDisconnect() {
   if (!connectDisconnectRef.value) {
@@ -100,6 +105,27 @@ onMounted(() => {
     }
   }
 });
+
+async function resetCameraToGeolocationButtonClick() {
+  try {
+    resetPositionButtonIcon.value = "pi pi-spin pi-spinner";
+    await resetCameraToGeolocation();
+    resetPositionButtonIcon.value = "pi pi-map-marker";
+  } catch (e) {
+    if (e instanceof Error) {
+      resetPositionButtonIcon.value = "pi pi-map-marker";
+      showToast(
+        `Could not retrieve geolocation: ${e.message}`,
+        ToastSeverity.Error,
+      );
+    } else {
+      showToast(
+        `Could not retrieve geolocation: : ${JSON.stringify(e)}`,
+        ToastSeverity.Error,
+      );
+    }
+  }
+}
 </script>
 
 <template>
@@ -154,7 +180,12 @@ onMounted(() => {
     <div
       id="toolbarTopRight"
       style="display: flex; gap: 5px; position: absolute; top: 5px; right: 5px"
-    ></div>
+    >
+      <Button
+        :icon="resetPositionButtonIcon"
+        @click="resetCameraToGeolocationButtonClick"
+      />
+    </div>
 
     <DroneMenu />
   </div>
