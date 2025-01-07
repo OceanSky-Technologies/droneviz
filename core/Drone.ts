@@ -36,7 +36,6 @@ import {
 import { MessageMap } from "./MessageMap";
 import { settings } from "@/utils/Settings";
 import { fixBigIntSerialization } from "@/types/bigIntSerializationHelper";
-import { useRuntimeConfig } from "nuxt/app";
 import { baseURL } from "@/baseURL.config";
 
 fixBigIntSerialization();
@@ -216,12 +215,6 @@ export class Drone {
       // Create an instance of the class and populate it with data
       const message = Object.assign(new clazz(), rawMessage.data);
 
-      // Store the last message for the given class
-      this.lastMessages.set(clazz.name, {
-        message: message,
-        timestamp: Date.now(),
-      });
-
       const responseCallbacksToRemove: typeof this.responseCallbacks = [];
       // check if the message is a response to a request
       for (const callback of this.responseCallbacks) {
@@ -263,6 +256,12 @@ export class Drone {
       } else {
         //console.log(message);
       }
+
+      // Store the last message for the given class
+      this.lastMessages.set(clazz.name, {
+        message: message,
+        timestamp: Date.now(),
+      });
     } else {
       console.warn(
         `Unknown message received with ID: ${rawMessage.header.msgid}`,
@@ -285,7 +284,7 @@ export class Drone {
     });
 
     if (typeof response === "string") return JSON.parse(response);
-    else return response;
+    else return response as QueryResult;
   }
 
   /**
@@ -388,6 +387,9 @@ export class Drone {
    * @param {Attitude} message - The attitude message to update the orientation with.
    */
   private updateEntityOrientation(message: Attitude) {
+    // skip if the new message has the same content as the old one
+    if (this.lastMessages.attitude?.message === message) return;
+
     if (!this.entity) return;
     if (!this.entity.position || !this.entity.position.getValue()) return;
 
@@ -416,6 +418,9 @@ export class Drone {
    * @param {GlobalPositionInt} message - The global position message to update the position with.
    */
   private updateEntityPosition(message: GlobalPositionInt) {
+    // skip if the new message has the same content as the old one
+    if (this.lastMessages.globalPositionInt?.message === message) return;
+
     if (!this.entity) return;
 
     setPosition(this.entity, message);

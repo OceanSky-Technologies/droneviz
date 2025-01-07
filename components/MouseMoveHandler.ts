@@ -45,13 +45,13 @@ export function init() {
 
   // position info at mouse position
   mousePositionInfoEntity = getCesiumViewer().entities.add({
+    id: "mouse-position-info",
     label: {
       show: false,
       showBackground: true,
       font: "15px monospace", // Ensure 'monospace' is a fallback font
       horizontalOrigin: HorizontalOrigin.LEFT,
       verticalOrigin: VerticalOrigin.TOP,
-      pixelOffset: new Cartesian2(15, 0),
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
     },
   });
@@ -69,21 +69,26 @@ async function mouseOverListener(
 
   const entity = await getCesiumViewer().scene.pick(motionEvent.endPosition);
 
-  mouseOverHighlighter.clear();
-
   if (
     !defined(entity) ||
     !defined(entity.id) ||
     !(entity.id instanceof Entity) ||
     entity.primitive instanceof Label
   ) {
+    mouseOverHighlighter.clear();
     updateRequestRenderMode();
     return;
   }
 
+  if (mouseOverHighlighter.contains(entity)) {
+    updateRequestRenderMode();
+    return;
+  }
+
+  mouseOverHighlighter.clear();
+
   // add entity to the array
-  console.log("Mouse over entity:");
-  console.log(entity);
+  console.log("Mouse over entity:", entity);
 
   mouseOverHighlighter.add(entity);
 

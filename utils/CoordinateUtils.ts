@@ -1,16 +1,19 @@
-import type { Entity } from "cesium";
+import type { Cartesian2, Entity } from "cesium";
 import {
   Cartesian3,
+  Cartographic,
   ConstantPositionProperty,
   ConstantProperty,
   Ellipsoid,
   HeightReference,
   Math,
   Matrix4,
+  Math as CesiumMath,
   Transforms,
 } from "cesium";
 import { egm96ToEllipsoid } from "egm96-universal";
 import type { GlobalPositionInt } from "mavlink-mappings/dist/lib/common";
+import { getCesiumViewer } from "../components/CesiumViewerWrapper";
 
 /**
  * Moves a 3D coordinate by a vector.

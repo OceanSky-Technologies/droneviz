@@ -24,6 +24,7 @@ class Settings {
   enableMousePositionInfo: Ref<boolean>;
   mousePositionInfoMostDetailed: Ref<boolean>;
   darkMode: Ref<DarkMode>;
+  disableAnimations: Ref<boolean>;
 
   heartbeatInterval: Ref<number>; // milliseconds, 0: disabled
   manualControlInterval: Ref<number>; // milliseconds, 0: disabled
@@ -37,13 +38,14 @@ class Settings {
     this.bingEnabled = ref(false);
     this.tileCacheSize = ref(1000);
     this.sceneMode = ref(SceneMode.SCENE3D);
-    this.msaaSamples = ref(0);
+    this.msaaSamples = ref(1); // don't use 0/disabled because transparent object rendering doesn't work then
     this.fxaa = ref(false);
     this.showFramesPerSecond = ref(true);
     this.demoMode = ref(false);
     this.enableMousePositionInfo = ref(true);
     this.mousePositionInfoMostDetailed = ref(false); // most detailed position retrieval triggers the API and increases quota!
     this.darkMode = ref(DarkMode.Dark);
+    this.disableAnimations = ref(true);
 
     this.heartbeatInterval = ref(1000);
     this.manualControlInterval = ref(0);

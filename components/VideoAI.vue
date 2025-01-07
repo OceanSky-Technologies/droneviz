@@ -92,8 +92,8 @@ let model: cocoSsd.ObjectDetection | null = null;
 const mediaConstraints: MediaStreamConstraints = {
   audio: false,
   video: {
-    width: { exact: 1920, max: 3840 },
-    height: { exact: 1080, max: 2160 },
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
   },
 };
 
@@ -133,7 +133,7 @@ const listVideoDevices = async () => {
       }
     }
 
-    if (videoDevices.value.length > 0) {
+    if (!selectedDevice.value && videoDevices.value.length > 0) {
       selectedDevice.value = videoDevices.value[0]; // Default device
     }
   } catch (error) {
@@ -163,16 +163,28 @@ const startVideo = async (device: DeviceInfo) => {
     return;
   }
 
+  console.log("Starting video with device:", JSON.stringify(device));
+
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    const constraintsWithDeviceId = {
       ...mediaConstraints,
-      video: { deviceId: { exact: device.deviceId } },
-    });
+      video: {
+        ...(mediaConstraints.video as object),
+        deviceId: { exact: device.deviceId },
+      },
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia(
+      constraintsWithDeviceId,
+    );
 
     // Set video element source to videoHtmlElement
     videoHtmlElement.value.srcObject = stream;
 
     const track = stream.getVideoTracks()[0];
+
+    console.log("Video track settings:", track.getSettings());
+    console.log("Video track capabilities:", track.getCapabilities());
 
     // Play the video
     await videoHtmlElement.value.play();

@@ -5,7 +5,6 @@ import {
   getCesiumViewer,
   initCesium,
   destroyCesium,
-  resetCameraToGeolocation,
 } from "./CesiumViewerWrapper";
 import { initDemo } from "@/demo/Demo";
 import { Math, Cartesian3 } from "cesium";
@@ -16,6 +15,8 @@ import { init as initLeftClickHandler } from "./LeftClickHandler";
 import { init as initDoubleClickHandler } from "./DoubleClickHandler";
 import { init as initRightClickHandler } from "./RightClickHandler";
 import { init as initMouseMoveHandler } from "./MouseMoveHandler";
+import { getGeolocationAsync } from "~/utils/geolocation";
+import { updateEgoPosition } from "~/core/ego-position";
 
 export interface CesiumViewerProps {
   mockViewerOptions?: Viewer.ConstructorOptions | undefined;
@@ -46,14 +47,51 @@ async function init() {
 onMounted(async () => {
   try {
     await init();
-
-    await resetCameraToGeolocation();
   } catch (e) {
     if (e instanceof Error) {
       console.error("Error initializing Cesium viewer:", e.message);
-      console.error(e.stack);
     }
   }
+
+  // try to get the camera location a few times before giving up
+  // workaround solution because with tauri the first few attempts seem to fail
+  let errorMessage;
+  for (let i = 0; i < 5; i++) {
+    try {
+      const position = await getGeolocationAsync();
+      console.log("initial position:", position);
+
+      updateEgoPosition(position);
+
+      getCesiumViewer().camera.flyTo({
+        destination: Cartesian3.fromDegrees(
+          position.coords.longitude,
+          position.coords.latitude,
+          400,
+        ),
+        orientation: {
+          heading: Math.toRadians(0.0),
+          pitch: Math.toRadians(-90.0),
+        },
+        complete: () => {
+          // the sphere position uses globe.getHeight which might not be ready yet so update again after the camera has flown
+          updateEgoPosition(position);
+        },
+      });
+
+      break; // success
+    } catch (e) {
+      if (e instanceof Error) {
+        errorMessage = e.message;
+      } else {
+        errorMessage = "Could not get geolocation: " + e;
+      }
+      await new Promise((f) => setTimeout(f, 1000));
+    }
+  }
+  if (errorMessage) showToast(errorMessage, ToastSeverity.Error);
+
+  watchHomePositionUpdates();
 });
 
 onUnmounted(() => {

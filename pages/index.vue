@@ -6,7 +6,7 @@ import DroneRightClickMenu from "@/components/DroneRightClickMenu.vue";
 import MainToolbar from "@/components/MainToolbar.vue";
 import {
   cesiumInitialized,
-  resetCameraToGeolocation,
+  getCesiumViewer,
 } from "@/components/CesiumViewerWrapper";
 import { Drone } from "@/core/Drone";
 import { droneCollection } from "@/core/DroneCollection";
@@ -15,6 +15,9 @@ import { showToast, ToastSeverity } from "~/utils/ToastService";
 import { onMounted } from "vue";
 import { eventBus } from "~/utils/Eventbus";
 import { getCacheStatistics, clearCache } from "~/utils/cache-utils";
+import { Cartesian3, Math as CesiumMath } from "cesium";
+import { getGeolocationAsync } from "~/utils/geolocation";
+import { updateEgoPosition } from "~/core/ego-position";
 
 const cacheQuota = ref(0);
 const cacheTotalUsed = ref(0);
@@ -106,10 +109,27 @@ onMounted(() => {
   }
 });
 
-async function resetCameraToGeolocationButtonClick() {
+async function getGeolocationAsyncButtonClick() {
   try {
     resetPositionButtonIcon.value = "pi pi-spin pi-spinner";
-    await resetCameraToGeolocation();
+    const position = await getGeolocationAsync();
+
+    getCesiumViewer().camera.flyTo({
+      destination: Cartesian3.fromDegrees(
+        position.coords.longitude,
+        position.coords.latitude,
+        400,
+      ),
+      orientation: {
+        heading: CesiumMath.toRadians(0.0),
+        pitch: CesiumMath.toRadians(-90.0),
+      },
+    });
+
+    updateEgoPosition(position);
+
+    showToast("Camera reset to geolocation", ToastSeverity.Info);
+
     resetPositionButtonIcon.value = "pi pi-map-marker";
   } catch (e) {
     if (e instanceof Error) {
@@ -183,7 +203,7 @@ async function resetCameraToGeolocationButtonClick() {
     >
       <Button
         :icon="resetPositionButtonIcon"
-        @click="resetCameraToGeolocationButtonClick"
+        @click="getGeolocationAsyncButtonClick"
       />
     </div>
 

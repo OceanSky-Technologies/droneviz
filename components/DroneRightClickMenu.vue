@@ -130,7 +130,7 @@ function handleCesiumRightClick({
   }
 }
 
-const updateOverlayPosition = () => {
+function updateOverlayPosition() {
   if (!getCesiumViewer() || !menu.value || !positionCartesian) return;
 
   // Convert WGS84 position to screen coordinates
@@ -147,7 +147,7 @@ const updateOverlayPosition = () => {
     menuPosition.x = -9999;
     menuPosition.y = -9999;
   }
-};
+}
 
 onMounted(async () => {
   eventBus.on("cesiumRightClick", handleCesiumRightClick);
@@ -161,7 +161,7 @@ onMounted(async () => {
   // Add a camera move listeners to update the overlay position
   cesiumListenerCbs.push(
     getCesiumViewer().camera.changed.addEventListener(() => {
-      if (visible.value) updateOverlayPosition;
+      if (visible.value) updateOverlayPosition();
     }),
   );
   cesiumListenerCbs.push(

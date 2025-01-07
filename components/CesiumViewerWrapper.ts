@@ -5,6 +5,7 @@ import {
   createGooglePhotorealistic3DTileset,
   Ion,
   Viewer,
+  GlobeTranslucency,
 } from "cesium";
 import { settings } from "../utils/Settings";
 import { selectedEntityHighlighter } from "./LeftClickHandler";
@@ -20,7 +21,7 @@ Ion.defaultAccessToken =
 let viewer: Viewer | undefined;
 let googleTileset: Cesium3DTileset | undefined;
 
-export let cesiumInitialized: Ref<boolean> = ref(false);
+export const cesiumInitialized: Ref<boolean> = ref(false);
 
 /**
  * Initialize Cesium viewer.
@@ -82,8 +83,17 @@ export function isCesiumInitialized(): boolean {
 
 export function waitUntilCesiumInitialized(): Promise<void> {
   return new Promise<void>((resolve) => {
+    // If already initialized, resolve immediately
     if (cesiumInitialized.value) {
       resolve();
+    } else {
+      // Watch for changes to cesiumInitialized
+      const stop = watch(cesiumInitialized, (newValue) => {
+        if (newValue) {
+          resolve();
+          stop(); // Stop watching once resolved
+        }
+      });
     }
   });
 }
@@ -190,8 +200,11 @@ export function disableGoogleTiles() {
  * If one highlighter contains entities set requestRenderMode to false otherwise set it to true.
  * This makes animations run if an entity is selected.
  * Also renders the scene once.
+ * Only has effect if settings.disableAnimations is false.
  */
 export function updateRequestRenderMode() {
+  if (settings.disableAnimations.value) return;
+
   if (!selectedEntityHighlighter) {
     console.log("selectedEntityHighlighter is undefined");
     return;
@@ -209,45 +222,4 @@ export function updateRequestRenderMode() {
   }
 
   getCesiumViewer().scene.requestRender();
-}
-
-/**
- * Resets the camera to the browser geolocation.
- */
-export function resetCameraToGeolocation(): Promise<void> {
-  const options = {
-    enableHighAccuracy: false,
-    timeout: 10000,
-    maximumAge: 0,
-  };
-
-  return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      (position: GeolocationPosition) => {
-        console.log("Position fetched:", position);
-
-        getCesiumViewer().camera.flyTo({
-          destination: Cartesian3.fromDegrees(
-            position.coords.longitude,
-            position.coords.latitude,
-            400,
-          ),
-          orientation: {
-            heading: Math.toRadians(0.0),
-            pitch: Math.toRadians(-90.0),
-          },
-        });
-
-        resolve();
-      },
-      () => {
-        const errorMessage =
-          "Couldn't get your location. Please enable location services and make sure you're connected to the internet.";
-
-        showToast(errorMessage, ToastSeverity.Info);
-        reject(new Error(errorMessage)); // Reject with an error
-      },
-      options,
-    );
-  });
 }

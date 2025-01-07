@@ -45,7 +45,9 @@ export function init() {
 async function mouseClickListener(
   positionEvent: ScreenSpaceEventHandler.PositionedEvent,
 ) {
-  const entity = await getCesiumViewer().scene.pick(positionEvent.position);
+  const entities = getCesiumViewer().scene.drillPick(positionEvent.position);
+
+  const entity = getPreferredEntity(entities);
 
   if (
     !defined(entity) ||
@@ -60,16 +62,14 @@ async function mouseClickListener(
   }
 
   if (!selectedEntityHighlighter.contains(entity)) {
-    console.log("Selected entity:");
-    console.log(entity);
+    console.log("Selected entity:", entity);
 
     selectedEntityHighlighter.add(entity);
     droneCollection.selectDrone(0);
 
     eventBus.emit("cesiumLeftClick", entity);
   } else {
-    console.log("Unselected entity:");
-    console.log(entity);
+    console.log("Unselected entity:", entity);
 
     selectedEntityHighlighter.remove(entity);
     droneCollection.selectedDrone.value = undefined;
