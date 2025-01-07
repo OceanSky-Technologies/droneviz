@@ -12,17 +12,17 @@ export enum DarkMode {
  * Collection of all settings.
  */
 class Settings {
-  google3DTilesEnabled: Ref<boolean>;
-  googleApiKey: Ref<string | undefined>;
-  bingEnabled: Ref<boolean>;
+  google3DTilesEnabled: Ref<boolean>; // costs quota
+  googleApiKey: Ref<string | undefined>; // empty because this will use Cesium's API key which doesn't cost anything.
+  bingEnabled: Ref<boolean>; // costs quota
   tileCacheSize: Ref<number>;
   sceneMode: Ref<SceneMode>;
-  msaaSamples: Ref<number>;
+  msaaSamples: Ref<number>; // don't use 0/disabled because transparent object rendering doesn't work then
   fxaa: Ref<boolean>;
   showFramesPerSecond: Ref<boolean>;
   demoMode: Ref<boolean>;
   enableMousePositionInfo: Ref<boolean>;
-  mousePositionInfoMostDetailed: Ref<boolean>;
+  mousePositionInfoMostDetailed: Ref<boolean>; // most detailed position retrieval triggers the API and increases quota!
   darkMode: Ref<DarkMode>;
   disableAnimations: Ref<boolean>;
 
@@ -34,16 +34,16 @@ class Settings {
    */
   constructor() {
     this.google3DTilesEnabled = ref(false);
-    this.googleApiKey = ref(undefined); // empty because this will use Cesium's API key which doesn't cost anything.
-    this.bingEnabled = ref(false);
+    this.googleApiKey = ref(undefined);
+    this.bingEnabled = ref(true);
     this.tileCacheSize = ref(1000);
     this.sceneMode = ref(SceneMode.SCENE3D);
-    this.msaaSamples = ref(1); // don't use 0/disabled because transparent object rendering doesn't work then
+    this.msaaSamples = ref(1);
     this.fxaa = ref(false);
     this.showFramesPerSecond = ref(true);
     this.demoMode = ref(false);
     this.enableMousePositionInfo = ref(true);
-    this.mousePositionInfoMostDetailed = ref(false); // most detailed position retrieval triggers the API and increases quota!
+    this.mousePositionInfoMostDetailed = ref(false);
     this.darkMode = ref(DarkMode.Dark);
     this.disableAnimations = ref(true);
 

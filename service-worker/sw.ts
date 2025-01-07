@@ -70,10 +70,27 @@ const CACHE_CONFIG = [
       cacheName: "virtualearth",
       matchOptions: {
         ignoreVary: true,
+        // ignoreMethod: true,
+        // ignoreSearch: true,
       },
       plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
       fetchOptions: {
         mode: "cors",
+        credentials: "omit",
+      },
+    }),
+  },
+  {
+    urlPattern: /^http.*\.tiles\.virtualearth\..*/i,
+    strategy: new CacheFirst({
+      cacheName: "virtualearth-tiles",
+      matchOptions: {
+        ignoreVary: true,
+      },
+      plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
+      fetchOptions: {
+        mode: "cors",
+        credentials: "omit",
       },
     }),
   },

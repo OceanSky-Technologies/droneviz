@@ -1,22 +1,16 @@
 <script lang="ts" setup>
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import { createViewerOptions } from "@/utils/CesiumViewerOptions";
-import {
-  getCesiumViewer,
-  initCesium,
-  destroyCesium,
-} from "./CesiumViewerWrapper";
+import { initCesium, destroyCesium } from "./CesiumViewerWrapper";
 import { initDemo } from "@/demo/Demo";
-import { Math, Cartesian3 } from "cesium";
-import { onMounted } from "vue";
+import { onMounted, onUnmounted } from "vue";
 import type { Viewer, Cesium3DTileset } from "cesium";
 import { settings } from "../utils/Settings";
 import { init as initLeftClickHandler } from "./LeftClickHandler";
 import { init as initDoubleClickHandler } from "./DoubleClickHandler";
 import { init as initRightClickHandler } from "./RightClickHandler";
 import { init as initMouseMoveHandler } from "./MouseMoveHandler";
-import { getGeolocationAsync } from "~/utils/geolocation";
-import { updateEgoPosition } from "~/core/EgoPosition";
+import { watchHomePositionUpdates } from "~/core/Geolocation";
 
 export interface CesiumViewerProps {
   mockViewerOptions?: Viewer.ConstructorOptions | undefined;
@@ -53,43 +47,43 @@ onMounted(async () => {
     }
   }
 
-  // try to get the camera location a few times before giving up
-  // workaround solution because with tauri the first few attempts seem to fail
-  let errorMessage;
-  for (let i = 0; i < 5; i++) {
-    try {
-      const position = await getGeolocationAsync();
-      console.log("initial position:", position);
+  // // try to get the camera location a few times before giving up
+  // // workaround solution because with tauri the first few attempts seem to fail
+  // let errorMessage;
+  // for (let i = 0; i < 5; i++) {
+  //   try {
+  //     const position = await getGeolocationAsync();
+  //     console.log("initial position:", position);
 
-      updateEgoPosition(position);
+  //     await updateEgoPosition(position);
 
-      getCesiumViewer().camera.flyTo({
-        destination: Cartesian3.fromDegrees(
-          position.coords.longitude,
-          position.coords.latitude,
-          400,
-        ),
-        orientation: {
-          heading: Math.toRadians(0.0),
-          pitch: Math.toRadians(-90.0),
-        },
-        complete: () => {
-          // the sphere position uses globe.getHeight which might not be ready yet so update again after the camera has flown
-          updateEgoPosition(position);
-        },
-      });
+  //     getCesiumViewer().camera.flyTo({
+  //       destination: Cartesian3.fromDegrees(
+  //         position.coords.longitude,
+  //         position.coords.latitude,
+  //         400,
+  //       ),
+  //       orientation: {
+  //         heading: Math.toRadians(0.0),
+  //         pitch: Math.toRadians(-90.0),
+  //       },
+  //       complete: () => {
+  //         // the sphere position uses globe.getHeight which might not be ready yet so update again after the camera has flown
+  //         await updateEgoPosition(position);
+  //       },
+  //     });
 
-      break; // success
-    } catch (e) {
-      if (e instanceof Error) {
-        errorMessage = e.message;
-      } else {
-        errorMessage = "Could not get geolocation: " + e;
-      }
-      await new Promise((f) => setTimeout(f, 1000));
-    }
-  }
-  if (errorMessage) showToast(errorMessage, ToastSeverity.Error);
+  //     break; // success
+  //   } catch (e) {
+  //     if (e instanceof Error) {
+  //       errorMessage = e.message;
+  //     } else {
+  //       errorMessage = "Could not get geolocation: " + e;
+  //     }
+  //     await new Promise((f) => setTimeout(f, 1000));
+  //   }
+  // }
+  // if (errorMessage) showToast(errorMessage, ToastSeverity.Error);
 
   watchHomePositionUpdates();
 });

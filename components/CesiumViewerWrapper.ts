@@ -1,18 +1,15 @@
 import type { Cesium3DTileset } from "cesium";
-import {
-  Cartesian3,
-  Math,
-  createGooglePhotorealistic3DTileset,
-  Ion,
-  Viewer,
-  GlobeTranslucency,
-} from "cesium";
+import { createGooglePhotorealistic3DTileset, Ion, Viewer } from "cesium";
 import { settings } from "../utils/Settings";
 import { selectedEntityHighlighter } from "./LeftClickHandler";
 import { mouseOverHighlighter } from "./MouseMoveHandler";
+import { type Ref, ref, watch } from "vue";
 
 Ion.defaultAccessToken =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTJmM2RmYi0wMDI3LTQxYmMtYjY1NS00MzhmYzg4Njk1NTMiLCJpZCI6MjExMDU5LCJpYXQiOjE3MTM5OTExNTh9.cgvEwVgVgDQRqLsZzWCubdKnui9qoZAXTPCRbtVzZmo";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhYTIyODMxOS05NGU3LTRhMjYtYjljOC0wYTY4YTU4YjRhNmIiLCJpZCI6MjY3NDczLCJpYXQiOjE3MzYyODczNjB9._Ss2M4av8Z4ytLgDiM0nzjhvfcNFa8OxgSZ8Hc1YtUc";
+
+// Ion.defaultAccessToken =
+//   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTJmM2RmYi0wMDI3LTQxYmMtYjY1NS00MzhmYzg4Njk1NTMiLCJpZCI6MjExMDU5LCJpYXQiOjE3MTM5OTExNTh9.cgvEwVgVgDQRqLsZzWCubdKnui9qoZAXTPCRbtVzZmo";
 
 // expires 2025-10-01 !
 // ArcGisMapService.defaultAccessToken =

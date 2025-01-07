@@ -1,19 +1,11 @@
-import type { Cartesian2, Entity } from "cesium";
-import {
-  Cartesian3,
-  Cartographic,
-  ConstantPositionProperty,
-  ConstantProperty,
-  Ellipsoid,
-  HeightReference,
-  Math,
-  Matrix4,
-  Math as CesiumMath,
-  Transforms,
-} from "cesium";
+import * as Cesium from "cesium";
 import { egm96ToEllipsoid } from "egm96-universal";
 import type { GlobalPositionInt } from "mavlink-mappings/dist/lib/common";
-import { getCesiumViewer } from "../components/CesiumViewerWrapper";
+import {
+  getCesiumViewer,
+  googleTilesEnabled,
+} from "@/components/CesiumViewerWrapper";
+import { settings } from "./Settings";
 
 /**
  * Moves a 3D coordinate by a vector.
@@ -24,15 +16,15 @@ import { getCesiumViewer } from "../components/CesiumViewerWrapper";
  * @returns {Cartesian3} New 3D coordinate
  */
 export function move(
-  orig: Cartesian3,
+  orig: Cesium.Cartesian3,
   x: number,
   y: number,
   z: number,
-): Cartesian3 {
-  return Matrix4.multiplyByPoint(
-    Transforms.eastNorthUpToFixedFrame(orig),
-    new Cartesian3(x, y, z),
-    new Cartesian3(),
+): Cesium.Cartesian3 {
+  return Cesium.Matrix4.multiplyByPoint(
+    Cesium.Transforms.eastNorthUpToFixedFrame(orig),
+    new Cesium.Cartesian3(x, y, z),
+    new Cesium.Cartesian3(),
   );
 }
 
@@ -41,13 +33,13 @@ export function move(
  * @param {Cartesian3} pos 3D coordinates
  * @returns { {lat: number; lon: number;} } latitude and longitude
  */
-export function getLatLonFromCartesian3(pos: Cartesian3): {
+export function getLatLonFromCartesian3(pos: Cesium.Cartesian3): {
   lat: number;
   lon: number;
 } {
-  const carto = Ellipsoid.WGS84.cartesianToCartographic(pos);
-  const lon = Math.toDegrees(carto.longitude);
-  const lat = Math.toDegrees(carto.latitude);
+  const carto = Cesium.Ellipsoid.WGS84.cartesianToCartographic(pos);
+  const lon = Cesium.Math.toDegrees(carto.longitude);
+  const lat = Cesium.Math.toDegrees(carto.latitude);
 
   return { lat, lon };
 }
@@ -75,7 +67,7 @@ export function formatAltitude(altitude?: number): string {
   return altitude.toFixed(2).padStart(12, " ") + "m";
 }
 
-export function setPosition(entity: Entity, message: GlobalPositionInt) {
+export function setPosition(entity: Cesium.Entity, message: GlobalPositionInt) {
   const longitude = message.lon / 1e7;
   const latitude = message.lat / 1e7;
 
@@ -87,20 +79,91 @@ export function setPosition(entity: Entity, message: GlobalPositionInt) {
       // TODO: replace 0 with terrain / 3D tile height
       if (
         entity.model.heightReference?.getValue() !==
-        HeightReference.CLAMP_TO_GROUND
+        Cesium.HeightReference.CLAMP_TO_GROUND
       )
-        entity.model.heightReference = new ConstantProperty(
-          HeightReference.CLAMP_TO_GROUND,
+        entity.model.heightReference = new Cesium.ConstantProperty(
+          Cesium.HeightReference.CLAMP_TO_GROUND,
         );
     } else {
-      if (entity.model.heightReference?.getValue() !== HeightReference.NONE)
-        entity.model.heightReference = new ConstantProperty(
-          HeightReference.NONE,
+      if (
+        entity.model.heightReference?.getValue() !== Cesium.HeightReference.NONE
+      )
+        entity.model.heightReference = new Cesium.ConstantProperty(
+          Cesium.HeightReference.NONE,
         );
     }
   }
 
-  entity.position = new ConstantPositionProperty(
-    Cartesian3.fromDegrees(longitude, latitude, altitude),
+  entity.position = new Cesium.ConstantPositionProperty(
+    Cesium.Cartesian3.fromDegrees(longitude, latitude, altitude),
   );
+}
+
+/**
+ * Returns the correct height of the terrain at the given cartographic position with enabled and disabled 3D Google tiles.
+ * @param cartographic The cartographic position.
+ * @returns The height of the terrain/scene at the given position or undefined.
+ */
+export async function getHeight(
+  cartesian: Cesium.Cartesian3,
+): Promise<number | undefined> {
+  let height: number | undefined = undefined;
+
+  if (googleTilesEnabled()) {
+    if (getCesiumViewer().scene.clampToHeightSupported) {
+      if (settings.mousePositionInfoMostDetailed.value) {
+        // increases quota!
+        const tmpResult =
+          await getCesiumViewer().scene.clampToHeightMostDetailed([cartesian]);
+
+        if (tmpResult.length > 0 && tmpResult[0])
+          height = Cesium.Cartographic.fromCartesian(tmpResult[0]).height;
+
+        if (height !== undefined) return height;
+      }
+
+      // alternative that doesn't cost quota: clampToTeight
+      const tmpResult2 = getCesiumViewer().scene.clampToHeight(cartesian);
+      if (tmpResult2 !== undefined)
+        height = Cesium.Cartographic.fromCartesian(tmpResult2).height;
+
+      if (height !== undefined) return height;
+    }
+
+    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+    height = getCesiumViewer().scene.sampleHeight(cartographic);
+    if (height !== undefined) return height;
+
+    // fallback: scene.globe.getHeight
+    height = getCesiumViewer().scene.globe.getHeight(cartographic);
+    return height;
+  } else {
+    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+
+    if (settings.mousePositionInfoMostDetailed.value) {
+      // increases quota!
+      const tmpResult = await Cesium.sampleTerrainMostDetailed(
+        getCesiumViewer().terrainProvider,
+        [cartographic],
+      );
+
+      if (tmpResult.length > 0 && tmpResult[0]) height = tmpResult[0].height;
+
+      if (height !== undefined) return height;
+
+      // fallback: sampleTerrain still triggers the cesium API and increases quota!
+      const tmpResult2 = await Cesium.sampleTerrain(
+        getCesiumViewer().terrainProvider,
+        11,
+        [cartographic],
+      );
+
+      if (tmpResult2.length > 0 && tmpResult2[0]) height = tmpResult2[0].height;
+
+      if (height !== undefined) return height;
+    }
+
+    // sampleTerrain still triggers the cesium API and increases quota!
+    return getCesiumViewer().scene.globe.getHeight(cartographic);
+  }
 }

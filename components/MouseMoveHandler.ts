@@ -13,6 +13,7 @@ import {
   ConstantProperty,
   sampleTerrainMostDetailed,
   Math,
+  Property,
 } from "cesium";
 import CesiumHighlighter from "./CesiumHighlighter.vue";
 import {
@@ -21,6 +22,9 @@ import {
   updateRequestRenderMode,
 } from "./CesiumViewerWrapper";
 import * as egm96 from "egm96-universal";
+import { Colors } from "@/utils/Colors";
+import { settings } from "@/utils/Settings";
+import { formatCoordinate, getHeight } from "@/utils/CoordinateUtils";
 
 let mouseMoveHandler: ScreenSpaceEventHandler;
 export let mouseOverHighlighter: CesiumHighlighter;
@@ -105,12 +109,12 @@ async function showPositionInfoEntity(position: Cartesian2) {
   // show a position data text box next to the mouse cursor
   try {
     // get the position below the mouse
-    const cartesian = getCesiumViewer().scene.pickPosition(position);
-    const cartographic = Cartographic.fromCartesian(cartesian);
+    const cartesian3 = getCesiumViewer().scene.pickPosition(position);
+    const cartographic = Cartographic.fromCartesian(cartesian3);
     const latitudeDegrees = Math.toDegrees(cartographic.latitude);
     const longitudeDegrees = Math.toDegrees(cartographic.longitude);
 
-    mousePositionInfoEntity.position = new ConstantPositionProperty(cartesian);
+    mousePositionInfoEntity.position = new ConstantPositionProperty(cartesian3);
 
     // 6 decimal places equal 10 cm resolution. 12 digits are maximum.
     const longitudeString = formatCoordinate(longitudeDegrees);
@@ -122,89 +126,101 @@ async function showPositionInfoEntity(position: Cartesian2) {
         .toFixed(2)
         .padStart(12, " ") + "m";
 
-    let height3DString = "";
+    // if (!mousePositionInfoEntity.label.show)
+    mousePositionInfoEntity.label.show = new ConstantProperty(true);
 
-    // show position infos depending on if 3D tiles are enabled or not
+    const height = await getHeight(cartesian3);
+
+    if (height === undefined) {
+      mousePositionInfoEntity.label.text = new ConstantProperty(
+        `Lat:    ${latitudeString}` +
+          `\nLon:    ${longitudeString}` +
+          `\nHeight: ${heightMSLString}`,
+      );
+
+      getCesiumViewer().scene.requestRender();
+      return;
+    }
+
+    const heightString = height.toFixed(2).padStart(12, " ") + "m";
+
     if (googleTilesEnabled()) {
-      // try to retrieve 3D position
-      if (getCesiumViewer().scene.clampToHeightSupported) {
-        let updatedCartesians;
-
-        if (settings.mousePositionInfoMostDetailed.value) {
-          const tmpResult =
-            await getCesiumViewer().scene.clampToHeightMostDetailed([
-              cartesian,
-            ]);
-
-          if (tmpResult.length > 0 && tmpResult[0])
-            updatedCartesians = tmpResult[0];
-        } else {
-          updatedCartesians = getCesiumViewer().scene.clampToHeight(cartesian);
-        }
-
-        if (updatedCartesians)
-          height3DString =
-            Cartographic.fromCartesian(updatedCartesians)
-              .height.toFixed(2)
-              .padStart(12, " ") + "m";
-      }
-
-      // if 3D position couldn't be retrieved fall back to height of scene geometry
-      if (height3DString === "") {
-        height3DString =
-          getCesiumViewer()
-            .scene.sampleHeight(cartographic)
-            .toFixed(2)
-            .padStart(12, " ") + "m";
-      }
-
       mousePositionInfoEntity.label.text = new ConstantProperty(
         `Lat:     ${latitudeString}` +
           `\nLon:     ${longitudeString}` +
           `\nMSL:     ${heightMSLString}` +
-          `\n3D:      ${height3DString}`,
+          `\n3D:      ${heightString}`,
       );
     } else {
-      // Query the terrain height at the mouse position
-      let height;
-      let tmpResult;
-
-      if (settings.mousePositionInfoMostDetailed.value) {
-        tmpResult = await sampleTerrainMostDetailed(
-          getCesiumViewer().terrainProvider,
-          [cartographic],
-        );
-
-        if (tmpResult.length > 0 && tmpResult[0]) height = tmpResult[0].height;
-      } else {
-        // sampleTerrain still triggers the cesium API and increases quota!
-        // tmpResult = await sampleTerrain(getCesiumViewer().terrainProvider, 11, [
-        //   cartographic,
-        // ]);
-
-        height = getCesiumViewer().scene.globe.getHeight(cartographic);
-      }
-
-      if (height) {
-        const heightTerrainString = height.toFixed(2).padStart(12, " ") + "m";
-
-        mousePositionInfoEntity.label.text = new ConstantProperty(
-          `Lat:     ${latitudeString}` +
-            `\nLon:     ${longitudeString}` +
-            `\nMSL:     ${heightMSLString}` +
-            `\nTerrain: ${heightTerrainString}`,
-        );
-      } else {
-        // fallback: no height could be retrieved so only show MSL height
-        mousePositionInfoEntity.label.text = new ConstantProperty(
-          `Lat:    ${latitudeString}` +
-            `\nLon:    ${longitudeString}` +
-            `\nHeight: ${heightMSLString}`,
-        );
-      }
+      mousePositionInfoEntity.label.text = new ConstantProperty(
+        `Lat:     ${latitudeString}` +
+          `\nLon:     ${longitudeString}` +
+          `\nMSL:     ${heightMSLString}` +
+          `\nTerrain: ${heightString}`,
+      );
     }
 
-    mousePositionInfoEntity.label.show = new ConstantProperty(true);
+    getCesiumViewer().scene.requestRender();
+    return;
+
+    ///
+
+    // let height3DString = "";
+
+    // // show position infos depending on if 3D tiles are enabled or not
+    // if (googleTilesEnabled()) {
+    //   // if 3D position couldn't be retrieved fall back to height of scene geometry
+    //   if (height3DString === "") {
+    //     height3DString = height.toFixed(2).padStart(12, " ") + "m";
+    //   }
+
+    //   mousePositionInfoEntity.label.text = new ConstantProperty(
+    //     `Lat:     ${latitudeString}` +
+    //       `\nLon:     ${longitudeString}` +
+    //       `\nMSL:     ${heightMSLString}` +
+    //       `\n3D:      ${height3DString}`,
+    //   );
+    // } else {
+    //   // Query the terrain height at the mouse position
+    //   let height;
+    //   let tmpResult;
+
+    //   if (settings.mousePositionInfoMostDetailed.value) {
+    //     tmpResult = await sampleTerrainMostDetailed(
+    //       getCesiumViewer().terrainProvider,
+    //       [cartographic],
+    //     );
+
+    //     if (tmpResult.length > 0 && tmpResult[0]) height = tmpResult[0].height;
+    //   } else {
+    //     // sampleTerrain still triggers the cesium API and increases quota!
+    //     // tmpResult = await sampleTerrain(getCesiumViewer().terrainProvider, 11, [
+    //     //   cartographic,
+    //     // ]);
+
+    //     height = getCesiumViewer().scene.globe.getHeight(cartographic);
+    //   }
+
+    //   if (height) {
+    //     const heightTerrainString = height.toFixed(2).padStart(12, " ") + "m";
+
+    //     mousePositionInfoEntity.label.text = new ConstantProperty(
+    //       `Lat:     ${latitudeString}` +
+    //         `\nLon:     ${longitudeString}` +
+    //         `\nMSL:     ${heightMSLString}` +
+    //         `\nTerrain: ${heightTerrainString}`,
+    //     );
+    //   } else {
+    //     // fallback: no height could be retrieved so only show MSL height
+    //     mousePositionInfoEntity.label.text = new ConstantProperty(
+    //       `Lat:    ${latitudeString}` +
+    //         `\nLon:    ${longitudeString}` +
+    //         `\nHeight: ${heightMSLString}`,
+    //     );
+    //   }
+    // }
+
+    // mousePositionInfoEntity.label.show = new ConstantProperty(true);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e: unknown) {

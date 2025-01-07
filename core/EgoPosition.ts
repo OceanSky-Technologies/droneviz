@@ -1,25 +1,24 @@
 import * as Cesium from "cesium";
 import { getCesiumViewer } from "@/components/CesiumViewerWrapper";
 import { Colors } from "@/utils/Colors";
+import { getHeight } from "@/utils/CoordinateUtils";
 
-export function updateEgoPosition(position: GeolocationPosition): void {
+let lastEgoPosition: GeolocationPosition | undefined = undefined;
+
+export async function updateEgoPosition(
+  position: GeolocationPosition,
+): Promise<void> {
   console.log("Updating ego position:", position);
 
   const latitude = position.coords.latitude;
   const longitude = position.coords.longitude;
   const altitude = position.coords.altitude;
 
-  const cartographic = Cesium.Cartographic.fromDegrees(
-    position.coords.longitude,
-    position.coords.latitude,
-  );
-
-  // increases cesium quota
-  //   const terrainHeight = getCesiumViewer().scene.sampleHeight(cartographic);
   const terrainHeight =
-    getCesiumViewer().scene.globe.getHeight(cartographic) ?? 0;
+    (await getHeight(Cesium.Cartesian3.fromDegrees(longitude, latitude))) ?? 0;
 
-  const accuracy = position.coords.accuracy ?? 100;
+  const accuracy =
+    position.coords.accuracy ?? lastEgoPosition?.coords.accuracy ?? 0;
 
   const altitudeAccuracy =
     position.coords.altitudeAccuracy && position.coords.accuracy
@@ -75,6 +74,8 @@ export function updateEgoPosition(position: GeolocationPosition): void {
 
   // Update sphere size based on accuracy
   sphere.ellipsoid!.radii = new Cesium.ConstantProperty(egoRadii);
+
+  lastEgoPosition = position;
 
   // Request render
   getCesiumViewer().scene.requestRender();

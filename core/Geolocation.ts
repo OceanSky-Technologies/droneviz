@@ -41,9 +41,9 @@ export function getGeolocationAsync(): Promise<GeolocationPosition> {
 export function watchHomePositionUpdates() {
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
-      (position) => {
+      async (position) => {
         lastPosition = position;
-        updateEgoPosition(position);
+        await updateEgoPosition(position);
       },
       (error) => console.error("Geolocation error: ", error),
       options,

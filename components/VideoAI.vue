@@ -52,7 +52,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch } from "vue";
 import { getFormattedDate } from "@/utils/DateUtils";
 import { showToast, ToastSeverity } from "@/utils/ToastService";
 import { Button, ToggleSwitch, Select } from "primevue";
@@ -137,10 +137,7 @@ const listVideoDevices = async () => {
       selectedDevice.value = videoDevices.value[0]; // Default device
     }
   } catch (error) {
-    showToast(
-      "No video devices found: " + JSON.stringify(error),
-      ToastSeverity.Error,
-    );
+    showToast("No video devices found.", ToastSeverity.Error);
     videoDevices.value = [
       {
         label: "No devices found",

@@ -12,11 +12,16 @@ import { Drone } from "@/core/Drone";
 import { droneCollection } from "@/core/DroneCollection";
 import { SerialOptions, UdpOptions } from "@/types/DroneConnectionOptions";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { eventBus } from "~/utils/Eventbus";
-import { getCacheStatistics, clearCache } from "~/utils/CacheUtils";
+import {
+  getCacheStatistics,
+  clearCache,
+  type CacheStatistics,
+  formatBytes,
+} from "~/utils/CacheUtils";
 import { Cartesian3, Math as CesiumMath } from "cesium";
-import { getGeolocationAsync } from "~/utils/geolocation";
+import { getGeolocationAsync } from "~/core/Geolocation";
 import { updateEgoPosition } from "~/core/EgoPosition";
 
 const cacheQuota = ref(0);
@@ -85,6 +90,8 @@ async function connectDisconnect() {
 }
 
 onMounted(() => {
+  getGeolocationAsyncButtonClick();
+
   try {
     getCacheStatistics().then((stats) => {
       cacheQuota.value = stats.cacheQuota;
@@ -128,9 +135,9 @@ async function getGeolocationAsyncButtonClick() {
       },
     });
 
-    updateEgoPosition(position);
+    await updateEgoPosition(position);
 
-    showToast("Camera reset to geolocation", ToastSeverity.Info);
+    showToast("Camera moving to ego position.", ToastSeverity.Info);
 
     resetPositionButtonIcon.value = "pi pi-map-marker";
   } catch (e) {
