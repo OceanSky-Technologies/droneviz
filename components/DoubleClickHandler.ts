@@ -6,6 +6,7 @@ import {
   HeadingPitchRange,
 } from "cesium";
 import { getCesiumViewer } from "./CesiumViewerWrapper";
+import { getPreferredEntity } from "@/utils/EntityUtils";
 
 let mouseDoubleClickHandler: ScreenSpaceEventHandler;
 
@@ -33,7 +34,11 @@ export function init() {
 async function mouseDoubleClickListener(
   positionEvent: ScreenSpaceEventHandler.PositionedEvent,
 ) {
-  const entity = await getCesiumViewer().scene.pick(positionEvent.position);
+  const entities = await getCesiumViewer().scene.drillPick(
+    positionEvent.position,
+  );
+  const entity = getPreferredEntity(entities);
+
   if (!defined(entity)) return;
   if (!defined(entity.id)) return;
 

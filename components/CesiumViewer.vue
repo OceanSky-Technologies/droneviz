@@ -16,7 +16,7 @@ import { init as initDoubleClickHandler } from "./DoubleClickHandler";
 import { init as initRightClickHandler } from "./RightClickHandler";
 import { init as initMouseMoveHandler } from "./MouseMoveHandler";
 import { getGeolocationAsync } from "~/utils/geolocation";
-import { updateEgoPosition } from "~/core/ego-position";
+import { updateEgoPosition } from "~/core/EgoPosition";
 
 export interface CesiumViewerProps {
   mockViewerOptions?: Viewer.ConstructorOptions | undefined;

@@ -14,10 +14,10 @@ import { SerialOptions, UdpOptions } from "@/types/DroneConnectionOptions";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
 import { onMounted } from "vue";
 import { eventBus } from "~/utils/Eventbus";
-import { getCacheStatistics, clearCache } from "~/utils/cache-utils";
+import { getCacheStatistics, clearCache } from "~/utils/CacheUtils";
 import { Cartesian3, Math as CesiumMath } from "cesium";
 import { getGeolocationAsync } from "~/utils/geolocation";
-import { updateEgoPosition } from "~/core/ego-position";
+import { updateEgoPosition } from "~/core/EgoPosition";
 
 const cacheQuota = ref(0);
 const cacheTotalUsed = ref(0);
@@ -80,6 +80,8 @@ async function connectDisconnect() {
     droneCollection.disconnectAll();
     droneCollection.removeAllDrones();
   }
+
+  getCesiumViewer().scene.requestRender();
 }
 
 onMounted(() => {

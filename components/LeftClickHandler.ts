@@ -12,6 +12,7 @@ import {
 } from "./CesiumViewerWrapper";
 import { droneCollection } from "@/core/DroneCollection";
 import { eventBus } from "@/utils/Eventbus";
+import { getPreferredEntity } from "@/utils/EntityUtils";
 
 let mouseClickHandler: ScreenSpaceEventHandler;
 export let selectedEntityHighlighter: CesiumHighlighter;

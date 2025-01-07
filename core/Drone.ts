@@ -37,6 +37,7 @@ import { MessageMap } from "./MessageMap";
 import { settings } from "@/utils/Settings";
 import { fixBigIntSerialization } from "@/types/bigIntSerializationHelper";
 import { baseURL } from "@/baseURL.config";
+import { equals } from "@/utils/MessageUtils";
 
 fixBigIntSerialization();
 
@@ -388,7 +389,7 @@ export class Drone {
    */
   private updateEntityOrientation(message: Attitude) {
     // skip if the new message has the same content as the old one
-    if (this.lastMessages.attitude?.message === message) return;
+    if (equals(this.lastMessages.attitude?.message, message)) return;
 
     if (!this.entity) return;
     if (!this.entity.position || !this.entity.position.getValue()) return;
@@ -419,7 +420,7 @@ export class Drone {
    */
   private updateEntityPosition(message: GlobalPositionInt) {
     // skip if the new message has the same content as the old one
-    if (this.lastMessages.globalPositionInt?.message === message) return;
+    if (equals(this.lastMessages.globalPositionInt?.message, message)) return;
 
     if (!this.entity) return;
 

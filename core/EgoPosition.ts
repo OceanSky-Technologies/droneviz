@@ -1,14 +1,6 @@
-import {
-  Cartesian3,
-  Color,
-  LabelStyle,
-  HorizontalOrigin,
-  VerticalOrigin,
-  ConstantPositionProperty,
-  Cartographic,
-  ConstantProperty,
-} from "cesium";
-import { getCesiumViewer } from "../components/CesiumViewerWrapper";
+import * as Cesium from "cesium";
+import { getCesiumViewer } from "@/components/CesiumViewerWrapper";
+import { Colors } from "@/utils/Colors";
 
 export function updateEgoPosition(position: GeolocationPosition): void {
   console.log("Updating ego position:", position);
@@ -17,7 +9,7 @@ export function updateEgoPosition(position: GeolocationPosition): void {
   const longitude = position.coords.longitude;
   const altitude = position.coords.altitude;
 
-  const cartographic = Cartographic.fromDegrees(
+  const cartographic = Cesium.Cartographic.fromDegrees(
     position.coords.longitude,
     position.coords.latitude,
   );
@@ -36,10 +28,14 @@ export function updateEgoPosition(position: GeolocationPosition): void {
 
   const egoPosition =
     altitude !== null
-      ? Cartesian3.fromDegrees(longitude, latitude, altitude + terrainHeight)
-      : Cartesian3.fromDegrees(longitude, latitude, terrainHeight);
+      ? Cesium.Cartesian3.fromDegrees(
+          longitude,
+          latitude,
+          altitude + terrainHeight,
+        )
+      : Cesium.Cartesian3.fromDegrees(longitude, latitude, terrainHeight);
 
-  const egoRadii = new Cartesian3(
+  const egoRadii = new Cesium.Cartesian3(
     accuracy / 2,
     accuracy / 2,
     altitudeAccuracy / 2,
@@ -51,7 +47,7 @@ export function updateEgoPosition(position: GeolocationPosition): void {
     sphere = getCesiumViewer().entities.add({
       id: "ego-sphere",
       ellipsoid: {
-        material: Color.fromCssColorString(Colors.BLUE).withAlpha(0.3),
+        material: Cesium.Color.fromCssColorString(Colors.BLUE).withAlpha(0.3),
       },
     });
   }
@@ -64,21 +60,21 @@ export function updateEgoPosition(position: GeolocationPosition): void {
       label: {
         text: "H",
         font: "24px sans-serif",
-        fillColor: Color.fromCssColorString(Colors.GOLD),
-        style: LabelStyle.FILL,
-        horizontalOrigin: HorizontalOrigin.CENTER,
-        verticalOrigin: VerticalOrigin.CENTER,
+        fillColor: Cesium.Color.fromCssColorString(Colors.GOLD),
+        style: Cesium.LabelStyle.FILL,
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+        verticalOrigin: Cesium.VerticalOrigin.CENTER,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
       },
     });
   }
 
   // Update sphere and label positions
-  sphere.position = new ConstantPositionProperty(egoPosition);
-  label.position = new ConstantPositionProperty(egoPosition);
+  sphere.position = new Cesium.ConstantPositionProperty(egoPosition);
+  label.position = new Cesium.ConstantPositionProperty(egoPosition);
 
   // Update sphere size based on accuracy
-  sphere.ellipsoid!.radii = new ConstantProperty(egoRadii);
+  sphere.ellipsoid!.radii = new Cesium.ConstantProperty(egoRadii);
 
   // Request render
   getCesiumViewer().scene.requestRender();

@@ -12,10 +12,10 @@ export function getPreferredEntity(entities: any[]): any | undefined {
   }
 
   // first prio: entities that don't start with "ego-" or "mouse-position-info"
-  const firstPrioEntities = [];
+  const firstPrioEntities: any[] = [];
 
   // second prio: entities that are not "mouse-position-info"
-  const secondPrioEntities = [];
+  const secondPrioEntities: any[] = [];
 
   for (const entity of entities) {
     if (!entity || !entity.id || !entity.id.id) {

@@ -1,4 +1,4 @@
-import { updateEgoPosition } from "~/core/ego-position";
+import { updateEgoPosition } from "~/core/EgoPosition";
 
 export let lastPosition: GeolocationPosition | null = null;
 
