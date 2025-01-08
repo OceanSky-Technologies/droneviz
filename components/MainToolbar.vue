@@ -5,7 +5,7 @@ import ToggleSwitch from "primevue/toggleswitch";
 import InputText from "primevue/inputtext";
 import Listbox from "primevue/listbox";
 
-import { onMounted, type Ref, ref, watch } from "vue";
+import { onMounted, type Ref, ref, useTemplateRef, watch } from "vue";
 import { settings } from "../utils/Settings";
 import {
   disableGoogleTiles,
@@ -15,8 +15,10 @@ import {
 } from "./CesiumViewerWrapper";
 import type { Cesium3DTileset, ProviderViewModel } from "cesium";
 import { Cartesian3, SceneMode } from "cesium";
+import type NodeGeocoder from "node-geocoder";
 import { showToast, ToastSeverity } from "@/utils/ToastService";
 import type { ComponentPublicInstance } from "vue";
+import { useRuntimeConfig } from "nuxt/app";
 
 // list of all available map data sources
 const mapDataSources: Ref<MapDataSource[]> = ref([
@@ -136,7 +138,7 @@ async function doSearch() {
   try {
     const config = useRuntimeConfig();
 
-    const data = await $fetch("/api/geocoder", {
+    const data: NodeGeocoder.Entry[] = await $fetch("/api/geocoder", {
       params: { text: searchStringSanitized },
       baseURL: config.public.baseURL as string,
     });
@@ -423,7 +425,7 @@ onMounted(async () => {
 
       <template #center>
         <InputGroup ref="searchBox" style="width: 18rem">
-          <Button :icon="searchIcon" severity="info" @click="doSearch" />
+          <Button :icon="searchIcon" @click="doSearch" />
 
           <FloatLabel variant="on">
             <InputText

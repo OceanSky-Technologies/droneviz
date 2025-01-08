@@ -34,6 +34,27 @@
   --p-primary-800: var(--p-sky-800) !important;
   --p-primary-900: var(--p-sky-900) !important;
   --p-primary-950: var(--p-sky-950) !important;
+
+  --p-primary-color: var(--color-dark-blue);
+  --p-primary-contrast-color: white;
+
+  /* buttons */
+  --p-button-primary-hover-background: color-mix(
+    in srgb,
+    var(--color-dark-blue),
+    white 30%
+  );
+  --p-button-primary-hover-border-color: var(
+    --p-button-primary-hover-background
+  );
+
+  --p-button-danger-background: var(--color-red);
+  --p-button-danger-color: white;
+
+  /* slider */
+  --p-toggleswitch-checked-background: var(--color-gold) !important;
+  --p-toggleswitch-checked-hover-background: var(--color-gold) !important;
+  --p-toggleswitch-handle-checked-background: var(--color-dark-blue) !important;
 }
 
 body {
@@ -64,37 +85,13 @@ svg {
   column-gap: 7px !important;
 }
 
-.p-button {
-  background-color: var(--color-dark-blue) !important;
-  border-color: var(--color-dark-blue) !important;
-  color: #ffffff !important;
-}
-
-.p-button-danger {
-  background-color: var(--color-red) !important;
-  border-color: var(--color-red) !important;
-  color: #ffffff !important;
-}
-
-.p-button-warn {
-  background-color: var(--color-orange) !important;
-  border-color: var(--color-orange) !important;
-  color: #ffffff !important;
-}
-
-.p-button-success {
-  background-color: var(--color-dark-green) !important;
-  border-color: var(--color-dark-green) !important;
-  color: #ffffff !important;
-}
-
 .p-toggleswitch {
   padding: 0 !important;
 }
 
-.p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
+/* .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
   background-color: var(--color-gold) !important;
-}
+} */
 
 .p-dialog-footer {
   justify-content: center !important;

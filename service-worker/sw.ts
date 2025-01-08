@@ -6,7 +6,7 @@ import { CacheFirst, NetworkFirst } from "workbox-strategies";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { registerRoute } from "workbox-routing";
 import { precacheAndRoute } from "workbox-precaching";
-import { skipWaiting, clientsClaim } from "workbox-core";
+import { skipWaiting, clientsClaim, type WorkboxPlugin } from "workbox-core";
 
 declare var self: ServiceWorkerGlobalScope;
 
@@ -18,6 +18,122 @@ clientsClaim();
 // Precaching will automatically inject the files defined in `globPatterns`.
 precacheAndRoute(self.__WB_MANIFEST);
 
+class RemoveJsonpPlugin implements WorkboxPlugin {
+  // works
+  async cacheWillUpdate({
+    request,
+    response,
+  }: {
+    request: Request;
+    response: Response;
+    event?: ExtendableEvent;
+  }): Promise<Response | null> {
+    const requestUrl = new URL(request.url);
+
+    console.log("cacheWillUpdate");
+
+    if (
+      requestUrl.hostname !== "dev.virtualearth.net" ||
+      !requestUrl.pathname.includes("/REST/v1/Imagery/Metadata/Aerial")
+    )
+      return response;
+
+    if (!response || !response.ok) {
+      return null; // Don't cache non-OK responses
+    }
+
+    console.log("original response", response);
+
+    // Clone the response to ensure we don't modify the original
+    const clonedResponse = response.clone();
+
+    // Modify the request URL by setting the 'jsonp=deleted' parameter
+    requestUrl.searchParams.set("jsonp", "deleted");
+
+    // Store the cloned response in the cache with the modified URL
+    const cache = await caches.open("virtualearth"); // Open a cache storage (adjust name as necessary)
+    await cache.put(requestUrl.toString(), clonedResponse);
+
+    console.log(`Stored response in cache with URL: ${requestUrl.toString()}`);
+
+    return clonedResponse;
+  }
+
+  async getFromCache(request: Request): Promise<Response | undefined> {
+    const originalUrl = new URL(request.url);
+    console.log("now", request, originalUrl);
+
+    // Check if the URL matches the target criteria
+    if (
+      originalUrl.hostname !== "dev.virtualearth.net" ||
+      !originalUrl.pathname.includes("/REST/v1/Imagery/Metadata/Aerial")
+    ) {
+      return undefined;
+    }
+
+    try {
+      const originalJsonp = originalUrl.searchParams.get("jsonp");
+      if (!originalJsonp) {
+        return undefined;
+      }
+
+      // Create a modified URL with jsonp set to "deleted"
+      const modifiedUrl = new URL(originalUrl.toString());
+      modifiedUrl.searchParams.set("jsonp", "deleted");
+
+      // Open the cache and look for the modified URL
+      const cache = await caches.open("virtualearth");
+      const cachedResponse = await cache.match(modifiedUrl.toString());
+
+      if (cachedResponse) {
+        // Clone the cached response
+        const clonedResponse = cachedResponse.clone();
+        const responseText = await clonedResponse.text();
+
+        // Extract and replace the callback function name
+        const callbackRegex = /^(loadJsonp\d+)/; // Matches loadJsonp followed by digits
+        const match = responseText.match(callbackRegex);
+
+        if (match) {
+          const cachedCallback = match[1]; // e.g., "loadJsonp210343"
+          console.log(
+            `Replacing cached callback "${cachedCallback}" with "${originalJsonp}"`,
+          );
+
+          // Replace the callback function name in the response body
+          const restoredResponseText = responseText.replace(
+            cachedCallback,
+            originalJsonp,
+          );
+
+          // Create a new response with the restored body and headers
+          const modifiedResponse = new Response(restoredResponseText, {
+            status: clonedResponse.status,
+            statusText: clonedResponse.statusText,
+            headers: clonedResponse.headers,
+          });
+
+          // Set the original URL (optional)
+          Object.defineProperty(modifiedResponse, "url", {
+            value: originalUrl.toString(),
+          });
+
+          return modifiedResponse;
+        } else {
+          console.warn("No callback function found in cached response");
+          return undefined;
+        }
+      }
+
+      // Return undefined if no cached response was found
+      return undefined;
+    } catch (error) {
+      console.error("Error in getFromCache:", error);
+      return undefined;
+    }
+  }
+}
+
 // Define caching strategies for each URL
 // Strategies:
 //  - CacheFirst,   // Cache first, fallback to network. Use this for assets that consume quota.
@@ -26,7 +142,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Make sure to add these URLs also to the `dns-prefetch` and `preconnect` (crossorigin: anonymous) headers in nuxt.config.ts!
 const CACHE_CONFIG = [
   {
-    url: "https://tile.googleapis.com",
+    url: "tile.googleapis.com",
     strategy: new CacheFirst({
       cacheName: "google-tiles",
       matchOptions: {
@@ -39,7 +155,7 @@ const CACHE_CONFIG = [
     }),
   },
   {
-    url: "https://assets.ion.cesium.com",
+    url: "assets.ion.cesium.com",
     strategy: new CacheFirst({
       cacheName: "cesium-ion",
       matchOptions: {
@@ -52,7 +168,7 @@ const CACHE_CONFIG = [
     }),
   },
   {
-    url: "https://api.cesium.com",
+    url: "api.cesium.com",
     strategy: new NetworkFirst({
       cacheName: "cesium-api",
       matchOptions: {
@@ -65,15 +181,17 @@ const CACHE_CONFIG = [
     }),
   },
   {
-    url: "https://dev.virtualearth.net", // Bing Maps
+    url: "dev.virtualearth.net", // Bing Maps
     strategy: new CacheFirst({
       cacheName: "virtualearth",
       matchOptions: {
         ignoreVary: true,
-        // ignoreMethod: true,
-        // ignoreSearch: true,
+        ignoreSearch: true,
       },
-      plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
+      plugins: [
+        new RemoveJsonpPlugin(),
+        new CacheableResponsePlugin({ statuses: [0, 200] }),
+      ],
       fetchOptions: {
         mode: "cors",
         credentials: "omit",
@@ -81,7 +199,8 @@ const CACHE_CONFIG = [
     }),
   },
   {
-    urlPattern: /^http.*\.tiles\.virtualearth\..*/i,
+    urlPattern:
+      /^(http|https):\/\/([a-zA-Z0-9.-]+\.)?tiles\.virtualearth\.net\/.*/i, // Bing Maps
     strategy: new CacheFirst({
       cacheName: "virtualearth-tiles",
       matchOptions: {
@@ -95,7 +214,7 @@ const CACHE_CONFIG = [
     }),
   },
   {
-    url: "https://ibasemaps-api.arcgis.com",
+    url: "ibasemaps-api.arcgis.com",
     strategy: new NetworkFirst({
       cacheName: "arcgis",
       matchOptions: {
@@ -108,7 +227,7 @@ const CACHE_CONFIG = [
     }),
   },
   {
-    url: "https://tile.openstreetmap.org",
+    url: "tile.openstreetmap.org",
     strategy: new NetworkFirst({
       cacheName: "openstreetmap",
       matchOptions: {
@@ -121,7 +240,7 @@ const CACHE_CONFIG = [
     }),
   },
   {
-    url: "https://tiles.stadiamaps.com",
+    url: "tiles.stadiamaps.com",
     strategy: new NetworkFirst({
       cacheName: "stadiamaps",
       matchOptions: {
@@ -168,28 +287,72 @@ const DeliverCacheIfHttpErrorCodePlugin = {
   },
 };
 
+// checks if two urls match independently of http:// or https:// (meaning they match even if the protocol differs)
+function urlMatchesHttpHttps(url: string, requestUrl: URL) {
+  // Normalize URLs by manually removing the protocol
+  let normalizedUrl: string;
+  if (url.startsWith("http://")) {
+    normalizedUrl = url.slice(7); // Remove "http://"
+  } else if (url.startsWith("https://")) {
+    normalizedUrl = url.slice(8); // Remove "https://"
+  } else {
+    normalizedUrl = url;
+  }
+
+  let requestUrlWithoutProtocol: string;
+  if (requestUrl.href.startsWith("http://")) {
+    requestUrlWithoutProtocol = requestUrl.href.slice(7); // Remove "http://"
+  } else if (requestUrl.href.startsWith("https://")) {
+    requestUrlWithoutProtocol = requestUrl.href.slice(8); // Remove "https://"
+  } else {
+    requestUrlWithoutProtocol = requestUrl.href;
+  }
+
+  // Check if the request URL starts with the normalized URL
+  return requestUrlWithoutProtocol.startsWith(normalizedUrl);
+}
+
 // Register routes for each config
-CACHE_CONFIG.forEach(({ url, strategy }) => {
+CACHE_CONFIG.forEach(({ url, urlPattern, strategy }) => {
   // Add the DeliverCacheIfHttpErrorCodePlugin plugin to the NetworkFirst strategy
   if (strategy instanceof NetworkFirst) {
-    if (strategy.plugins && strategy.plugins.length > 0) {
-      const exists = strategy.plugins.some(
+    if (
+      !strategy.plugins.some(
         (item) => item === DeliverCacheIfHttpErrorCodePlugin,
-      );
-      if (!exists) {
-        strategy.plugins.push(DeliverCacheIfHttpErrorCodePlugin);
-      }
-    } else {
-      strategy.plugins = [DeliverCacheIfHttpErrorCodePlugin];
+      )
+    ) {
+      strategy.plugins.push(DeliverCacheIfHttpErrorCodePlugin);
     }
   }
 
   // Register route and silence 'no-response' logs
   registerRoute(
-    ({ url: requestUrl }) => requestUrl.href.startsWith(url),
+    ({ url: requestUrl }) => {
+      if (url) {
+        return urlMatchesHttpHttps(url, requestUrl);
+      } else if (urlPattern) {
+        return urlPattern.test(requestUrl.href);
+      }
+      return false; // Default case if neither `url` nor `urlPattern` is provided.
+    },
     async (params) => {
       const { request, event } = params;
       try {
+        // console.log(new Map(request.headers));
+
+        // Attempt to fetch the response from the cache first (if the plugin applies)
+        try {
+          const cachedResponse = await new RemoveJsonpPlugin().getFromCache(
+            request,
+          );
+
+          if (cachedResponse) {
+            console.log("retruened", cachedResponse);
+            console.log("original request", request);
+            return cachedResponse; // Return the cached response if found
+          }
+        } catch (error) {}
+
         return await strategy.handle({ request, event });
       } catch (error) {
         console.debug("Fetch failed, returning fallback response:", error);

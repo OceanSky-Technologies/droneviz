@@ -46,7 +46,6 @@ function formattedMessage(message: string): string {
           />
           <Button
             :label="message.rejectLabel"
-            outlined
             @click="rejectCallback"
             class="w-32"
             :class="message.rejectClass"

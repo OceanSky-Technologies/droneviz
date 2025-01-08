@@ -4,6 +4,7 @@ import DarkModeToggle from "@/components/DarkModeToggle.vue";
 import DroneMenu from "@/components/DroneMenu.vue";
 import DroneRightClickMenu from "@/components/DroneRightClickMenu.vue";
 import MainToolbar from "@/components/MainToolbar.vue";
+import NetworkIndicator from "@/components/NetworkIndicator.vue";
 import {
   cesiumInitialized,
   getCesiumViewer,
@@ -210,6 +211,8 @@ async function getGeolocationAsyncButtonClick() {
       id="toolbarTopRight"
       style="display: flex; gap: 5px; position: absolute; top: 5px; right: 5px"
     >
+      <NetworkIndicator />
+
       <Button
         :icon="resetPositionButtonIcon"
         @click="getGeolocationAsyncButtonClick"

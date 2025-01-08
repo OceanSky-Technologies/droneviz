@@ -1,7 +1,7 @@
 import { definePreset } from "@primevue/themes";
-import Aura from "@primevue/themes/aura";
+import Material from "@primevue/themes/material";
 
-const ColorPreset = definePreset(Aura, {
+const ColorPreset = definePreset(Material, {
   semantic: {
     primary: {
       50: "{sky.50}",

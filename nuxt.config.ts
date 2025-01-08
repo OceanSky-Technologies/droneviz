@@ -17,6 +17,7 @@ export default defineNuxtConfig({
     "@nuxtjs/tailwindcss",
     "@primevue/nuxt-module",
     "@vite-pwa/nuxt",
+    "unplugin-icons/nuxt",
   ],
   css: ["/assets/style.css"],
   primevue: {
