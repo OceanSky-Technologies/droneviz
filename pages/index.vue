@@ -9,6 +9,7 @@ import {
   cesiumInitialized,
   getCesiumViewer,
 } from "@/components/CesiumViewerWrapper";
+import Button from "primevue/button";
 import { Drone } from "@/core/Drone";
 import { droneCollection } from "@/core/DroneCollection";
 import { SerialOptions, UdpOptions } from "@/types/DroneConnectionOptions";
@@ -24,6 +25,7 @@ import {
 import { Cartesian3, Math as CesiumMath } from "cesium";
 import { getGeolocationAsync } from "~/core/Geolocation";
 import { updateEgoPosition } from "~/core/EgoPosition";
+import IcOutlinePersonPinCircle from "~icons/ic/outline-person-pin-circle";
 
 const cacheQuota = ref(0);
 const cacheTotalUsed = ref(0);
@@ -33,8 +35,6 @@ const cacheDetails = ref<CacheStatistics[]>([]);
 const connectDisconnectRef = ref("connectDisconnectRef");
 const connectDisconnectDisabled = ref(false);
 const connectDisconnectText = ref("Connect");
-
-const resetPositionButtonIcon = ref("pi pi-map-marker");
 
 async function connectDisconnect() {
   if (!connectDisconnectRef.value) {
@@ -121,7 +121,7 @@ onMounted(() => {
 
 async function getGeolocationAsyncButtonClick() {
   try {
-    resetPositionButtonIcon.value = "pi pi-spin pi-spinner";
+    // resetPositionButtonIcon.value = "pi pi-spin pi-spinner";
     const position = await getGeolocationAsync();
 
     getCesiumViewer().camera.flyTo({
@@ -139,11 +139,8 @@ async function getGeolocationAsyncButtonClick() {
     await updateEgoPosition(position);
 
     showToast("Camera moving to ego position.", ToastSeverity.Info);
-
-    resetPositionButtonIcon.value = "pi pi-map-marker";
   } catch (e) {
     if (e instanceof Error) {
-      resetPositionButtonIcon.value = "pi pi-map-marker";
       showToast(
         `Could not retrieve geolocation: ${e.message}`,
         ToastSeverity.Error,
@@ -213,10 +210,9 @@ async function getGeolocationAsyncButtonClick() {
     >
       <NetworkIndicator />
 
-      <Button
-        :icon="resetPositionButtonIcon"
-        @click="getGeolocationAsyncButtonClick"
-      />
+      <Button @click="getGeolocationAsyncButtonClick">
+        <IcOutlinePersonPinCircle />
+      </Button>
     </div>
 
     <DroneMenu />

@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import Warning from "@/components/icons/Warning.vue";
+import Button from "primevue/button";
+import ConfirmDialog from "primevue/confirmdialog";
 
 // Format the message to replace \n with <br> for multi-line support
 function formattedMessage(message: string): string {

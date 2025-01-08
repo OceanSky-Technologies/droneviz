@@ -1,35 +1,43 @@
 <template>
-  <Button
-    :icon="statusIcon"
-    :severity="buttonSeverity"
-    @click="checkWebsites"
-    v-tooltip.bottom="statusMessage"
-  >
-    <WifiOff />
-  </Button>
+  <div>
+    <Button
+      :severity="buttonSeverity"
+      @click="checkWebsites"
+      v-tooltip.bottom="statusMessage"
+      class="icon-button"
+    >
+      <div class="icon-wrapper">
+        <Wifi
+          class="icon"
+          v-show="buttonSeverity === 'info'"
+          v-rotate
+          ref="infoIcon"
+        />
+
+        <Wifi v-show="buttonSeverity === 'success'" class="icon" />
+        <MdiWifiAlert v-show="buttonSeverity === 'warn'" class="icon" />
+        <WifiOff v-show="buttonSeverity === 'danger'" class="icon" />
+      </div>
+    </Button>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, nextTick, toRaw } from "vue";
 
-import Tooltip from "primevue/tooltip";
+// import Tooltip from "primevue/tooltip";
 import Button from "primevue/button";
+import Wifi from "~icons/mdi/wifi";
 import WifiOff from "~icons/mdi/wifi-off";
-import { defineComponent } from "vue";
-import { Colors } from "~/utils/Colors";
-
-defineComponent({
-  directives: {
-    tooltip: Tooltip,
-  },
-});
+import MdiWifiAlert from "~icons/mdi/wifi-alert";
+import type { ComponentPublicInstance } from "vue";
 
 const cesiumReachable = ref(false);
 const googleReachable = ref(false);
-const statusColor = ref(Colors.RED);
 const statusMessage = ref("Checking reachability...");
-const statusIcon = ref("pi pi-spin pi-spinner");
 const buttonSeverity = ref("danger");
+
+const infoIcon = ref<ComponentPublicInstance | null>(null);
 
 const checkReachability = async (url: string): Promise<boolean> => {
   try {
@@ -47,41 +55,38 @@ const checkReachability = async (url: string): Promise<boolean> => {
 
 const updateStatus = () => {
   if (cesiumReachable.value && googleReachable.value) {
-    statusColor.value = Colors.DARK_GREEN;
     statusMessage.value = "Internet connection established.";
-    statusIcon.value = "pi pi-wifi";
-    statusIcon.value = "material material-icons";
     buttonSeverity.value = "success";
   } else if (cesiumReachable.value || googleReachable.value) {
-    statusColor.value = Colors.ORANGE;
     statusMessage.value =
       "Internet access problem: " +
       (cesiumReachable.value ? "Google" : "Cesium") +
       " unreachable.";
-    statusIcon.value = "pi pi-exclamation-triangle";
     buttonSeverity.value = "warn";
   } else {
-    statusColor.value = Colors.RED;
     statusMessage.value = "No internet connection.";
-    statusIcon.value = "pi pi-times";
     buttonSeverity.value = "danger";
   }
 };
 
 const checkWebsites = async () => {
   statusMessage.value = "Checking connection...";
-  statusIcon.value = "pi pi-spin pi-spinner";
   buttonSeverity.value = "info";
+
+  infoIcon.value?.$el.startRotation(true);
   cesiumReachable.value = await checkReachability("https://cesium.com");
   googleReachable.value = await checkReachability("https://google.com");
+  await infoIcon.value?.$el.stopRotation();
+  await infoIcon.value?.$el.rotationStopped();
+
   updateStatus();
 };
 
 // refresh interval
-let refreshInterval: NodeJS.Timeout;
+let refreshInterval: ReturnType<typeof setInterval>;
 const refreshIntervalMillis = 10_000;
 
-onMounted(() => {
+onMounted(async () => {
   checkWebsites();
   refreshInterval = setInterval(checkWebsites, refreshIntervalMillis);
 });
@@ -91,4 +96,21 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+.icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  transition:
+    opacity 0.2s ease-in-out,
+    visibility 0.2s ease-in-out;
+}
+
+.icon[v-show] {
+  opacity: 1; /* Show the visible icon */
+  visibility: visible; /* Allow only visible icons to affect layout */
+}
+</style>

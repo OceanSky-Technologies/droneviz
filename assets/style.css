@@ -1,4 +1,5 @@
 @import url("/assets/tailwind.css");
+@import url("/assets/animations.css");
 
 :root {
   font-size: 14px;
@@ -89,10 +90,6 @@ svg {
   padding: 0 !important;
 }
 
-/* .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
-  background-color: var(--color-gold) !important;
-} */
-
 .p-dialog-footer {
   justify-content: center !important;
   gap: 10px !important;
@@ -105,8 +102,8 @@ svg {
 
 .cesium-performanceDisplay-defaultContainer {
   position: absolute;
-  top: 47px !important;
-  right: 5px !important;
+  top: 5px !important;
+  right: 81px !important;
 }
 
 .cesium-performanceDisplay-ms,
@@ -116,4 +113,14 @@ svg {
 
 .cesium-performanceDisplay-throttled {
   color: var(--color-gold) !important;
+}
+
+/* Toast */
+.p-toast {
+  top: 45px !important;
+  right: 5px !important;
+}
+
+.p-toast-message-content {
+  align-items: center !important;
 }
