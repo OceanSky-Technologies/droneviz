@@ -237,20 +237,20 @@ onBeforeUnmount(() => {
 
 <style scoped lang="postcss">
 .popup-menu {
-  pointer-events: none; /* Allows events to pass through */
+  pointer-events: none;
   position: absolute;
   text-align: center;
-  white-space: nowrap; /* Prevent text wrapping */
-  min-width: max-content; /* Ensure the width accommodates the content */
-  min-height: fit-content; /* Ensure the height accommodates the content */
-  overflow: visible; /* Prevent clipping */
+  white-space: nowrap;
+  min-width: max-content;
+  min-height: fit-content;
+  overflow: visible;
   border-radius: 10px;
   z-index: 1000;
   padding: 10px;
   background-color: var(--p-content-background);
   border-color: var(--p-content-border-color);
-  transform: translate(-50%, -100%) translateY(-16px);
-  transform-origin: bottom center;
+  transform: translate(-50%, -100%) translateY(-16px); /* Start above */
+  transform-origin: top center; /* Change origin to top for entering from above */
   transition:
     transform 0.2s ease-out,
     opacity 0.2s ease-out;
@@ -279,19 +279,20 @@ onBeforeUnmount(() => {
   border-top-color: var(--p-content-background);
 }
 
-/* Fade and slide animation */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition:
     transform 0.2s ease,
     opacity 0.2s ease;
 }
+
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translate(-50%, -10px);
+  transform: translate(-50%, -150%); /* Appear from above the element */
 }
+
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translate(-50%, -10px);
+  transform: translate(-50%, -150%); /* Disappear moving further up */
 }
 </style>

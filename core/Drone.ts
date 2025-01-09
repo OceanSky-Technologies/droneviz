@@ -6,8 +6,8 @@ import type {
 import { showToast, ToastSeverity } from "@/utils/ToastService";
 import { REGISTRY } from "@/types/MavlinkRegistry";
 import { getCesiumViewer } from "../components/CesiumViewerWrapper";
-import { setPosition } from "@/utils/CoordinateUtils";
-import { ConstantProperty, HeadingPitchRoll, Math, Transforms } from "cesium";
+import { calculatePosition } from "@/utils/CoordinateUtils";
+import * as Cesium from "cesium";
 import type {
   MavlinkMessageInterface,
   QueryResult,
@@ -37,7 +37,6 @@ import { MessageMap } from "./MessageMap";
 import { settings } from "@/utils/Settings";
 import { fixBigIntSerialization } from "@/types/bigIntSerializationHelper";
 import { baseURL } from "@/baseURL.config";
-import { equals } from "@/utils/MessageUtils";
 
 fixBigIntSerialization();
 
@@ -61,7 +60,10 @@ export class Drone {
   private eventSource?: EventSource;
 
   // cesium entity to represent the drone
-  entity?: any;
+  entity: Cesium.Entity | undefined;
+
+  position: Cesium.Cartesian3 | undefined;
+  orientation: Cesium.Quaternion | undefined;
 
   private sysid: number = NaN;
   private compid: number = NaN;
@@ -388,9 +390,6 @@ export class Drone {
    * @param {Attitude} message - The attitude message to update the orientation with.
    */
   private updateEntityOrientation(message: Attitude) {
-    // skip if the new message has the same content as the old one
-    if (equals(this.lastMessages.attitude?.message, message)) return;
-
     if (!this.entity) return;
     if (!this.entity.position || !this.entity.position.getValue()) return;
 
@@ -399,17 +398,17 @@ export class Drone {
 
     if (lastglobalPositionMessage.message.hdg === UINT16_MAX) return;
 
-    const heading = Math.toRadians(
+    const heading = Cesium.Math.toRadians(
       lastglobalPositionMessage.message.hdg / 100 - 90.0,
     );
-    const pitch = message.pitch - Math.toRadians(-30); // skywinger has 30 degrees pitch. TODO: fix in model
+    const pitch = message.pitch - Cesium.Math.toRadians(-30); // skywinger has 30 degrees pitch. TODO: fix in model
     const roll = message.roll;
-    const orientation = Transforms.headingPitchRollQuaternion(
+    const orientation = Cesium.Transforms.headingPitchRollQuaternion(
       this.entity.position.getValue()!,
-      new HeadingPitchRoll(heading, pitch, roll),
+      new Cesium.HeadingPitchRoll(heading, pitch, roll),
     );
 
-    this.entity.orientation = new ConstantProperty(orientation);
+    this.orientation = orientation;
 
     getCesiumViewer().scene.requestRender();
   }
@@ -419,12 +418,9 @@ export class Drone {
    * @param {GlobalPositionInt} message - The global position message to update the position with.
    */
   private updateEntityPosition(message: GlobalPositionInt) {
-    // skip if the new message has the same content as the old one
-    if (equals(this.lastMessages.globalPositionInt?.message, message)) return;
-
     if (!this.entity) return;
 
-    setPosition(this.entity, message);
+    this.position = calculatePosition(this.entity, message);
 
     getCesiumViewer().scene.requestRender();
   }

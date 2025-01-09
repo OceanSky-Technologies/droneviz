@@ -1,8 +1,9 @@
 <!-- A button that shows a progress bar when clicked and emits a click event when the progress bar is filled. -->
 
 <script lang="ts" setup>
-import { ref, computed } from "vue";
+import { ref, computed, onUnmounted } from "vue";
 import { Button } from "primevue";
+import { AnimationFrameScheduler } from "~/utils/AnimationFrameScheduler";
 
 const props = defineProps({
   label: {
@@ -11,7 +12,7 @@ const props = defineProps({
   },
   time: {
     type: Number,
-    default: 1.5, // seconds
+    default: 1, // seconds
   },
 });
 

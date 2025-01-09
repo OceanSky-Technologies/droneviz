@@ -20,6 +20,13 @@
         :disabled="connectDisconnectDisabled"
         @click="connectDisconnect"
         ref="connectDisconnectRef"
+        :icon="connectIcon"
+        :severity="
+          connectDisconnectText.toLowerCase() === 'disconnect'
+            ? 'danger'
+            : 'primary'
+        "
+        iconPos="right"
       />
 
       <div>
@@ -90,6 +97,7 @@ import { Cartesian3, Math as CesiumMath } from "cesium";
 import { getGeolocationAsync } from "~/core/Geolocation";
 import { updateEgoPosition } from "~/core/EgoPosition";
 import IcOutlinePersonPinCircle from "~icons/ic/outline-person-pin-circle";
+import { IconField } from "primevue";
 
 const cacheQuota = ref(0);
 const cacheTotalUsed = ref(0);
@@ -102,6 +110,8 @@ const connectDisconnectText = ref("Connect");
 
 const geolocationIconRef = ref<ComponentPublicInstance | null>(null);
 
+const connectIcon = ref("pi pi-lock-open");
+
 async function connectDisconnect() {
   if (!connectDisconnectRef.value) {
     showToast("connectDisconnectRef button not found", ToastSeverity.Error);
@@ -113,6 +123,7 @@ async function connectDisconnect() {
 
     if (droneCollection.getNumDrones() === 0) {
       showToast(`Connecting ...`, ToastSeverity.Info);
+      connectIcon.value = "pi pi-spin pi-spinner";
 
       const drone = droneCollection.addDrone(new Drone(new UdpOptions()));
       // const drone = droneCollection.addDrone(
@@ -120,6 +131,8 @@ async function connectDisconnect() {
       // );
 
       await droneCollection.connectAll();
+
+      connectIcon.value = "pi pi-lock";
 
       showToast(
         `Connected! (sysid: ${drone.getSysId()}, compid: ${drone.getCompId()})`,
@@ -133,6 +146,8 @@ async function connectDisconnect() {
     } else {
       await droneCollection.disconnectAll();
       droneCollection.removeAllDrones();
+
+      connectIcon.value = "pi pi-lock-open";
 
       showToast("Disconnected!", ToastSeverity.Success);
 
@@ -151,6 +166,8 @@ async function connectDisconnect() {
     connectDisconnectDisabled.value = false;
     droneCollection.disconnectAll();
     droneCollection.removeAllDrones();
+
+    connectIcon.value = "pi pi-lock-open";
   }
 
   getCesiumViewer().scene.requestRender();
@@ -202,6 +219,7 @@ async function flyToGeolocation() {
         heading: CesiumMath.toRadians(0.0),
         pitch: CesiumMath.toRadians(-90.0),
       },
+      duration: 1,
       complete: async () => {
         await geolocationIconRef.value?.$el.stopRotation();
         await geolocationIconRef.value?.$el.rotationStopped();

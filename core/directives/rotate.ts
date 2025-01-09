@@ -2,8 +2,8 @@ import type { Directive } from "vue";
 
 export const rotate: Directive = {
   mounted(el, binding) {
-    // Try a default of 3 seconds if no binding value:
-    const duration = binding.value || 3;
+    // Try a default of 1 second if no binding value:
+    const duration = binding.value || 1;
 
     let isRotating = false;
     let isInfinite = false;
@@ -35,7 +35,7 @@ export const rotate: Directive = {
       finishRotation();
     };
 
-    const handleAnimationIteration = (evt: AnimationEvent) => {
+    const handleAnimationIteration = () => {
       if (!isRotating || !isInfinite) return;
 
       // If user requested to stop, we stop after the current iteration

@@ -49,7 +49,7 @@ export async function updateEgoPosition(
     sphere = getCesiumViewer().entities.add({
       id: "ego-sphere",
       ellipsoid: {
-        material: Cesium.Color.fromCssColorString(Colors.BLUE).withAlpha(0.3),
+        material: Cesium.Color.fromCssColorString(Colors.GOLD).withAlpha(0.3),
       },
     });
   }

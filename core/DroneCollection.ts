@@ -1,6 +1,7 @@
 import { getCesiumViewer } from "@/components/CesiumViewerWrapper";
 import type { Drone } from "./Drone";
 import { ref } from "vue";
+import * as Cesium from "cesium";
 
 class DroneCollection {
   private drones: Drone[] = [];
@@ -21,6 +22,18 @@ class DroneCollection {
         minimumPixelSize: 75,
         maximumScale: 20000,
       },
+      position: new Cesium.CallbackPositionProperty(
+        (): Cesium.Cartesian3 | undefined => {
+          return drone.position;
+        },
+        false,
+      ),
+      orientation: new Cesium.CallbackProperty(
+        (): Cesium.Quaternion | undefined => {
+          return drone.orientation;
+        },
+        false,
+      ),
     });
 
     this.drones[num - 1].entity = entity;

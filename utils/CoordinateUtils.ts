@@ -67,7 +67,10 @@ export function formatAltitude(altitude?: number): string {
   return altitude.toFixed(2).padStart(12, " ") + "m";
 }
 
-export function setPosition(entity: Cesium.Entity, message: GlobalPositionInt) {
+export function calculatePosition(
+  entity: Cesium.Entity,
+  message: GlobalPositionInt,
+): Cesium.Cartesian3 {
   const longitude = message.lon / 1e7;
   const latitude = message.lat / 1e7;
 
@@ -93,10 +96,7 @@ export function setPosition(entity: Cesium.Entity, message: GlobalPositionInt) {
         );
     }
   }
-
-  entity.position = new Cesium.ConstantPositionProperty(
-    Cesium.Cartesian3.fromDegrees(longitude, latitude, altitude),
-  );
+  return Cesium.Cartesian3.fromDegrees(longitude, latitude, altitude);
 }
 
 /**

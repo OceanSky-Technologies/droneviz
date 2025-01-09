@@ -7,10 +7,13 @@
       :key="animationKey"
       style="padding: 5px"
       class="popup-menu shadow-lg"
+      @dblclick="handleDoubleClick"
     >
       <!-- Content -->
       <div>
-        <IcBaselinePerson style="font-size: 1.5em" />
+        <IcBaselinePerson
+          style="font-size: 1.5em; color: var(--p-content-background)"
+        />
       </div>
 
       <!-- Arrow -->
@@ -29,7 +32,7 @@ import {
   watch,
 } from "vue";
 import type { CSSProperties } from "vue";
-import { Cartesian3, SceneTransforms } from "cesium";
+import { Cartesian3, SceneTransforms, Math as CesiumMath } from "cesium";
 import {
   getCesiumViewer,
   waitUntilCesiumInitialized,
@@ -39,7 +42,7 @@ import IcBaselinePerson from "~icons/ic/baseline-person";
 import { egoPosition } from "@/core/EgoPosition";
 
 const visible = ref(false);
-const menu = ref(null);
+const menu = ref<HTMLElement | null>(null);
 const menuPosition = reactive({ x: 0, y: 0 });
 
 const animationKey = ref(0); // Used to force the transition if the menu is already open
@@ -80,6 +83,7 @@ function updateOverlayPosition() {
   }
 }
 
+// Watch for changes to egoPosition
 watch(egoPosition, async (newPosition: Cartesian3 | undefined) => {
   if (!newPosition) return;
   visible.value = true;
@@ -96,7 +100,7 @@ onMounted(async () => {
     updateOverlayPosition();
   }
 
-  // Add a camera move listeners to update the overlay position
+  // Add camera listeners to update the overlay position
   cesiumListenerCbs.push(
     getCesiumViewer().camera.changed.addEventListener(() => {
       if (visible.value) updateOverlayPosition();
@@ -121,9 +125,41 @@ onBeforeUnmount(() => {
     const cb = cesiumListenerCbs.pop();
     if (cb) cb();
   }
-
   animationFrameScheduler.stop();
 });
+
+// ====================================
+//    DOUBLE-CLICK HANDLER
+// ====================================
+async function handleDoubleClick() {
+  // Example: if you want to fly to the last known position
+  if (!positionCartesian) return;
+
+  const viewer = getCesiumViewer();
+  if (!viewer) return;
+
+  // Convert cartesian3 to lat/lon/height
+  const cartographic =
+    viewer.scene.globe.ellipsoid.cartesianToCartographic(positionCartesian);
+  const longitude = CesiumMath.toDegrees(cartographic.longitude);
+  const latitude = CesiumMath.toDegrees(cartographic.latitude);
+  const height = cartographic.height || 400;
+
+  viewer.camera.flyTo({
+    destination: Cartesian3.fromDegrees(longitude, latitude, height),
+    orientation: {
+      heading: CesiumMath.toRadians(0.0),
+      pitch: CesiumMath.toRadians(-90.0),
+    },
+    duration: 1,
+    complete: async () => {
+      // Additional logic once camera flight is complete
+      // e.g., stop some rotation or call updateEgoPosition
+      // updateEgoPosition(...);
+      console.log("Camera flight complete!");
+    },
+  });
+}
 </script>
 
 <style scoped lang="postcss">
@@ -149,6 +185,7 @@ onBeforeUnmount(() => {
 
 /* Arrow styles */
 .popup-arrow {
+  pointer-events: none;
   position: absolute;
   bottom: -16px; /* Adjust based on menu placement */
   left: calc(50% - 10px);
