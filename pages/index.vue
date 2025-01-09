@@ -15,19 +15,27 @@
       "
     >
       <DarkModeToggle />
+
       <Button
         :label="connectDisconnectText"
         :disabled="connectDisconnectDisabled"
         @click="connectDisconnect"
         ref="connectDisconnectRef"
-        :icon="connectIcon"
         :severity="
           connectDisconnectText.toLowerCase() === 'disconnect'
             ? 'danger'
             : 'primary'
         "
-        iconPos="right"
-      />
+      >
+        <template #icon>
+          <Wifi
+            v-if="connectDisconnectText.toLowerCase() === 'connect'"
+            ref="connectedIconRef"
+            v-rotate
+          />
+          <WifiOff v-else />
+        </template>
+      </Button>
 
       <div>
         <Button @click="clearCache">Clear cache</Button>
@@ -96,8 +104,9 @@ import {
 import { Cartesian3, Math as CesiumMath } from "cesium";
 import { getGeolocationAsync } from "~/core/Geolocation";
 import { updateEgoPosition } from "~/core/EgoPosition";
+import Wifi from "~icons/mdi/wifi";
+import WifiOff from "~icons/mdi/wifi-off";
 import IcOutlinePersonPinCircle from "~icons/ic/outline-person-pin-circle";
-import { IconField } from "primevue";
 
 const cacheQuota = ref(0);
 const cacheTotalUsed = ref(0);
@@ -107,10 +116,9 @@ const cacheDetails = ref<CacheStatistics[]>([]);
 const connectDisconnectRef = ref("connectDisconnectRef");
 const connectDisconnectDisabled = ref(false);
 const connectDisconnectText = ref("Connect");
+const connectedIconRef = ref<ComponentPublicInstance | null>(null);
 
 const geolocationIconRef = ref<ComponentPublicInstance | null>(null);
-
-const connectIcon = ref("pi pi-lock-open");
 
 async function connectDisconnect() {
   if (!connectDisconnectRef.value) {
@@ -123,7 +131,7 @@ async function connectDisconnect() {
 
     if (droneCollection.getNumDrones() === 0) {
       showToast(`Connecting ...`, ToastSeverity.Info);
-      connectIcon.value = "pi pi-spin pi-spinner";
+      connectedIconRef.value?.$el.startRotation(true);
 
       const drone = droneCollection.addDrone(new Drone(new UdpOptions()));
       // const drone = droneCollection.addDrone(
@@ -132,7 +140,7 @@ async function connectDisconnect() {
 
       await droneCollection.connectAll();
 
-      connectIcon.value = "pi pi-lock";
+      await connectedIconRef.value?.$el.stopRotation(true);
 
       showToast(
         `Connected! (sysid: ${drone.getSysId()}, compid: ${drone.getCompId()})`,
@@ -147,7 +155,8 @@ async function connectDisconnect() {
       await droneCollection.disconnectAll();
       droneCollection.removeAllDrones();
 
-      connectIcon.value = "pi pi-lock-open";
+      await connectedIconRef.value?.$el.stopRotation();
+      await connectedIconRef.value?.$el.rotationStopped();
 
       showToast("Disconnected!", ToastSeverity.Success);
 
@@ -167,7 +176,8 @@ async function connectDisconnect() {
     droneCollection.disconnectAll();
     droneCollection.removeAllDrones();
 
-    connectIcon.value = "pi pi-lock-open";
+    await connectedIconRef.value?.$el.stopRotation();
+    await connectedIconRef.value?.$el.rotationStopped();
   }
 
   getCesiumViewer().scene.requestRender();

@@ -7,11 +7,7 @@
       class="icon-button"
     >
       <div class="icon-wrapper">
-        <Wifi class="icon" v-show="buttonSeverity === 'info'" ref="infoIcon" />
-
-        <Wifi v-show="buttonSeverity === 'success'" class="icon" />
-        <MdiWifiAlert v-show="buttonSeverity === 'warn'" class="icon" />
-        <WifiOff v-show="buttonSeverity === 'danger'" class="icon" />
+        <MaterialSymbolsGlobe class="icon" />
       </div>
     </Button>
   </div>
@@ -22,9 +18,7 @@ import { ref, onMounted, onUnmounted } from "vue";
 
 // import Tooltip from "primevue/tooltip";
 import Button from "primevue/button";
-import Wifi from "~icons/mdi/wifi";
-import WifiOff from "~icons/mdi/wifi-off";
-import MdiWifiAlert from "~icons/mdi/wifi-alert";
+import MaterialSymbolsGlobe from "~icons/material-symbols/globe";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
 
 const cesiumReachable = ref(false);

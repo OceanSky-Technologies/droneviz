@@ -56,7 +56,7 @@ export const rotate: Directive = {
      * @param continuous - if true => infinite spin, else single spin
      * @returns A promise that resolves *when the rotation stops*.
      */
-    el.startRotation = (continuous = true) => {
+    el.startRotation = (continuous: boolean = true) => {
       if (isRotating) {
         return stopPromise ?? Promise.resolve();
       }
@@ -89,10 +89,16 @@ export const rotate: Directive = {
      * - If infinite rotation, it will stop after the next `animationiteration`.
      * @returns A promise that resolves when rotation is fully stopped.
      */
-    el.stopRotation = () => {
+    el.stopRotation = (force: boolean = false) => {
       if (!isRotating) {
         return stopPromise ?? Promise.resolve();
       }
+
+      if (force) {
+        finishRotation();
+        return Promise.resolve();
+      }
+
       stopRequested = true;
       return stopPromise;
     };
