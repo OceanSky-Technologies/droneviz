@@ -35,7 +35,7 @@ class Settings {
   constructor() {
     this.google3DTilesEnabled = ref(false);
     this.googleApiKey = ref(undefined);
-    this.bingEnabled = ref(true);
+    this.bingEnabled = ref(false);
     this.tileCacheSize = ref(1000);
     this.sceneMode = ref(SceneMode.SCENE3D);
     this.msaaSamples = ref(1);

@@ -103,7 +103,7 @@ svg {
 .cesium-performanceDisplay-defaultContainer {
   position: absolute;
   top: 5px !important;
-  right: 81px !important;
+  right: 89px !important;
 }
 
 .cesium-performanceDisplay-ms,
@@ -117,7 +117,7 @@ svg {
 
 /* Toast */
 .p-toast {
-  top: 45px !important;
+  top: 47px !important;
   right: 5px !important;
 }
 

@@ -13,6 +13,7 @@ import {
 import { droneCollection } from "@/core/DroneCollection";
 import { eventBus } from "@/utils/Eventbus";
 import { getPreferredEntity } from "@/utils/EntityUtils";
+import { Colors } from "@/utils/Colors";
 
 let mouseClickHandler: ScreenSpaceEventHandler;
 export let selectedEntityHighlighter: CesiumHighlighter;

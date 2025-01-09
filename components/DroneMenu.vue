@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { defined, Entity } from "cesium";
-import { ref, onMounted, toRaw } from "vue";
+import { defined } from "cesium";
+import { ref, onMounted, toRaw, markRaw, watch, onUnmounted } from "vue";
 import { eventBus } from "@/utils/Eventbus";
 import {
   getCesiumViewer,
@@ -9,14 +9,14 @@ import {
 import { Button } from "primevue";
 import Landing from "@/components/icons/Landing.vue";
 import Takeoff from "@/components/icons/Takeoff.vue";
-import Warning from "@/components/icons/Warning.vue";
+import IcBaselineWarningAmber from "~icons/ic/baseline-warning-amber";
+import IcBaselineClose from "~icons/ic/baseline-close";
 import DroneTelemetry from "@/components/DroneTelemetry.vue";
 import { useConfirm } from "primevue/useconfirm";
 import { droneCollection } from "@/core/DroneCollection";
 
 import { isTauri } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { resolveResource } from "@tauri-apps/api/path";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
 
 const confirm = useConfirm();
@@ -56,7 +56,7 @@ async function arm() {
     message:
       "Are you sure you want to arm the aircraft?\nPlease ensure the environment is safe, and all pre-flight checks are complete before proceeding.",
     header: "Arming",
-    icon: markRaw(Warning) as any,
+    icon: markRaw(IcBaselineWarningAmber) as any,
     rejectLabel: "Cancel",
     acceptLabel: "Arm",
     acceptClass: "p-button-danger",
@@ -85,7 +85,7 @@ async function disarm() {
     message:
       "Are you sure you want to disarm the aircraft?\nDisarming while airborne will cause the aircraft to fall immediately. Proceed only if it is safe to do so.",
     header: "Disarming",
-    icon: markRaw(Warning) as any,
+    icon: markRaw(IcBaselineWarningAmber) as any,
     rejectLabel: "Cancel",
     acceptLabel: "Disarm",
     acceptClass: "p-button-danger",
@@ -170,7 +170,7 @@ async function autotune() {
     message:
       "Are you sure you want to start autotuning the flight controller?\nPlease ensure the aircraft can fly stable enough and you are ready to abort the autotuning process at any time.\nOnce autotuning is complete the aircraft will land automatically.\n\nMore infos: <a href='https://docs.px4.io/main/en/config/autotune_mc.html' target='_blank'>here</a>.",
     header: "Autotune",
-    icon: markRaw(Warning) as any,
+    icon: markRaw(IcBaselineWarningAmber) as any,
     rejectLabel: "Cancel",
     acceptLabel: "Start",
     acceptClass: "p-button-danger",
@@ -299,7 +299,10 @@ onUnmounted(() => {
   <div class="menu-wrapper" :class="{ open: isMenuOpen }">
     <CustomConfirmDialog />
 
-    <Button class="close-button" @click="toggleMenu">x</Button>
+    <Button class="close-button" @click="toggleMenu">
+      <IcBaselineClose />
+    </Button>
+
     <div class="menu">
       <div
         style="

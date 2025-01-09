@@ -1,3 +1,67 @@
+<template>
+  <div class="h-full w-full bg-black">
+    <CesiumViewer />
+
+    <div
+      id="toolbarTopLeft"
+      style="
+        display: flex;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+        position: absolute;
+        top: 5px;
+        left: 5px;
+      "
+    >
+      <DarkModeToggle />
+      <Button
+        :label="connectDisconnectText"
+        :disabled="connectDisconnectDisabled"
+        @click="connectDisconnect"
+        ref="connectDisconnectRef"
+      />
+
+      <div>
+        <Button @click="clearCache">Clear cache</Button>
+        <p>Available cache quota: {{ formatBytes(cacheQuota) }}</p>
+        <p>Total cache size: {{ formatBytes(cacheTotalUsed) }}</p>
+        <p>
+          Cache usage:
+          {{ (Math.round(cacheUsedPercent * 100) / 100).toFixed(2) }}%
+        </p>
+        <p>Cache details:</p>
+        <div
+          v-for="cache in cacheDetails"
+          :key="cache.cacheName"
+          style="border: 1px solid black"
+        >
+          <h3>{{ cache.cacheName }}</h3>
+          <p>Number of cached requests: {{ cache.requestCount }}</p>
+        </div>
+      </div>
+
+      <div id="demoMenu" />
+    </div>
+
+    <DroneRightClickMenu />
+    <MainToolbar v-if="cesiumInitialized" id="mainToolbar" />
+
+    <div
+      id="toolbarTopRight"
+      style="display: flex; gap: 5px; position: absolute; top: 5px; right: 5px"
+    >
+      <NetworkIndicator />
+
+      <Button @click="flyToGeolocation">
+        <IcOutlinePersonPinCircle ref="geolocationIconRef" v-rotate />
+      </Button>
+    </div>
+
+    <DroneMenu />
+  </div>
+</template>
+
 <script lang="ts" setup>
 import CesiumViewer from "@/components/CesiumViewer.vue";
 import DarkModeToggle from "@/components/DarkModeToggle.vue";
@@ -14,7 +78,7 @@ import { Drone } from "@/core/Drone";
 import { droneCollection } from "@/core/DroneCollection";
 import { SerialOptions, UdpOptions } from "@/types/DroneConnectionOptions";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, type ComponentPublicInstance } from "vue";
 import { eventBus } from "~/utils/Eventbus";
 import {
   getCacheStatistics,
@@ -35,6 +99,8 @@ const cacheDetails = ref<CacheStatistics[]>([]);
 const connectDisconnectRef = ref("connectDisconnectRef");
 const connectDisconnectDisabled = ref(false);
 const connectDisconnectText = ref("Connect");
+
+const geolocationIconRef = ref<ComponentPublicInstance | null>(null);
 
 async function connectDisconnect() {
   if (!connectDisconnectRef.value) {
@@ -91,7 +157,7 @@ async function connectDisconnect() {
 }
 
 onMounted(() => {
-  getGeolocationAsyncButtonClick();
+  flyToGeolocation();
 
   try {
     getCacheStatistics().then((stats) => {
@@ -119,10 +185,12 @@ onMounted(() => {
   }
 });
 
-async function getGeolocationAsyncButtonClick() {
+async function flyToGeolocation() {
   try {
-    // resetPositionButtonIcon.value = "pi pi-spin pi-spinner";
+    geolocationIconRef.value?.$el.startRotation(true);
     const position = await getGeolocationAsync();
+
+    showToast("Camera moving to ego position.", ToastSeverity.Info);
 
     getCesiumViewer().camera.flyTo({
       destination: Cartesian3.fromDegrees(
@@ -134,11 +202,14 @@ async function getGeolocationAsyncButtonClick() {
         heading: CesiumMath.toRadians(0.0),
         pitch: CesiumMath.toRadians(-90.0),
       },
+      complete: async () => {
+        await geolocationIconRef.value?.$el.stopRotation();
+        await geolocationIconRef.value?.$el.rotationStopped();
+        updateEgoPosition(position);
+      },
     });
 
-    await updateEgoPosition(position);
-
-    showToast("Camera moving to ego position.", ToastSeverity.Info);
+    updateEgoPosition(position);
   } catch (e) {
     if (e instanceof Error) {
       showToast(
@@ -151,70 +222,8 @@ async function getGeolocationAsyncButtonClick() {
         ToastSeverity.Error,
       );
     }
+    await geolocationIconRef.value?.$el.stopRotation();
+    await geolocationIconRef.value?.$el.rotationStopped();
   }
 }
 </script>
-
-<template>
-  <div class="h-full w-full bg-black">
-    <CesiumViewer />
-
-    <div
-      id="toolbarTopLeft"
-      style="
-        display: flex;
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 5px;
-        position: absolute;
-        top: 5px;
-        left: 5px;
-      "
-    >
-      <DarkModeToggle />
-      <Button
-        :label="connectDisconnectText"
-        :disabled="connectDisconnectDisabled"
-        @click="connectDisconnect"
-        ref="connectDisconnectRef"
-      />
-
-      <div>
-        <Button @click="clearCache">Clear cache</Button>
-        <p>Available cache quota: {{ formatBytes(cacheQuota) }}</p>
-        <p>Total cache size: {{ formatBytes(cacheTotalUsed) }}</p>
-        <p>
-          Cache usage:
-          {{ (Math.round(cacheUsedPercent * 100) / 100).toFixed(2) }}%
-        </p>
-        <p>Cache details:</p>
-        <div
-          v-for="cache in cacheDetails"
-          :key="cache.cacheName"
-          style="border: 1px solid black"
-        >
-          <h3>{{ cache.cacheName }}</h3>
-          <p>Number of cached requests: {{ cache.requestCount }}</p>
-        </div>
-      </div>
-
-      <div id="demoMenu" />
-    </div>
-
-    <DroneRightClickMenu />
-    <MainToolbar v-if="cesiumInitialized" id="mainToolbar" />
-
-    <div
-      id="toolbarTopRight"
-      style="display: flex; gap: 5px; position: absolute; top: 5px; right: 5px"
-    >
-      <NetworkIndicator />
-
-      <Button @click="getGeolocationAsyncButtonClick">
-        <IcOutlinePersonPinCircle />
-      </Button>
-    </div>
-
-    <DroneMenu />
-  </div>
-</template>

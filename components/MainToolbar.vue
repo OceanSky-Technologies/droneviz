@@ -1,3 +1,68 @@
+<template>
+  <div>
+    <Toolbar class="main-toolbar">
+      <template #start>
+        <div>3D</div>
+        <ToggleSwitch id="3d-toggle-switch" v-model="map3DEnabled" />
+      </template>
+
+      <template #center>
+        <InputGroup ref="searchBox" style="width: 18rem">
+          <Button :icon="searchIcon" @click="doSearch" />
+
+          <FloatLabel variant="on">
+            <InputText
+              v-model="searchString"
+              @keyup.enter="doSearch"
+              @keyup.escape="closeSearchListbox"
+            />
+            <label for="on_label" style="font-weight: normal">Search</label>
+          </FloatLabel>
+          <Button
+            icon="pi pi-times"
+            severity="danger"
+            @click="closeSearchListbox"
+          />
+        </InputGroup>
+        <Listbox
+          v-show="showGeolocationListbox"
+          ref="geolocationListbox"
+          v-model="selectedGeolocation"
+          :options="geolocationOptions"
+          option-label="text"
+          class="floating-listbox"
+          style="position: absolute"
+        />
+      </template>
+
+      <template #end>
+        <FloatLabel variant="on">
+          <CascadeSelect
+            v-model="mapDataSourceSelection"
+            :options="mapDataSources"
+            option-label="name"
+            option-group-label="name"
+            :option-group-children="['options']"
+            style="width: 15rem"
+            placeholder="Select a data source"
+            @change="changeMapDataSource"
+          >
+            <template #option="slotProps">
+              <div class="flex items-center">
+                <img :src="`${slotProps.option.image}`" style="width: 18px" />
+                <span>{{
+                  slotProps.option.optionName || slotProps.option.shortName
+                }}</span>
+              </div>
+            </template>
+          </CascadeSelect>
+          <label for="on_label" style="font-weight: normal">Map provider</label>
+        </FloatLabel>
+      </template>
+    </Toolbar>
+  </div>
+</template>
+
 <script lang="ts" setup>
 import Toolbar from "primevue/toolbar";
 import CascadeSelect from "primevue/cascadeselect";
@@ -415,71 +480,6 @@ onMounted(async () => {
 });
 </script>
 
-<template>
-  <div>
-    <Toolbar class="main-toolbar">
-      <template #start>
-        <div>3D</div>
-        <ToggleSwitch id="3d-toggle-switch" v-model="map3DEnabled" />
-      </template>
-
-      <template #center>
-        <InputGroup ref="searchBox" style="width: 18rem">
-          <Button :icon="searchIcon" @click="doSearch" />
-
-          <FloatLabel variant="on">
-            <InputText
-              v-model="searchString"
-              @keyup.enter="doSearch"
-              @keyup.escape="closeSearchListbox"
-            />
-            <label for="on_label" style="font-weight: normal">Search</label>
-          </FloatLabel>
-          <Button
-            icon="pi pi-times"
-            severity="danger"
-            @click="closeSearchListbox"
-          />
-        </InputGroup>
-        <Listbox
-          v-show="showGeolocationListbox"
-          ref="geolocationListbox"
-          v-model="selectedGeolocation"
-          :options="geolocationOptions"
-          option-label="text"
-          class="floating-listbox"
-          style="position: absolute"
-        />
-      </template>
-
-      <template #end>
-        <FloatLabel variant="on">
-          <CascadeSelect
-            v-model="mapDataSourceSelection"
-            :options="mapDataSources"
-            option-label="name"
-            option-group-label="name"
-            :option-group-children="['options']"
-            style="width: 15rem"
-            placeholder="Select a data source"
-            @change="changeMapDataSource"
-          >
-            <template #option="slotProps">
-              <div class="flex items-center">
-                <img :src="`${slotProps.option.image}`" style="width: 18px" />
-                <span>{{
-                  slotProps.option.optionName || slotProps.option.shortName
-                }}</span>
-              </div>
-            </template>
-          </CascadeSelect>
-          <label for="on_label" style="font-weight: normal">Map provider</label>
-        </FloatLabel>
-      </template>
-    </Toolbar>
-  </div>
-</template>
-
 <style scoped lang="postcss">
 .main-toolbar {
   position: absolute;
@@ -493,7 +493,7 @@ onMounted(async () => {
   border-bottom-right-radius: 10px;
   border-top: 0;
   padding: 8px;
-  column-gap: 15px;
+  column-gap: 8px;
   flex-wrap: nowrap;
 }
 

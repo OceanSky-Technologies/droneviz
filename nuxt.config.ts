@@ -11,13 +11,14 @@ export default defineNuxtConfig({
   compatibilityDate: "2024-10-14",
   modules: [
     "@nuxt/eslint",
+    "@nuxt/image",
     "@nuxt/icon",
     "@nuxt/test-utils/module",
     "@nuxtjs/html-validator",
     "@nuxtjs/tailwindcss",
     "@primevue/nuxt-module",
     "@vite-pwa/nuxt",
-    "unplugin-icons/nuxt",
+    ["unplugin-icons/nuxt", { scale: 1.5 }],
   ],
   css: ["/assets/style.css"],
   primevue: {
@@ -206,6 +207,9 @@ export default defineNuxtConfig({
       strictPort: true,
     },
     plugins: [nodePolyfills()],
+    build: {
+      sourcemap: process.env.NODE_ENV === "development",
+    },
   },
   nitro: {
     sourceMap: process.env.NODE_ENV !== "production",
@@ -214,6 +218,7 @@ export default defineNuxtConfig({
         target: "esnext",
       },
     },
+    compressPublicAssets: true,
     externals: {
       inline: ["mavlink-mappings"], // make sure mavlink-mappings can be imported by the server with tauri in production mode
     },

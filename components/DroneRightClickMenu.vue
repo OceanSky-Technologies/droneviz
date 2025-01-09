@@ -1,5 +1,43 @@
+<template>
+  <transition name="fade-slide">
+    <div
+      v-show="visible"
+      ref="menu"
+      :style="popupStyle"
+      :key="animationKey"
+      class="popup-menu shadow-lg"
+      @click.self="closeMenu"
+    >
+      <!-- Content -->
+      <div style="padding-bottom: 5px">
+        <p>
+          Latitude:
+          {{ formatCoordinate(Math.toDegrees(positionCartographic.latitude)) }}
+        </p>
+        <p>
+          Longitude:
+          {{ formatCoordinate(Math.toDegrees(positionCartographic.longitude)) }}
+        </p>
+        <p>
+          Height (MSL):
+          {{ positionCartographic.height.toFixed(2) + "m" }}
+        </p>
+      </div>
+
+      <!-- Arrow -->
+      <div class="popup-arrow"></div>
+
+      <ProgressButton label="Fly to this location" @click="flyTo">
+        <template #icon>
+          <FlyToIcon />
+        </template>
+      </ProgressButton>
+    </div>
+  </transition>
+</template>
+
 <script lang="ts" setup>
-import { onMounted } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { eventBus } from "@/utils/Eventbus";
 import type { CSSProperties } from "vue";
 import {
@@ -16,6 +54,9 @@ import {
   getCesiumViewer,
   waitUntilCesiumInitialized,
 } from "./CesiumViewerWrapper";
+import { AnimationFrameScheduler } from "~/utils/AnimationFrameScheduler";
+import { formatCoordinate } from "~/utils/CoordinateUtils";
+import { showToast, ToastSeverity } from "~/utils/ToastService";
 
 const visible = ref(false);
 const menu = ref(null);
@@ -194,46 +235,9 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<template>
-  <transition name="fade-slide">
-    <div
-      v-show="visible"
-      ref="menu"
-      :style="popupStyle"
-      :key="animationKey"
-      class="popup-menu shadow-lg"
-      @click.self="closeMenu"
-    >
-      <!-- Arrow -->
-      <div class="popup-arrow"></div>
-
-      <!-- Content -->
-      <div style="padding-bottom: 5px">
-        <p>
-          Latitude:
-          {{ formatCoordinate(Math.toDegrees(positionCartographic.latitude)) }}
-        </p>
-        <p>
-          Longitude:
-          {{ formatCoordinate(Math.toDegrees(positionCartographic.longitude)) }}
-        </p>
-        <p>
-          Height (MSL):
-          {{ positionCartographic.height.toFixed(2) + "m" }}
-        </p>
-      </div>
-
-      <ProgressButton label="Fly to this location" @click="flyTo">
-        <template #icon>
-          <FlyToIcon />
-        </template>
-      </ProgressButton>
-    </div>
-  </transition>
-</template>
-
 <style scoped lang="postcss">
 .popup-menu {
+  pointer-events: none; /* Allows events to pass through */
   position: absolute;
   text-align: center;
   white-space: nowrap; /* Prevent text wrapping */
@@ -245,29 +249,34 @@ onBeforeUnmount(() => {
   padding: 10px;
   background-color: var(--p-content-background);
   border-color: var(--p-content-border-color);
-  transform: translate(-50%, 16px);
-  transform-origin: top center;
+  transform: translate(-50%, -100%) translateY(-16px);
+  transform-origin: bottom center;
   transition:
     transform 0.2s ease-out,
     opacity 0.2s ease-out;
 }
 
+/* Enable Interaction with Specific Elements */
+.popup-menu :is(button, input, select, textarea, a) {
+  pointer-events: auto;
+}
+
 /* Arrow styles */
 .popup-arrow {
   position: absolute;
-  top: -16px; /* Adjust based on menu placement */
+  bottom: -16px; /* Adjust based on menu placement */
   left: calc(50% - 10px);
   width: 0;
   height: 0;
   border-left: 10px solid transparent;
   border-right: 10px solid transparent;
-  border-bottom: 16px solid white;
+  border-top: 17px solid white;
   z-index: 999;
 }
 
 /* Adjust dark mode arrow */
 .dark .popup-arrow {
-  border-bottom-color: var(--p-content-background);
+  border-top-color: var(--p-content-background);
 }
 
 /* Fade and slide animation */

@@ -1,7 +1,6 @@
 import type { Entity, Cartesian3 } from "cesium";
 import mitt from "mitt";
 import type { Drone } from "@/core/Drone";
-import { darkMode } from "../core/DarkMode";
 
 export type Events = {
   // drone events

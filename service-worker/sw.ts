@@ -61,7 +61,6 @@ class RemoveJsonpPlugin implements WorkboxPlugin {
 
   async getFromCache(request: Request): Promise<Response | undefined> {
     const originalUrl = new URL(request.url);
-    console.log("now", request, originalUrl);
 
     // Check if the URL matches the target criteria
     if (

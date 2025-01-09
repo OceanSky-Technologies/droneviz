@@ -1,5 +1,13 @@
+<template>
+  <div class="relative">
+    <div id="cesiumContainer" />
+    <EgoPin />
+  </div>
+</template>
+
 <script lang="ts" setup>
 import "cesium/Build/Cesium/Widgets/widgets.css";
+import EgoPin from "@/components/EgoPin.vue";
 import { createViewerOptions } from "@/utils/CesiumViewerOptions";
 import { initCesium, destroyCesium } from "./CesiumViewerWrapper";
 import { initDemo } from "@/demo/Demo";
@@ -92,12 +100,6 @@ onUnmounted(() => {
   destroyCesium();
 });
 </script>
-
-<template>
-  <div class="relative">
-    <div id="cesiumContainer" />
-  </div>
-</template>
 
 <style scoped lang="postcss">
 #cesiumContainer {

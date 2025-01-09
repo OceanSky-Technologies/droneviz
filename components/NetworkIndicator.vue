@@ -2,17 +2,12 @@
   <div>
     <Button
       :severity="buttonSeverity"
-      @click="checkWebsites"
+      @click="checkWebsitesWithToast"
       v-tooltip.bottom="statusMessage"
       class="icon-button"
     >
       <div class="icon-wrapper">
-        <Wifi
-          class="icon"
-          v-show="buttonSeverity === 'info'"
-          v-rotate
-          ref="infoIcon"
-        />
+        <Wifi class="icon" v-show="buttonSeverity === 'info'" ref="infoIcon" />
 
         <Wifi v-show="buttonSeverity === 'success'" class="icon" />
         <MdiWifiAlert v-show="buttonSeverity === 'warn'" class="icon" />
@@ -23,21 +18,19 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, nextTick, toRaw } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 
 // import Tooltip from "primevue/tooltip";
 import Button from "primevue/button";
 import Wifi from "~icons/mdi/wifi";
 import WifiOff from "~icons/mdi/wifi-off";
 import MdiWifiAlert from "~icons/mdi/wifi-alert";
-import type { ComponentPublicInstance } from "vue";
+import { showToast, ToastSeverity } from "~/utils/ToastService";
 
 const cesiumReachable = ref(false);
 const googleReachable = ref(false);
 const statusMessage = ref("Checking reachability...");
 const buttonSeverity = ref("danger");
-
-const infoIcon = ref<ComponentPublicInstance | null>(null);
 
 const checkReachability = async (url: string): Promise<boolean> => {
   try {
@@ -72,14 +65,20 @@ const updateStatus = () => {
 const checkWebsites = async () => {
   statusMessage.value = "Checking connection...";
   buttonSeverity.value = "info";
-
-  infoIcon.value?.$el.startRotation(true);
   cesiumReachable.value = await checkReachability("https://cesium.com");
   googleReachable.value = await checkReachability("https://google.com");
-  await infoIcon.value?.$el.stopRotation();
-  await infoIcon.value?.$el.rotationStopped();
 
   updateStatus();
+};
+
+const checkWebsitesWithToast = async () => {
+  await checkWebsites();
+
+  if (buttonSeverity.value === "success") {
+    showToast(statusMessage.value, ToastSeverity.Success);
+  } else if (buttonSeverity.value === "warn") {
+    showToast(statusMessage.value, ToastSeverity.Warn);
+  } else showToast(statusMessage.value, ToastSeverity.Error);
 };
 
 // refresh interval
@@ -105,8 +104,8 @@ onUnmounted(() => {
 
 .icon {
   transition:
-    opacity 0.2s ease-in-out,
-    visibility 0.2s ease-in-out;
+    opacity 0.5s ease-in-out,
+    visibility 0.5s ease-in-out;
 }
 
 .icon[v-show] {

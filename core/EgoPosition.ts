@@ -2,8 +2,11 @@ import * as Cesium from "cesium";
 import { getCesiumViewer } from "@/components/CesiumViewerWrapper";
 import { Colors } from "@/utils/Colors";
 import { getHeight } from "@/utils/CoordinateUtils";
+import { type Ref, ref } from "vue";
 
-let lastEgoPosition: GeolocationPosition | undefined = undefined;
+let lastGeoPosition: GeolocationPosition | undefined = undefined;
+
+export const egoPosition: Ref<Cesium.Cartesian3 | undefined> = ref(undefined);
 
 export async function updateEgoPosition(
   position: GeolocationPosition,
@@ -18,14 +21,14 @@ export async function updateEgoPosition(
     (await getHeight(Cesium.Cartesian3.fromDegrees(longitude, latitude))) ?? 0;
 
   const accuracy =
-    position.coords.accuracy ?? lastEgoPosition?.coords.accuracy ?? 0;
+    position.coords.accuracy ?? lastGeoPosition?.coords.accuracy ?? 0;
 
   const altitudeAccuracy =
     position.coords.altitudeAccuracy && position.coords.accuracy
       ? position.coords.altitudeAccuracy
       : accuracy;
 
-  const egoPosition =
+  egoPosition.value =
     altitude !== null
       ? Cesium.Cartesian3.fromDegrees(
           longitude,
@@ -51,31 +54,13 @@ export async function updateEgoPosition(
     });
   }
 
-  // Check if the label entity exists, create if not
-  let label = getCesiumViewer().entities.getById("ego-label");
-  if (!label) {
-    label = getCesiumViewer().entities.add({
-      id: "ego-label",
-      label: {
-        text: "H",
-        font: "24px sans-serif",
-        fillColor: Cesium.Color.fromCssColorString(Colors.GOLD),
-        style: Cesium.LabelStyle.FILL,
-        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-        verticalOrigin: Cesium.VerticalOrigin.CENTER,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
-      },
-    });
-  }
-
   // Update sphere and label positions
-  sphere.position = new Cesium.ConstantPositionProperty(egoPosition);
-  label.position = new Cesium.ConstantPositionProperty(egoPosition);
+  sphere.position = new Cesium.ConstantPositionProperty(egoPosition.value);
 
   // Update sphere size based on accuracy
   sphere.ellipsoid!.radii = new Cesium.ConstantProperty(egoRadii);
 
-  lastEgoPosition = position;
+  lastGeoPosition = position;
 
   // Request render
   getCesiumViewer().scene.requestRender();

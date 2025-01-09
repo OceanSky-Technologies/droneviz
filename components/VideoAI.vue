@@ -20,7 +20,17 @@
           column-gap: 5px;
         "
       >
-        <div>AI</div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 5px;
+            align-items: center;
+          "
+        >
+          <MaterialSymbolsDetectionAndZone style="font-size: 1.4em" />
+          AI
+        </div>
         <ToggleSwitch
           v-model="aiEnabled"
           :disabled="isRecording || aiModelInitializing"
@@ -53,6 +63,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, onBeforeUnmount, watch } from "vue";
+import MaterialSymbolsDetectionAndZone from "~icons/material-symbols/detection-and-zone";
 import { getFormattedDate } from "@/utils/DateUtils";
 import { showToast, ToastSeverity } from "@/utils/ToastService";
 import { Button, ToggleSwitch, Select } from "primevue";

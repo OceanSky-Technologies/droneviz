@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import Warning from "@/components/icons/Warning.vue";
 import Button from "primevue/button";
 import ConfirmDialog from "primevue/confirmdialog";
+import IcBaselineWarningAmber from "~icons/ic/baseline-warning-amber";
 
 // Format the message to replace \n with <br> for multi-line support
 function formattedMessage(message: string): string {
@@ -24,7 +24,7 @@ function formattedMessage(message: string): string {
         </div>
 
         <!-- Default icon -->
-        <Warning v-else width="75px" height="75px"></Warning>
+        <IcBaselineWarningAmber v-else width="75px" height="75px" />
 
         <!-- Header -->
         <span class="mb-2 mt-6 block text-2xl font-bold">
