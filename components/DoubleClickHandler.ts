@@ -11,6 +11,8 @@ import { getPreferredEntity } from "@/utils/EntityUtils";
 let mouseDoubleClickHandler: ScreenSpaceEventHandler;
 
 export function init() {
+  if (mouseDoubleClickHandler) return;
+
   // double click: flyTo
   getCesiumViewer().screenSpaceEventHandler.removeInputAction(
     ScreenSpaceEventType.LEFT_DOUBLE_CLICK,

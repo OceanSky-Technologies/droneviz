@@ -10,8 +10,9 @@ export const egoPosition: Ref<Cesium.Cartesian3 | undefined> = ref(undefined);
 
 export async function updateEgoPosition(
   position: GeolocationPosition,
+  disableLog: boolean = false,
 ): Promise<void> {
-  console.log("Updating ego position:", position);
+  if (!disableLog) console.log("Updating ego position:", position);
 
   const latitude = position.coords.latitude;
   const longitude = position.coords.longitude;

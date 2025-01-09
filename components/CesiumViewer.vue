@@ -9,7 +9,7 @@
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import EgoPin from "@/components/EgoPin.vue";
 import { createViewerOptions } from "@/utils/CesiumViewerOptions";
-import { initCesium, destroyCesium } from "./CesiumViewerWrapper";
+import { initCesium } from "./CesiumViewerWrapper";
 import { initDemo } from "@/demo/Demo";
 import { onMounted, onUnmounted } from "vue";
 import type { Viewer, Cesium3DTileset } from "cesium";
@@ -55,49 +55,7 @@ onMounted(async () => {
     }
   }
 
-  // // try to get the camera location a few times before giving up
-  // // workaround solution because with tauri the first few attempts seem to fail
-  // let errorMessage;
-  // for (let i = 0; i < 5; i++) {
-  //   try {
-  //     const position = await getGeolocationAsync();
-  //     console.log("initial position:", position);
-
-  //     await updateEgoPosition(position);
-
-  //     getCesiumViewer().camera.flyTo({
-  //       destination: Cartesian3.fromDegrees(
-  //         position.coords.longitude,
-  //         position.coords.latitude,
-  //         400,
-  //       ),
-  //       orientation: {
-  //         heading: Math.toRadians(0.0),
-  //         pitch: Math.toRadians(-90.0),
-  //       },
-  //       complete: () => {
-  //         // the sphere position uses globe.getHeight which might not be ready yet so update again after the camera has flown
-  //         await updateEgoPosition(position);
-  //       },
-  //     });
-
-  //     break; // success
-  //   } catch (e) {
-  //     if (e instanceof Error) {
-  //       errorMessage = e.message;
-  //     } else {
-  //       errorMessage = "Could not get geolocation: " + e;
-  //     }
-  //     await new Promise((f) => setTimeout(f, 1000));
-  //   }
-  // }
-  // if (errorMessage) showToast(errorMessage, ToastSeverity.Error);
-
   watchHomePositionUpdates();
-});
-
-onUnmounted(() => {
-  destroyCesium();
 });
 </script>
 

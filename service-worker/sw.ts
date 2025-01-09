@@ -22,41 +22,40 @@ precacheAndRoute(self.__WB_MANIFEST);
 
 // Register routes for each config
 CACHE_CONFIG.forEach(({ url, urlPattern, strategy }) => {
-  // Add the DeliverCacheIfHttpErrorCodePlugin plugin to the NetworkFirst strategy
-  if (strategy instanceof NetworkFirst) {
-    if (
-      !strategy.plugins.some(
-        (item) => item === DeliverCacheIfHttpErrorCodePlugin,
-      )
-    ) {
-      strategy.plugins.push(new DeliverCacheIfHttpErrorCodePlugin());
-    }
+  // For NetworkFirst strategy add the DeliverCacheIfHttpErrorCodePlugin plugin automatically
+  if (
+    strategy instanceof NetworkFirst &&
+    !strategy.plugins.some((item) => item === DeliverCacheIfHttpErrorCodePlugin)
+  ) {
+    strategy.plugins.push(new DeliverCacheIfHttpErrorCodePlugin());
   }
 
   // Register route and silence 'no-response' logs
   registerRoute(
     ({ url: requestUrl }) => {
-      if (url) {
-        return urlMatchesHttpHttps(url, requestUrl);
-      } else if (urlPattern) {
-        return urlPattern.test(requestUrl.href);
-      }
+      try {
+        // Check if the request URL matches the provided `url` or `urlPattern`
+        if (url) {
+          return urlMatchesHttpHttps(url, requestUrl);
+        } else if (urlPattern) {
+          return urlPattern.test(requestUrl.href);
+        }
+      } catch (error) {}
+
       return false; // Default case if neither `url` nor `urlPattern` is provided.
     },
     async (params) => {
       const { request, event } = params;
       try {
-        // console.log(new Map(request.headers));
-
         // Attempt to fetch the response from the cache first (if the plugin applies)
         try {
+          // TODO don't create new json plugin for each request
+          // get the plugins from strategy.plugins and handle them
           const cachedResponse = await new RemoveJsonpPlugin().getFromCache(
             request,
           );
 
           if (cachedResponse) {
-            console.log("retruened", cachedResponse);
-            console.log("original request", request);
             return cachedResponse; // Return the cached response if found
           }
         } catch (error) {}
@@ -64,7 +63,10 @@ CACHE_CONFIG.forEach(({ url, urlPattern, strategy }) => {
         return await strategy.handle({ request, event });
       } catch (error) {
         console.debug("Fetch failed, returning fallback response:", error);
-        return new Response("", { status: 500, statusText: "Fetch failed" });
+        return new Response("", {
+          status: 500,
+          statusText: "Fetch failed from service worker",
+        });
       }
     },
   );

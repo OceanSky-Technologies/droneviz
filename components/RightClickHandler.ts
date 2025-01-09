@@ -9,6 +9,8 @@ import { getCesiumViewer } from "./CesiumViewerWrapper";
 let mouseClickHandler: ScreenSpaceEventHandler;
 
 export function init() {
+  if (mouseClickHandler) return;
+
   mouseClickHandler = new ScreenSpaceEventHandler(
     getCesiumViewer().scene.canvas,
   );

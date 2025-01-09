@@ -230,14 +230,17 @@ async function flyToGeolocation() {
         pitch: CesiumMath.toRadians(-90.0),
       },
       duration: 1,
+      cancel: async () => {
+        await geolocationIconRef.value?.$el.stopRotation();
+        await geolocationIconRef.value?.$el.rotationStopped();
+        updateEgoPosition(position, true);
+      },
       complete: async () => {
         await geolocationIconRef.value?.$el.stopRotation();
         await geolocationIconRef.value?.$el.rotationStopped();
-        updateEgoPosition(position);
+        updateEgoPosition(position, true);
       },
     });
-
-    updateEgoPosition(position);
   } catch (e) {
     if (e instanceof Error) {
       showToast(

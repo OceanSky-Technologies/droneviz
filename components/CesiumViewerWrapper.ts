@@ -30,7 +30,10 @@ export async function initCesium(
   viewerOptions: Viewer.ConstructorOptions,
   tilesetMock?: Cesium3DTileset,
 ) {
-  if (viewer) throw new Error("Cesium viewer already initialized");
+  if (viewer) {
+    console.log("Cesium viewer already initialized");
+    return;
+  }
 
   // wait until the service worker is ready
   console.log("Waiting for service worker to be ready...");

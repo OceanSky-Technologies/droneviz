@@ -19,6 +19,8 @@ let mouseClickHandler: ScreenSpaceEventHandler;
 export let selectedEntityHighlighter: CesiumHighlighter;
 
 export function init() {
+  if (mouseClickHandler) return;
+
   // single click: select
   mouseClickHandler = new ScreenSpaceEventHandler(
     getCesiumViewer().scene.canvas,

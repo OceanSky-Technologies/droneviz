@@ -11,9 +11,7 @@ import {
   Cartographic,
   ConstantPositionProperty,
   ConstantProperty,
-  sampleTerrainMostDetailed,
   Math,
-  Property,
 } from "cesium";
 import CesiumHighlighter from "./CesiumHighlighter.vue";
 import {
@@ -31,6 +29,8 @@ export let mouseOverHighlighter: CesiumHighlighter;
 let mousePositionInfoEntity: Entity;
 
 export function init() {
+  if (mouseMoveHandler) return;
+
   // mouse over: highlight
   mouseMoveHandler = new ScreenSpaceEventHandler(
     getCesiumViewer().scene.canvas,
@@ -57,6 +57,7 @@ export function init() {
       horizontalOrigin: HorizontalOrigin.LEFT,
       verticalOrigin: VerticalOrigin.TOP,
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      pixelOffset: new Cartesian2(15, 15),
     },
   });
 }
@@ -159,72 +160,7 @@ async function showPositionInfoEntity(position: Cartesian2) {
           `\nTerrain: ${heightString}`,
       );
     }
-
-    getCesiumViewer().scene.requestRender();
-    return;
-
-    ///
-
-    // let height3DString = "";
-
-    // // show position infos depending on if 3D tiles are enabled or not
-    // if (googleTilesEnabled()) {
-    //   // if 3D position couldn't be retrieved fall back to height of scene geometry
-    //   if (height3DString === "") {
-    //     height3DString = height.toFixed(2).padStart(12, " ") + "m";
-    //   }
-
-    //   mousePositionInfoEntity.label.text = new ConstantProperty(
-    //     `Lat:     ${latitudeString}` +
-    //       `\nLon:     ${longitudeString}` +
-    //       `\nMSL:     ${heightMSLString}` +
-    //       `\n3D:      ${height3DString}`,
-    //   );
-    // } else {
-    //   // Query the terrain height at the mouse position
-    //   let height;
-    //   let tmpResult;
-
-    //   if (settings.mousePositionInfoMostDetailed.value) {
-    //     tmpResult = await sampleTerrainMostDetailed(
-    //       getCesiumViewer().terrainProvider,
-    //       [cartographic],
-    //     );
-
-    //     if (tmpResult.length > 0 && tmpResult[0]) height = tmpResult[0].height;
-    //   } else {
-    //     // sampleTerrain still triggers the cesium API and increases quota!
-    //     // tmpResult = await sampleTerrain(getCesiumViewer().terrainProvider, 11, [
-    //     //   cartographic,
-    //     // ]);
-
-    //     height = getCesiumViewer().scene.globe.getHeight(cartographic);
-    //   }
-
-    //   if (height) {
-    //     const heightTerrainString = height.toFixed(2).padStart(12, " ") + "m";
-
-    //     mousePositionInfoEntity.label.text = new ConstantProperty(
-    //       `Lat:     ${latitudeString}` +
-    //         `\nLon:     ${longitudeString}` +
-    //         `\nMSL:     ${heightMSLString}` +
-    //         `\nTerrain: ${heightTerrainString}`,
-    //     );
-    //   } else {
-    //     // fallback: no height could be retrieved so only show MSL height
-    //     mousePositionInfoEntity.label.text = new ConstantProperty(
-    //       `Lat:    ${latitudeString}` +
-    //         `\nLon:    ${longitudeString}` +
-    //         `\nHeight: ${heightMSLString}`,
-    //     );
-    //   }
-    // }
-
-    // mousePositionInfoEntity.label.show = new ConstantProperty(true);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (e: unknown) {
-    /* empty */
+  } catch (e) {
   } finally {
     getCesiumViewer().scene.requestRender();
   }
