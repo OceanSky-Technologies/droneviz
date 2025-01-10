@@ -4,8 +4,8 @@ export let lastPosition: GeolocationPosition | null = null;
 
 const options = {
   enableHighAccuracy: true,
-  timeout: 15000,
-  maximumAge: 0,
+  timeout: 30000,
+  maximumAge: 30000,
 };
 
 /**
@@ -30,6 +30,11 @@ export function getGeolocationAsync(): Promise<GeolocationPosition> {
         const errorMessage =
           "Couldn't get your location. Please enable location services and make sure you're connected to the internet. Error: " +
           error.message;
+
+        if (lastPosition) {
+          resolve(lastPosition);
+          return;
+        }
 
         reject(new Error(errorMessage)); // Reject with an error
       },

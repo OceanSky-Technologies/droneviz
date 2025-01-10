@@ -1,6 +1,6 @@
 <template>
   <div class="h-full w-full bg-black">
-    <CesiumViewer />
+    <CesiumViewer style="z-index: 0" />
 
     <div
       id="toolbarTopLeft"
@@ -214,10 +214,11 @@ onMounted(() => {
 
 async function flyToGeolocation() {
   try {
+    showToast("Aquiring geolocation...", ToastSeverity.Info);
     geolocationIconRef.value?.$el.startRotation(true);
     const position = await getGeolocationAsync();
 
-    showToast("Camera moving to ego position.", ToastSeverity.Info);
+    showToast("Geolocation found. Moving camera.", ToastSeverity.Success);
 
     getCesiumViewer().camera.flyTo({
       destination: Cartesian3.fromDegrees(

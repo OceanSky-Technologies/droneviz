@@ -36,9 +36,7 @@ export function init() {
 async function mouseDoubleClickListener(
   positionEvent: ScreenSpaceEventHandler.PositionedEvent,
 ) {
-  const entities = await getCesiumViewer().scene.drillPick(
-    positionEvent.position,
-  );
+  const entities = getCesiumViewer().scene.drillPick(positionEvent.position);
   const entity = getPreferredEntity(entities);
 
   if (!defined(entity)) return;

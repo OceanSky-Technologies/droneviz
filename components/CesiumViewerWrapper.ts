@@ -16,7 +16,8 @@ Ion.defaultAccessToken =
 //   "AAPTxy8BH1VEsoebNVZXo8HurAYIVj8Enn_PLkaa6G0IFY0Zggco6V_IHWiDirkZ8HvvtmoCarlVdIHDbQZncEmTUvFj1GMPw3GF9dwoiqCRWa-_aBWHB4Ww3k3YvgATBtNFRGTzpWrlvNxwN7ISR7h-THU0enwgDlfFyUUsXoAN5fb8Rn0bA6kTAYwdM486kpqlfXgeQDpUZcki-erdmMOOREvEErlRyRm8xKHN3hxvkVI.AT1_O1bKakTu";
 
 let viewer: Viewer | undefined;
-let googleTileset: Cesium3DTileset | undefined;
+export let googleTileset: Cesium3DTileset | undefined;
+export let tilesetMock: Cesium3DTileset | undefined;
 
 export const cesiumInitialized: Ref<boolean> = ref(false);
 
@@ -28,7 +29,7 @@ export const cesiumInitialized: Ref<boolean> = ref(false);
  */
 export async function initCesium(
   viewerOptions: Viewer.ConstructorOptions,
-  tilesetMock?: Cesium3DTileset,
+  newTilesetMock?: Cesium3DTileset,
 ) {
   if (viewer) {
     console.log("Cesium viewer already initialized");
@@ -42,7 +43,8 @@ export async function initCesium(
     console.log("Service worker is ready!");
   }
 
-  if (tilesetMock) console.log("Mocking tileset");
+  if (newTilesetMock) console.log("Mocking tileset");
+  tilesetMock = newTilesetMock;
 
   viewer = new Viewer("cesiumContainer", viewerOptions);
 
@@ -57,7 +59,8 @@ export async function initCesium(
   // fix unprecise height values on mouse over: https://github.com/CesiumGS/cesium/issues/8707#issuecomment-606778413
   getCesiumViewer().scene.globe.depthTestAgainstTerrain = true;
 
-  if (settings.google3DTilesEnabled.value) await initGoogleTileset(tilesetMock);
+  if (settings.google3DTilesEnabled.value)
+    await initGoogleTileset(newTilesetMock);
 
   cesiumInitialized.value = true;
 }
@@ -121,13 +124,19 @@ export function getGoogle3DTileset(): Cesium3DTileset {
 }
 
 /**
+ * Set Google 3D Tileset.
+ * @param {Cesium3DTileset} newTileset The new Google 3D Tileset.
+ */
+export function setGoogle3DTileset(newTileset: Cesium3DTileset) {
+  googleTileset = newTileset;
+}
+
+/**
  * Initialize Google 3D Tileset.
  * @param {Cesium3DTileset?} tilesetMock Mock tileset for testing.
  * @throws {Error} If Google 3D Tileset is already initialized.
  */
-async function initGoogleTileset(tilesetMock?: Cesium3DTileset) {
-  if (googleTileset) throw new Error("Google 3D tileset already initialized");
-
+export async function initGoogleTileset(tilesetMock?: Cesium3DTileset) {
   if (tilesetMock) {
     console.log("Mocking tileset");
     googleTileset = tilesetMock;

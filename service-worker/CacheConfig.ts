@@ -1,7 +1,7 @@
 import { baseURL } from "@/baseURL.config";
 import { CacheFirst, NetworkFirst } from "workbox-strategies";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
-import { RemoveJsonpPlugin } from "./RemoveJsonpPlugin";
+import { ReplaceBingJsonpPlugin } from "./ReplaceBingJsonpPlugin";
 
 // Define caching strategies for each URL
 // Strategies:
@@ -48,6 +48,7 @@ export const CACHE_CONFIG = [
       plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
       fetchOptions: {
         mode: "cors",
+        credentials: "omit",
       },
     }),
   },
@@ -60,7 +61,7 @@ export const CACHE_CONFIG = [
         ignoreSearch: true,
       },
       plugins: [
-        new RemoveJsonpPlugin(),
+        new ReplaceBingJsonpPlugin(),
         new CacheableResponsePlugin({ statuses: [0, 200] }),
       ],
       fetchOptions: {
@@ -94,6 +95,7 @@ export const CACHE_CONFIG = [
       plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
       fetchOptions: {
         mode: "cors",
+        credentials: "omit",
       },
     }),
   },
@@ -107,6 +109,7 @@ export const CACHE_CONFIG = [
       plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
       fetchOptions: {
         mode: "cors",
+        credentials: "omit",
       },
     }),
   },
@@ -120,6 +123,7 @@ export const CACHE_CONFIG = [
       plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
       fetchOptions: {
         mode: "cors",
+        credentials: "omit",
       },
     }),
   },
@@ -133,6 +137,7 @@ export const CACHE_CONFIG = [
       plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
       fetchOptions: {
         mode: "cors",
+        credentials: "omit",
       },
     }),
   },

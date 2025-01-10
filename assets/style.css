@@ -55,6 +55,9 @@
   /* slider */
   --p-toggleswitch-checked-background: var(--color-gold) !important;
   --p-toggleswitch-checked-hover-background: var(--color-gold) !important;
+  --p-toggleswitch-handle-checked-hover-background: var(
+    --color-blue
+  ) !important;
   --p-toggleswitch-handle-checked-background: var(--color-dark-blue) !important;
 }
 
@@ -69,6 +72,11 @@ svg {
 /* default */
 .p-component {
   padding: 0.5rem !important;
+}
+
+/* if a button has no text then change its icon color depending on the dark/light mode setting */
+.p-button:not(:has(span)) svg {
+  color: var(--p-button-contrast-color) !important;
 }
 
 /* cascadeselect */

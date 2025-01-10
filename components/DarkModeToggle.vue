@@ -13,10 +13,10 @@ import IcOutlineDarkMode from "~icons/ic/outline-dark-mode";
       style="font-size: 1.2rem"
       @click="toggleDarkMode"
     >
-      <template #icon>
+      <div>
         <IcOutlineDarkMode v-if="darkMode" />
         <IcOutlineLightMode v-else />
-      </template>
+      </div>
     </Button>
   </div>
 </template>

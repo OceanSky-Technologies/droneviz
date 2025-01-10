@@ -128,9 +128,6 @@ onBeforeUnmount(() => {
   animationFrameScheduler.stop();
 });
 
-// ====================================
-//    DOUBLE-CLICK HANDLER
-// ====================================
 async function handleDoubleClick() {
   // Example: if you want to fly to the last known position
   if (!positionCartesian) return;

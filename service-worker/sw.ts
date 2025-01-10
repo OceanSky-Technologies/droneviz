@@ -5,7 +5,6 @@ import { NetworkFirst } from "workbox-strategies";
 import { registerRoute } from "workbox-routing";
 import { precacheAndRoute } from "workbox-precaching";
 import { skipWaiting, clientsClaim } from "workbox-core";
-import { RemoveJsonpPlugin } from "./RemoveJsonpPlugin";
 import { DeliverCacheIfHttpErrorCodePlugin } from "./DeliverCacheIfHttpErrorCodePlugin";
 import { CACHE_CONFIG } from "./CacheConfig";
 import { urlMatchesHttpHttps } from "./Utils";
@@ -47,19 +46,6 @@ CACHE_CONFIG.forEach(({ url, urlPattern, strategy }) => {
     async (params) => {
       const { request, event } = params;
       try {
-        // Attempt to fetch the response from the cache first (if the plugin applies)
-        try {
-          // TODO don't create new json plugin for each request
-          // get the plugins from strategy.plugins and handle them
-          const cachedResponse = await new RemoveJsonpPlugin().getFromCache(
-            request,
-          );
-
-          if (cachedResponse) {
-            return cachedResponse; // Return the cached response if found
-          }
-        } catch (error) {}
-
         return await strategy.handle({ request, event });
       } catch (error) {
         console.debug("Fetch failed, returning fallback response:", error);

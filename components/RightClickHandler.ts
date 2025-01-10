@@ -29,7 +29,8 @@ export function init() {
 async function mouseClickListener(
   positionEvent: ScreenSpaceEventHandler.PositionedEvent,
 ) {
-  const entity = await getCesiumViewer().scene.pick(positionEvent.position);
+  const entities = getCesiumViewer().scene.drillPick(positionEvent.position);
+  const entity = getPreferredEntity(entities);
 
   const cartesian3 = getCesiumViewer().scene.pickPosition(
     positionEvent.position,
@@ -38,6 +39,8 @@ async function mouseClickListener(
   if (
     defined(entity) &&
     defined(entity.primitive) &&
+    !entity.id.id.startsWith("ego-") &&
+    entity.id.id !== "mouse-position-info" &&
     entity.primitive instanceof Model
   ) {
     console.log("Right clicked entity:");
