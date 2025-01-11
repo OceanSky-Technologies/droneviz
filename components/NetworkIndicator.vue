@@ -1,20 +1,19 @@
 <template>
-  <div>
-    <Button
-      :severity="buttonSeverity"
-      @click="checkWebsitesButtonClick"
-      v-tooltip.bottom="tooltip"
-      class="icon-button"
-    >
-      <div class="icon-wrapper">
+  <Button
+    :severity="buttonSeverity"
+    @click="checkWebsitesButtonClick"
+    v-tooltip.bottom="tooltip"
+  >
+    <div class="icon-wrapper">
+      <div class="icon-container">
         <MaterialSymbolsGlobe
-          class="icon"
           ref="networkIndicatorIconRef"
+          class="icon"
           v-rotate
         />
       </div>
-    </Button>
-  </div>
+    </div>
+  </Button>
 </template>
 
 <script lang="ts" setup>
@@ -159,19 +158,32 @@ onUnmounted(() => {
 
 <style scoped>
 .icon-wrapper {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  width: 20px;
+  height: 20px;
+  position: relative;
+  overflow: visible;
 }
 
+/* This container centers + scales the icon. */
+.icon-container {
+  /* center within .icon-wrapper */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* scale up 1.5 and shift to center */
+  transform: translate(-50%, -50%) scale(1.3);
+  transform-origin: center center;
+  width: 20px;
+  height: 20px;
+}
+
+/* The actual icon will spin around its center. */
 .icon {
-  transition:
-    opacity 0.5s ease-in-out,
-    visibility 0.5s ease-in-out;
-}
-
-.icon[v-show] {
-  opacity: 1; /* Show the visible icon */
-  visibility: visible; /* Allow only visible icons to affect layout */
+  width: 20px;
+  height: 20px;
+  transform-origin: center center;
+  /* No transform or animation here,
+     because the directive sets it dynamically
+     (rotation only). */
 }
 </style>

@@ -67,10 +67,7 @@
       style="display: flex; gap: 5px; position: absolute; top: 5px; right: 5px"
     >
       <NetworkIndicator />
-
-      <Button @click="flyToGeolocation">
-        <IcOutlinePersonPinCircle ref="geolocationIconRef" v-rotate />
-      </Button>
+      <GeolocationButton />
     </div>
 
     <DroneMenu />
@@ -83,6 +80,7 @@ import DarkModeToggle from "@/components/DarkModeToggle.vue";
 import DroneMenu from "@/components/DroneMenu.vue";
 import DroneRightClickMenu from "@/components/DroneRightClickMenu.vue";
 import MainToolbar from "@/components/MainToolbar.vue";
+import GeolocationButton from "@/components/GeolocationButton.vue";
 import NetworkIndicator from "@/components/NetworkIndicator.vue";
 import {
   cesiumInitialized,
@@ -101,12 +99,8 @@ import {
   type CacheStatistics,
   formatBytes,
 } from "~/utils/CacheUtils";
-import { Cartesian3, Math as CesiumMath } from "cesium";
-import { getGeolocationAsync } from "~/core/Geolocation";
-import { updateEgoPosition } from "~/core/EgoPosition";
 import Wifi from "~icons/mdi/wifi";
 import WifiOff from "~icons/mdi/wifi-off";
-import IcOutlinePersonPinCircle from "~icons/ic/outline-person-pin-circle";
 
 const cacheQuota = ref(0);
 const cacheTotalUsed = ref(0);
@@ -117,8 +111,6 @@ const connectDisconnectRef = ref("connectDisconnectRef");
 const connectDisconnectDisabled = ref(false);
 const connectDisconnectText = ref("Connect");
 const connectedIconRef = ref<ComponentPublicInstance | null>(null);
-
-const geolocationIconRef = ref<ComponentPublicInstance | null>(null);
 
 async function connectDisconnect() {
   if (!connectDisconnectRef.value) {
@@ -184,8 +176,6 @@ async function connectDisconnect() {
 }
 
 onMounted(() => {
-  flyToGeolocation();
-
   try {
     getCacheStatistics().then((stats) => {
       cacheQuota.value = stats.cacheQuota;
@@ -211,51 +201,4 @@ onMounted(() => {
     }
   }
 });
-
-async function flyToGeolocation() {
-  try {
-    showToast("Aquiring geolocation...", ToastSeverity.Info);
-    geolocationIconRef.value?.$el.startRotation(true);
-    const position = await getGeolocationAsync();
-
-    showToast("Geolocation found. Moving camera.", ToastSeverity.Success);
-
-    getCesiumViewer().camera.flyTo({
-      destination: Cartesian3.fromDegrees(
-        position.coords.longitude,
-        position.coords.latitude,
-        400,
-      ),
-      orientation: {
-        heading: CesiumMath.toRadians(0.0),
-        pitch: CesiumMath.toRadians(-90.0),
-      },
-      duration: 1,
-      cancel: async () => {
-        await geolocationIconRef.value?.$el.stopRotation();
-        await geolocationIconRef.value?.$el.rotationStopped();
-        updateEgoPosition(position, true);
-      },
-      complete: async () => {
-        await geolocationIconRef.value?.$el.stopRotation();
-        await geolocationIconRef.value?.$el.rotationStopped();
-        updateEgoPosition(position, true);
-      },
-    });
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(
-        `Could not retrieve geolocation: ${e.message}`,
-        ToastSeverity.Error,
-      );
-    } else {
-      showToast(
-        `Could not retrieve geolocation: : ${JSON.stringify(e)}`,
-        ToastSeverity.Error,
-      );
-    }
-    await geolocationIconRef.value?.$el.stopRotation();
-    await geolocationIconRef.value?.$el.rotationStopped();
-  }
-}
 </script>

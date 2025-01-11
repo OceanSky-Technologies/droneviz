@@ -1,13 +1,13 @@
 <template>
   <div class="relative">
     <div id="cesiumContainer" />
-    <EgoPin />
+    <GeolocationPin />
   </div>
 </template>
 
 <script lang="ts" setup>
 import "cesium/Build/Cesium/Widgets/widgets.css";
-import EgoPin from "@/components/EgoPin.vue";
+import GeolocationPin from "~/components/GeolocationPin.vue";
 import { createViewerOptions } from "@/utils/CesiumViewerOptions";
 import { initCesium } from "./CesiumViewerWrapper";
 import { initDemo } from "@/demo/Demo";

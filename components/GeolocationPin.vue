@@ -39,7 +39,7 @@ import {
 } from "./CesiumViewerWrapper";
 import { AnimationFrameScheduler } from "~/utils/AnimationFrameScheduler";
 import IcBaselinePerson from "~icons/ic/baseline-person";
-import { egoPosition } from "@/core/EgoPosition";
+import { geolocation } from "@/core/Geolocation";
 
 const visible = ref(false);
 const menu = ref<HTMLElement | null>(null);
@@ -83,8 +83,8 @@ function updateOverlayPosition() {
   }
 }
 
-// Watch for changes to egoPosition
-watch(egoPosition, async (newPosition: Cartesian3 | undefined) => {
+// Watch for changes to geolocation
+watch(geolocation, async (newPosition: Cartesian3 | undefined) => {
   if (!newPosition) return;
   visible.value = true;
   positionCartesian = newPosition;
@@ -94,9 +94,9 @@ watch(egoPosition, async (newPosition: Cartesian3 | undefined) => {
 onMounted(async () => {
   await waitUntilCesiumInitialized();
 
-  if (egoPosition.value) {
+  if (geolocation.value) {
     visible.value = true;
-    positionCartesian = egoPosition.value;
+    positionCartesian = geolocation.value;
     updateOverlayPosition();
   }
 
@@ -151,8 +151,8 @@ async function handleDoubleClick() {
     duration: 1,
     complete: async () => {
       // Additional logic once camera flight is complete
-      // e.g., stop some rotation or call updateEgoPosition
-      // updateEgoPosition(...);
+      // e.g., stop some rotation or call updateGeolocation
+      // updateGeolocation(...);
       console.log("Camera flight complete!");
     },
   });

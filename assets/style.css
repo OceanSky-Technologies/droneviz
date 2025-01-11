@@ -123,6 +123,10 @@ svg {
   color: var(--color-gold) !important;
 }
 
+.cesium-viewer-fullscreenContainer {
+  display: none !important;
+}
+
 /* Toast */
 .p-toast {
   top: 47px !important;

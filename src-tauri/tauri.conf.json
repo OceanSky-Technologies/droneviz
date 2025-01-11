@@ -1,5 +1,5 @@
 {
-  "productName": "droneviz",
+  "productName": "OceanSky Droneviz",
   "version": "1.0.0",
   "identifier": "com.oceansky.droneviz",
   "build": {
@@ -21,6 +21,15 @@
   },
   "bundle": {
     "active": true,
+    "publisher": "OceanSky Technologies",
+    "windows": {
+      "webviewInstallMode": {
+        "type": "offlineInstaller"
+      },
+      "nsis": {
+        "installMode": "both"
+      }
+    },
     "targets": ["deb", "rpm", "appimage", "nsis", "app", "dmg"],
     "icon": [
       "../public/oceansky-logo30x30.png",
@@ -30,7 +39,7 @@
       "../public/oceansky-logo.ico"
     ],
     "externalBin": ["../.tauri-build/node/droneviz-node"],
-    "resources": ["../.output/server", "../.output/public/_nuxt"]
+    "resources": ["../.output/server", "../.output/public"]
   },
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json"
 }
