@@ -66,11 +66,22 @@ export function watchHomePositionUpdates() {
   }
 }
 
+/// Updates the ego position based on the given geolocation.
+/// @param position - The geolocation position to update the ego position with. If not provided it uses the last known position.
+/// @returns A promise that resolves when the ego position has been updated.
 export async function updateGeolocation(
-  position: GeolocationPosition,
-  disableLog: boolean = false,
+  position?: GeolocationPosition,
 ): Promise<void> {
-  if (!disableLog) console.log("Updating ego position:", position);
+  if (!position) {
+    if (!lastPosition) {
+      console.error("No position provided and no last known position.");
+      return;
+    }
+
+    position = lastPosition;
+  }
+
+  console.log("Updating ego position:", position);
 
   const latitude = position.coords.latitude;
   const longitude = position.coords.longitude;

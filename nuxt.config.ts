@@ -52,8 +52,6 @@ export default defineNuxtConfig({
       sourcemap: process.env.NODE_ENV !== "production",
       globPatterns: ["**/*.{html,mjs,js,ts,css,png,jpg,svg,glb}"],
       cleanupOutdatedCaches: false,
-      navigateFallback: "/",
-      navigateFallbackAllowlist: [/^\/$/],
     },
     injectManifest: {
       globPatterns: ["**/*.{html,mjs,js,ts,css,png,jpg,svg,glb}"],
@@ -210,9 +208,6 @@ export default defineNuxtConfig({
     build: {
       sourcemap: process.env.NODE_ENV === "development",
     },
-    resolve: {
-      preserveSymlinks: true,
-    },
   },
   nitro: {
     sourceMap: process.env.NODE_ENV !== "production",
@@ -222,6 +217,9 @@ export default defineNuxtConfig({
       },
     },
     compressPublicAssets: true,
+    externals: {
+      inline: ["mavlink-mappings"], // make sure mavlink-mappings can be imported by the server with tauri in production mode
+    },
     publicAssets: [
       {
         // Nuxt will copy the files here and serve them publicly

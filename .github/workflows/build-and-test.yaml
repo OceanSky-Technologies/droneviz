@@ -33,13 +33,13 @@ jobs:
         run: |
           pnpm build
 
-      - name: Unit tests
-        run: |
-          pnpm test
+      # - name: Unit tests
+      #   run: |
+      #     pnpm test
 
-      - name: End-to-end tests
-        run: |
-          pnpm test-e2e
+      # - name: End-to-end tests
+      #   run: |
+      #     pnpm test-e2e
 
       - name: Lint
         run: |

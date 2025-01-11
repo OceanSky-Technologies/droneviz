@@ -28,6 +28,7 @@ import {
   initGoogleTileset,
   tilesetMock,
 } from "./CesiumViewerWrapper";
+import { updateGeolocation } from "~/core/Geolocation";
 
 const buttonSeverity = ref("danger");
 
@@ -81,6 +82,9 @@ const refreshCesiumData = async () => {
     );
     baseLayer.show = true;
   }
+
+  // update the position. This is necessary to make the geolocationPin stick to the map again.
+  updateGeolocation();
 
   getCesiumViewer().scene.requestRender();
 

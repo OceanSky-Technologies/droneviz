@@ -19,6 +19,7 @@ import { getGeolocationAsync, updateGeolocation } from "~/core/Geolocation";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
 import { ref, onMounted, type ComponentPublicInstance } from "vue";
 import { getCesiumViewer } from "@/components/CesiumViewerWrapper";
+import { droneCollection } from "~/core/DroneCollection";
 
 const geolocationIconRef = ref<ComponentPublicInstance | null>(null);
 
@@ -29,6 +30,9 @@ async function flyToGeolocation() {
     const position = await getGeolocationAsync();
 
     showToast("Geolocation found. Moving camera.", ToastSeverity.Success);
+
+    // stop tracking drone if any
+    droneCollection.selectedDrone.value = undefined;
 
     getCesiumViewer().camera.flyTo({
       destination: Cartesian3.fromDegrees(
@@ -44,12 +48,12 @@ async function flyToGeolocation() {
       cancel: async () => {
         await geolocationIconRef.value?.$el.stopRotation();
         await geolocationIconRef.value?.$el.rotationStopped();
-        updateGeolocation(position, true);
+        updateGeolocation(position);
       },
       complete: async () => {
         await geolocationIconRef.value?.$el.stopRotation();
         await geolocationIconRef.value?.$el.rotationStopped();
-        updateGeolocation(position, true);
+        updateGeolocation(position);
       },
     });
   } catch (e) {
