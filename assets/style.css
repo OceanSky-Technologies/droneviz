@@ -103,6 +103,15 @@ svg {
   gap: 10px !important;
 }
 
+/* input number buttons */
+.p-inputnumber-button-group {
+  width: 1.5rem !important;
+}
+
+.p-inputnumber-button {
+  --p-inputnumber-button-width: 1.5rem !important;
+}
+
 /* hide cesium toolbar */
 .cesium-viewer-toolbar {
   display: none !important;

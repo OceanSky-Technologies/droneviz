@@ -3,6 +3,8 @@
 // Also, the folder ".output/server/node_modules/.nitro" is removed because it is not needed after the symlinks are replaced.
 // (All symlinks point to contents of this folder).
 
+// Once tauri supports symlinks or nitro gets an option to disable symlinks, this script can be removed.
+
 import fs from "fs";
 import path from "path";
 

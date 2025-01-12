@@ -17,12 +17,14 @@ import {
   AutotuneAxis,
   CommandAck,
   CommandLong,
+  DoOrbitCommand,
   DoRepositionCommand,
   GlobalPositionInt,
   ManualControl,
   MavCmd,
   MavDoRepositionFlags,
   MavResult,
+  OrbitYawBehaviour,
   Ping,
   PrecisionLandMode,
 } from "mavlink-mappings/dist/lib/common";
@@ -611,7 +613,7 @@ export class Drone {
    * @param {number} latitude - The latitude to reposition the drone to.
    * @param {number} longitude - The longitude to reposition the drone to.
    * @param {number} altitude - The altitude to reposition the drone to (MSL).
-   * @returns {Promise<void>} - A promise that resolves when the drone is repositioned successfully.
+   * @returns {Promise<void>} - A promise that resolves when the drone acknowledged the command.
    * @throws {Error} - Throws an error if the coordinates are invalid.
    */
   async doReposition(
@@ -665,6 +667,78 @@ export class Drone {
         return [false, undefined];
       },
       "Repositioning command timed out",
+    );
+  }
+
+  /**
+   * Orbits at a given latitude and longitude.
+   * @param {number} latitude - The latitude to reposition the drone to.
+   * @param {number} longitude - The longitude to reposition the drone to.
+   * @param {number} altitude - The altitude to reposition the drone to (MSL).
+   * @param {number} radius - Radius of the circle. Positive: orbit clockwise. Negative: orbit counter-clockwise. NaN: Use vehicle default radius, or current radius if already orbiting. [m]
+   * @param {OrbitYawBehaviour} yaw_behavior - See OrbitYawBehaviour.
+   * @param {number} velocity - Tangential Velocity. NaN: Use vehicle default velocity, or current velocity if already orbiting. [m/s]
+   * @param {number} orbits - Number of orbits. Orbit around the centre point for this many radians (i.e. for a three-quarter orbit set 270*Pi/180). 0: Orbit forever. NaN: Use vehicle default, or current value if already orbiting.
+   * @returns {Promise<void>} - A promise that resolves when the drone acknowledged the command.
+   * @throws {Error} - Throws an error if the coordinates are invalid.
+   */
+  async doOrbit(
+    latitude: number,
+    longitude: number,
+    altitude: number,
+    radius: number,
+    yaw_behavior: OrbitYawBehaviour,
+    velocity: number,
+    orbits: number,
+  ): Promise<void> {
+    if (
+      isNaN(latitude) ||
+      isNaN(longitude) ||
+      isNaN(altitude) ||
+      isNaN(radius) ||
+      latitude <= 0 ||
+      longitude <= 0
+    )
+      throw new Error("Invalid coordinates");
+
+    const command = new DoOrbitCommand();
+    command.latitude = latitude * 1e7;
+    command.longitude = longitude * 1e7;
+    command.altitude = altitude;
+    command.targetSystem = 1;
+    command.radius = radius;
+    command.yawBehavior = yaw_behavior;
+    command.velocity = velocity;
+    command.orbits = orbits;
+
+    await this.sendAndExpectResponse(
+      () => this.send("/api/drone/commandInt", command),
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (message.result === MavResult.ACCEPTED) return true;
+            if (message.result === MavResult.IN_PROGRESS) return true;
+          }
+        }
+        return false;
+      },
+      (message) => {
+        if (message instanceof CommandAck) {
+          if (message.command === command.command) {
+            if (
+              message.result !== MavResult.ACCEPTED &&
+              message.result !== MavResult.IN_PROGRESS
+            ) {
+              return [
+                true,
+                "Orbit command failed: " + MavResult[message.result],
+              ];
+            }
+          }
+        }
+        return [false, undefined];
+      },
+      "Orbit command timed out",
     );
   }
 

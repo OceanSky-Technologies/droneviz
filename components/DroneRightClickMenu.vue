@@ -3,20 +3,24 @@
     <div
       v-show="visible"
       ref="menu"
-      :style="popupStyle"
       :key="animationKey"
-      class="popup-menu shadow-lg"
+      :style="popupStyle"
+      class="popup-menu flex flex-col items-center gap-2 shadow-lg"
       @click.self="closeMenu"
     >
       <!-- Content -->
-      <div style="padding-bottom: 5px">
+      <div>
         <p>
-          Latitude:
-          {{ formatCoordinate(Math.toDegrees(positionCartographic.latitude)) }}
-        </p>
-        <p>
-          Longitude:
-          {{ formatCoordinate(Math.toDegrees(positionCartographic.longitude)) }}
+          {{
+            formatCoordinate(
+              Cesium.Math.toDegrees(positionCartographic.latitude),
+            )
+          }},
+          {{
+            formatCoordinate(
+              Cesium.Math.toDegrees(positionCartographic.longitude),
+            )
+          }}
         </p>
         <p>
           Height (MSL):
@@ -27,11 +31,47 @@
       <!-- Arrow -->
       <div class="popup-arrow"></div>
 
-      <ProgressButton label="Fly to this location" @click="flyTo">
+      <ProgressButton label="Fly here" @click="flyTo">
         <template #icon>
           <FlyToIcon />
         </template>
       </ProgressButton>
+
+      <div
+        class="flex w-72 flex-row flex-nowrap items-center justify-center gap-2"
+      >
+        <ProgressButton label="Orbit" @click="orbit">
+          <template #icon>
+            <MdiOrbitVariant />
+          </template>
+        </ProgressButton>
+
+        <InputNumber
+          id="radius"
+          v-model="radius"
+          :min="1"
+          :max="1000"
+          :step="1"
+          mode="decimal"
+          suffix=" m"
+          show-buttons
+          fluid
+          style="padding: 0px !important"
+        >
+          <template #incrementicon>
+            <span class="pi pi-plus" style="font-size: 0.6em" />
+          </template>
+          <template #decrementicon>
+            <span class="pi pi-minus" style="font-size: 0.6em" />
+          </template>
+        </InputNumber>
+
+        <SelectButton
+          v-model="orbitDirectionValue"
+          style="padding: 0px !important"
+          :options="orbitDirectionOptions"
+        />
+      </div>
     </div>
   </transition>
 </template>
@@ -40,16 +80,14 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { eventBus } from "@/utils/Eventbus";
 import type { CSSProperties } from "vue";
-import {
-  Cartesian3,
-  Cartographic,
-  Math,
-  SceneTransforms,
-  type Entity,
-} from "cesium";
+import * as Cesium from "cesium";
 import { droneCollection } from "@/core/DroneCollection";
 import FlyToIcon from "@/components/icons/FlyTo.vue";
 import ProgressButton from "@/components/ProgressButton.vue";
+import InputNumber from "primevue/inputnumber";
+import MdiOrbitVariant from "~icons/mdi/orbit-variant";
+import SelectButton from "primevue/selectbutton";
+
 import {
   getCesiumViewer,
   waitUntilCesiumInitialized,
@@ -57,8 +95,13 @@ import {
 import { AnimationFrameScheduler } from "~/utils/AnimationFrameScheduler";
 import { formatCoordinate } from "~/utils/CoordinateUtils";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
+import { OrbitYawBehaviour } from "mavlink-mappings/dist/lib/common";
 
 const visible = ref(false);
+const orbitDirectionOptions = ref(["CW", "CCW"]);
+const orbitDirectionValue = ref("CW");
+const radius = ref(10);
+
 const menu = ref(null);
 const menuPosition = reactive({ x: 0, y: 0 });
 
@@ -76,13 +119,19 @@ const popupStyle = computed<CSSProperties>(() => ({
 }));
 
 // coordinates of the right-clicked position
-let positionCartesian: Cartesian3;
-let positionCartographic: Cartographic = new Cartographic(); // the height is the drone MSL altitude
+let positionCartesian: Cesium.Cartesian3;
+let positionCartographic: Cesium.Cartographic = new Cesium.Cartographic(); // the height is the drone MSL altitude
 
 // remove callbacks for cesium listeners (destroyed when component is unmounted)
-let cesiumListenerCbs: (() => void)[] = [];
+const cesiumListenerCbs: (() => void)[] = [];
 
-async function flyTo() {
+const preCheck = () => {
+  if (!droneCollection.selectedDrone.value) {
+    showToast("Drone is not connected", ToastSeverity.Error);
+    closeMenu();
+    throw new Error("Drone is not connected");
+  }
+
   if (
     positionCartographic.latitude === 0 &&
     positionCartographic.longitude === 0 &&
@@ -90,24 +139,25 @@ async function flyTo() {
   ) {
     showToast("Invalid coordinates", ToastSeverity.Error);
     closeMenu();
-    return;
+    throw new Error("Invalid coordinates");
   }
+};
 
-  if (!droneCollection.selectedDrone.value) {
-    showToast("Drone is not connected", ToastSeverity.Error);
-    closeMenu();
-    return;
-  }
+async function flyTo() {
+  preCheck();
 
   try {
-    await droneCollection.selectedDrone.value.doReposition(
-      Math.toDegrees(positionCartographic.latitude),
-      Math.toDegrees(positionCartographic.longitude),
+    await droneCollection.selectedDrone.value!.doReposition(
+      Cesium.Math.toDegrees(positionCartographic.latitude),
+      Cesium.Math.toDegrees(positionCartographic.longitude),
       positionCartographic.height,
     );
 
     showToast(
-      `Repositioning drone:\n- latitude: ${formatCoordinate(Math.toDegrees(positionCartographic.latitude))}\n- longitude: ${formatCoordinate(Math.toDegrees(positionCartographic.longitude))}\n- height: ${positionCartographic.height.toFixed(2)}m`,
+      `Repositioning drone:
+      - latitude: ${formatCoordinate(Cesium.Math.toDegrees(positionCartographic.latitude))}
+      - longitude: ${formatCoordinate(Cesium.Math.toDegrees(positionCartographic.longitude))}
+      - height: ${positionCartographic.height.toFixed(2)}m`,
       ToastSeverity.Success,
     );
   } catch (e) {
@@ -120,6 +170,54 @@ async function flyTo() {
   closeMenu();
 }
 
+async function orbit() {
+  preCheck();
+
+  if (!radius.value) {
+    showToast("Invalid radius", ToastSeverity.Error);
+    closeMenu();
+    return;
+  }
+
+  if (!orbitDirectionValue.value) {
+    showToast("Invalid orbit direction", ToastSeverity.Error);
+    closeMenu();
+    return;
+  }
+
+  try {
+    await droneCollection.selectedDrone.value!.doOrbit(
+      Cesium.Math.toDegrees(positionCartographic.latitude),
+      Cesium.Math.toDegrees(positionCartographic.longitude),
+      positionCartographic.height,
+      orbitDirectionValue.value === "CCW" ? -1 * radius.value : radius.value,
+      OrbitYawBehaviour.HOLD_FRONT_TANGENT_TO_CIRCLE,
+      10,
+      0,
+    );
+
+    showToast(
+      `Orbitting position:
+      - latitude: ${formatCoordinate(Cesium.Math.toDegrees(positionCartographic.latitude))}
+      - longitude: ${formatCoordinate(Cesium.Math.toDegrees(positionCartographic.longitude))}
+      - height: ${positionCartographic.height.toFixed(2)}m
+      - radius: ${radius.value}m
+      - direction: ${orbitDirectionValue.value}`,
+      ToastSeverity.Success,
+    );
+  } catch (e) {
+    if (e instanceof Error) {
+      showToast(e.message, ToastSeverity.Error);
+    } else {
+      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+    }
+  }
+  closeMenu();
+}
+
+/**
+ *
+ */
 function showMenu() {
   visible.value = true;
   animationKey.value++;
@@ -129,12 +227,15 @@ const closeMenu = () => {
   visible.value = false;
 };
 
+/**
+ *
+ */
 function handleCesiumRightClick({
   entity,
   cartesian3,
 }: {
-  entity: Entity | undefined;
-  cartesian3: Cartesian3;
+  entity: Cesium.Entity | undefined;
+  cartesian3: Cesium.Cartesian3;
   position: { x: number; y: number };
 }) {
   // don't show menu if no drone is selected
@@ -144,7 +245,7 @@ function handleCesiumRightClick({
   if (!entity) {
     // save new gps coordinates of the right clicked location
     positionCartesian = cartesian3;
-    positionCartographic = Cartographic.fromCartesian(cartesian3);
+    positionCartographic = Cesium.Cartographic.fromCartesian(cartesian3);
 
     // get drone altitude and update the position (height)
     if (!droneCollection.selectedDrone.value) {
@@ -171,11 +272,14 @@ function handleCesiumRightClick({
   }
 }
 
+/**
+ *
+ */
 function updateOverlayPosition() {
   if (!getCesiumViewer() || !menu.value || !positionCartesian) return;
 
   // Convert WGS84 position to screen coordinates
-  const screenPosition = SceneTransforms.worldToWindowCoordinates(
+  const screenPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
     getCesiumViewer().scene,
     positionCartesian,
   );

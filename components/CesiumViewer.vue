@@ -11,7 +11,7 @@ import GeolocationPin from "~/components/GeolocationPin.vue";
 import { createViewerOptions } from "@/utils/CesiumViewerOptions";
 import { initCesium } from "./CesiumViewerWrapper";
 import { initDemo } from "@/demo/Demo";
-import { onMounted, onUnmounted } from "vue";
+import { onMounted } from "vue";
 import type { Viewer, Cesium3DTileset } from "cesium";
 import { settings } from "../utils/Settings";
 import { init as initLeftClickHandler } from "./LeftClickHandler";
