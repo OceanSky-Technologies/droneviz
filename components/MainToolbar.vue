@@ -125,26 +125,23 @@ const showGeolocationListbox = ref(false);
 const selectedGeolocation = ref<GeoLocationResult | null>(null);
 
 // when a geolocation was selected then hide the geolocationListbox and fly to the selected location
-watch(
-  () => selectedGeolocation.value,
-  (newVal: GeoLocationResult | null) => {
-    if (newVal) {
-      showGeolocationListbox.value = false;
+watch(selectedGeolocation, (newVal: GeoLocationResult | null) => {
+  if (newVal) {
+    showGeolocationListbox.value = false;
 
-      // fly to the selected location
-      getCesiumViewer().camera.flyTo({
-        destination: Cartesian3.fromDegrees(newVal.lon, newVal.lat, 10000),
-        duration: 3,
-      });
+    // fly to the selected location
+    getCesiumViewer().camera.flyTo({
+      destination: Cartesian3.fromDegrees(newVal.lon, newVal.lat, 10000),
+      duration: 3,
+    });
 
-      // clear the list
-      geolocationOptions.splice(0, geolocationOptions.length);
+    // clear the list
+    geolocationOptions.splice(0, geolocationOptions.length);
 
-      showGeolocationListbox.value = false;
-      searchString.value = "";
-    }
-  },
-);
+    showGeolocationListbox.value = false;
+    searchString.value = "";
+  }
+});
 
 watch(map3DEnabled, (newVal: boolean) => {
   getCesiumViewer().scene.mode = newVal ? SceneMode.SCENE3D : SceneMode.SCENE2D;
