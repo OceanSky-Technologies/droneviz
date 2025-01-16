@@ -31,20 +31,20 @@
       <!-- Arrow -->
       <div class="popup-arrow"></div>
 
-      <ProgressButton label="Fly here" @click="flyTo">
+      <ConfirmationButton label="Fly here" disable-mouse-leave @click="flyTo">
         <template #icon>
           <FlyToIcon />
         </template>
-      </ProgressButton>
+      </ConfirmationButton>
 
       <div
         class="flex w-72 flex-row flex-nowrap items-center justify-center gap-2"
       >
-        <ProgressButton label="Orbit" @click="orbit">
+        <ConfirmationButton label="Orbit" disable-mouse-leave @click="orbit">
           <template #icon>
             <MdiOrbitVariant />
           </template>
-        </ProgressButton>
+        </ConfirmationButton>
 
         <InputNumber
           id="radius"
@@ -83,7 +83,7 @@ import type { CSSProperties } from "vue";
 import * as Cesium from "cesium";
 import { droneCollection } from "@/core/DroneCollection";
 import FlyToIcon from "@/components/icons/FlyTo.vue";
-import ProgressButton from "@/components/ProgressButton.vue";
+import ConfirmationButton from "@/components/ConfirmationButton.vue";
 import InputNumber from "primevue/inputnumber";
 import MdiOrbitVariant from "~icons/mdi/orbit-variant";
 import SelectButton from "primevue/selectbutton";

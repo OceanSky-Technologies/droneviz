@@ -109,7 +109,7 @@ onUnmounted(() => {
 .button-content {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
   color: white; /* Ensure text is visible */
   z-index: 1;
 }
