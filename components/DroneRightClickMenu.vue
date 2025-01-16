@@ -31,47 +31,11 @@
       <!-- Arrow -->
       <div class="popup-arrow"></div>
 
-      <ConfirmationButton label="Fly here" disable-mouse-leave @click="flyTo">
-        <template #icon>
-          <FlyToIcon />
-        </template>
-      </ConfirmationButton>
-
-      <div
-        class="flex w-72 flex-row flex-nowrap items-center justify-center gap-2"
-      >
-        <ConfirmationButton label="Orbit" disable-mouse-leave @click="orbit">
-          <template #icon>
-            <MdiOrbitVariant />
-          </template>
-        </ConfirmationButton>
-
-        <InputNumber
-          id="radius"
-          v-model="radius"
-          :min="1"
-          :max="1000"
-          :step="1"
-          mode="decimal"
-          suffix=" m"
-          show-buttons
-          fluid
-          style="padding: 0px !important"
-        >
-          <template #incrementicon>
-            <span class="pi pi-plus" style="font-size: 0.6em" />
-          </template>
-          <template #decrementicon>
-            <span class="pi pi-minus" style="font-size: 0.6em" />
-          </template>
-        </InputNumber>
-
-        <SelectButton
-          v-model="orbitDirectionValue"
-          style="padding: 0px !important"
-          :options="orbitDirectionOptions"
-        />
-      </div>
+      <DroneRightClickMenuActions
+        :position-cartesian="positionCartesian"
+        :position-cartographic="positionCartographic"
+        @call-close="closeMenu"
+      />
     </div>
   </transition>
 </template>
@@ -82,11 +46,7 @@ import { eventBus } from "@/utils/Eventbus";
 import type { CSSProperties } from "vue";
 import * as Cesium from "cesium";
 import { droneCollection } from "@/core/DroneCollection";
-import FlyToIcon from "@/components/icons/FlyTo.vue";
-import ConfirmationButton from "@/components/ConfirmationButton.vue";
-import InputNumber from "primevue/inputnumber";
-import MdiOrbitVariant from "~icons/mdi/orbit-variant";
-import SelectButton from "primevue/selectbutton";
+import DroneRightClickMenuActions from "@/components/DroneRightClickMenuActions.vue";
 
 import {
   getCesiumViewer,
@@ -95,13 +55,8 @@ import {
 import { AnimationFrameScheduler } from "~/utils/AnimationFrameScheduler";
 import { formatCoordinate } from "~/utils/CoordinateUtils";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
-import { OrbitYawBehaviour } from "mavlink-mappings/dist/lib/common";
 
 const visible = ref(false);
-const orbitDirectionOptions = ref(["CW", "CCW"]);
-const orbitDirectionValue = ref("CW");
-const radius = ref(10);
-
 const menu = ref(null);
 const menuPosition = reactive({ x: 0, y: 0 });
 
@@ -119,101 +74,15 @@ const popupStyle = computed<CSSProperties>(() => ({
 }));
 
 // coordinates of the right-clicked position
-let positionCartesian: Cesium.Cartesian3;
-let positionCartographic: Cesium.Cartographic = new Cesium.Cartographic(); // the height is the drone MSL altitude
+const positionCartesian: Ref<Cesium.Cartesian3> = ref(Cesium.Cartesian3.ZERO);
+
+// the height is the drone MSL altitude
+const positionCartographic: Ref<Cesium.Cartographic> = ref(
+  Cesium.Cartographic.ZERO,
+);
 
 // remove callbacks for cesium listeners (destroyed when component is unmounted)
 const cesiumListenerCbs: (() => void)[] = [];
-
-const preCheck = () => {
-  if (!droneCollection.selectedDrone.value) {
-    showToast("Drone is not connected", ToastSeverity.Error);
-    closeMenu();
-    throw new Error("Drone is not connected");
-  }
-
-  if (
-    positionCartographic.latitude === 0 &&
-    positionCartographic.longitude === 0 &&
-    positionCartographic.height === 0
-  ) {
-    showToast("Invalid coordinates", ToastSeverity.Error);
-    closeMenu();
-    throw new Error("Invalid coordinates");
-  }
-};
-
-async function flyTo() {
-  preCheck();
-
-  try {
-    await droneCollection.selectedDrone.value!.doReposition(
-      Cesium.Math.toDegrees(positionCartographic.latitude),
-      Cesium.Math.toDegrees(positionCartographic.longitude),
-      positionCartographic.height,
-    );
-
-    showToast(
-      `Repositioning drone:
-      - latitude: ${formatCoordinate(Cesium.Math.toDegrees(positionCartographic.latitude))}
-      - longitude: ${formatCoordinate(Cesium.Math.toDegrees(positionCartographic.longitude))}
-      - height: ${positionCartographic.height.toFixed(2)}m`,
-      ToastSeverity.Success,
-    );
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(e.message, ToastSeverity.Error);
-    } else {
-      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
-    }
-  }
-  closeMenu();
-}
-
-async function orbit() {
-  preCheck();
-
-  if (!radius.value) {
-    showToast("Invalid radius", ToastSeverity.Error);
-    closeMenu();
-    return;
-  }
-
-  if (!orbitDirectionValue.value) {
-    showToast("Invalid orbit direction", ToastSeverity.Error);
-    closeMenu();
-    return;
-  }
-
-  try {
-    await droneCollection.selectedDrone.value!.doOrbit(
-      Cesium.Math.toDegrees(positionCartographic.latitude),
-      Cesium.Math.toDegrees(positionCartographic.longitude),
-      positionCartographic.height,
-      orbitDirectionValue.value === "CCW" ? -1 * radius.value : radius.value,
-      OrbitYawBehaviour.HOLD_FRONT_TANGENT_TO_CIRCLE,
-      10,
-      0,
-    );
-
-    showToast(
-      `Orbitting position:
-      - latitude: ${formatCoordinate(Cesium.Math.toDegrees(positionCartographic.latitude))}
-      - longitude: ${formatCoordinate(Cesium.Math.toDegrees(positionCartographic.longitude))}
-      - height: ${positionCartographic.height.toFixed(2)}m
-      - radius: ${radius.value}m
-      - direction: ${orbitDirectionValue.value}`,
-      ToastSeverity.Success,
-    );
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(e.message, ToastSeverity.Error);
-    } else {
-      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
-    }
-  }
-  closeMenu();
-}
 
 /**
  *
@@ -244,8 +113,8 @@ function handleCesiumRightClick({
   // right click somewhere on the map (but not on an entity) to show the menu
   if (!entity) {
     // save new gps coordinates of the right clicked location
-    positionCartesian = cartesian3;
-    positionCartographic = Cesium.Cartographic.fromCartesian(cartesian3);
+    positionCartesian.value = cartesian3;
+    positionCartographic.value = Cesium.Cartographic.fromCartesian(cartesian3);
 
     // get drone altitude and update the position (height)
     if (!droneCollection.selectedDrone.value) {
@@ -262,7 +131,7 @@ function handleCesiumRightClick({
       return;
     }
 
-    positionCartographic.height = currentAltitude.message.altitudeAmsl;
+    positionCartographic.value.height = currentAltitude.message.altitudeAmsl;
 
     updateOverlayPosition();
 
@@ -276,12 +145,12 @@ function handleCesiumRightClick({
  *
  */
 function updateOverlayPosition() {
-  if (!getCesiumViewer() || !menu.value || !positionCartesian) return;
+  if (!getCesiumViewer() || !menu.value || !positionCartesian.value) return;
 
   // Convert WGS84 position to screen coordinates
   const screenPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
     getCesiumViewer().scene,
-    positionCartesian,
+    positionCartesian.value,
   );
 
   if (screenPosition) {

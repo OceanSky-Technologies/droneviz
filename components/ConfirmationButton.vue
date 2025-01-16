@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import Button from "primevue/button";
 
-const props = defineProps({
+defineProps({
   label: {
     type: String,
     required: true,

@@ -24,13 +24,13 @@ class DroneCollection {
       },
       position: new Cesium.CallbackPositionProperty(
         (): Cesium.Cartesian3 | undefined => {
-          return drone.position;
+          return drone.position.value;
         },
         false,
       ),
       orientation: new Cesium.CallbackProperty(
         (): Cesium.Quaternion | undefined => {
-          return drone.orientation;
+          return drone.orientation.value;
         },
         false,
       ),

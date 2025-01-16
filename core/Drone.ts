@@ -64,8 +64,8 @@ export class Drone {
   // cesium entity to represent the drone
   entity: Cesium.Entity | undefined;
 
-  position: Cesium.Cartesian3 | undefined;
-  orientation: Cesium.Quaternion | undefined;
+  position: Ref<Cesium.Cartesian3> = ref(new Cesium.Cartesian3());
+  orientation: Ref<Cesium.Quaternion> = ref(new Cesium.Quaternion());
 
   private sysid: number = NaN;
   private compid: number = NaN;
@@ -410,7 +410,7 @@ export class Drone {
       new Cesium.HeadingPitchRoll(heading, pitch, roll),
     );
 
-    this.orientation = orientation;
+    this.orientation.value = orientation;
 
     getCesiumViewer().scene.requestRender();
   }
@@ -422,7 +422,7 @@ export class Drone {
   private updateEntityPosition(message: GlobalPositionInt) {
     if (!this.entity) return;
 
-    this.position = calculatePosition(this.entity, message);
+    this.position.value = calculatePosition(this.entity, message);
 
     getCesiumViewer().scene.requestRender();
   }
