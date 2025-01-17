@@ -61,7 +61,7 @@
           id="orbitVelocity"
           v-model="orbitVelocity"
           :min="1"
-          :max="100"
+          :max="90"
           :step="1"
           mode="decimal"
           suffix=" km/h"
@@ -86,7 +86,7 @@
 /* ------------- Imports ------------- */
 import { ref } from "vue";
 import * as Cesium from "cesium";
-import { droneCollection } from "@/core/DroneCollection";
+import { droneManager } from "~/core/drone/DroneManager";
 import FlyToIcon from "@/components/icons/FlyTo.vue";
 import ConfirmationButton from "@/components/ConfirmationButton.vue";
 import InputNumber from "primevue/inputnumber";
@@ -96,8 +96,9 @@ import SelectButton from "primevue/selectbutton";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
 import { formatCoordinate } from "~/utils/CoordinateUtils";
 import { getCesiumViewer } from "~/components/CesiumViewerWrapper";
-import { Colors } from "../utils/Colors";
+import { Colors } from "@/utils/Colors";
 import { OrbitYawBehaviour } from "mavlink-mappings/dist/lib/common";
+import { DroneCommands } from "@/core/drone/DroneCommand";
 
 /* ------------- Props & Emits ------------- */
 const props = defineProps<{
@@ -147,12 +148,12 @@ function cancel() {
  * If something is invalid, show an error toast and throw.
  */
 function preCheck() {
-  if (!droneCollection.selectedDrone.value) {
+  if (!droneManager.selectedDrone.value) {
     showToast("Drone is not connected", ToastSeverity.Error);
     cancel();
     throw new Error("Drone is not connected");
   }
-  if (!droneCollection.selectedDrone.value?.position.alt) {
+  if (!droneManager.selectedDrone.value?.lastAltitude) {
     showToast("Drone altitude is unknown", ToastSeverity.Error);
     cancel();
     throw new Error("Drone altitude is unknown");
@@ -189,6 +190,9 @@ function preCheck() {
 function flyToSelected() {
   clear();
   createOrUpdateLine();
+
+  console.log(targetPosition);
+  console.log(targetAltitudeMsl);
   // Let parent know the menu should reposition to the newly created line's target
   emit("position-update", targetPosition, targetAltitudeMsl);
 }
@@ -200,7 +204,12 @@ async function flyTo() {
   preCheck();
 
   try {
-    await droneCollection.selectedDrone.value!.doReposition(
+    if (!droneManager.selectedDrone.value) {
+      showToast("No drone selected", ToastSeverity.Error);
+      return;
+    }
+
+    await new DroneCommands(droneManager.selectedDrone.value).doReposition(
       Cesium.Math.toDegrees(props.positionCartographic.latitude),
       Cesium.Math.toDegrees(props.positionCartographic.longitude),
       targetAltitudeMsl!,
@@ -227,10 +236,15 @@ function createOrUpdateLine(skipClear = false) {
   if (!viewer) return;
   if (!skipClear) clear();
 
-  const dronePos = droneCollection.selectedDrone.value?.positionCartesian3;
-  if (!dronePos) return;
+  console.log(droneManager.selectedDrone.value!.lastGlobalPositionInt);
 
-  if (droneCollection.selectedDrone.value?.position.alt === undefined) return;
+  const globalPositionInt =
+    droneManager.selectedDrone.value?.lastGlobalPositionInt;
+  if (!globalPositionInt) return;
+
+  // PROBLEM: dronePos is undefined but droneManager.selectedDrone.value is not
+  const dronePos = droneManager.selectedDrone.value?.positionCartesian3;
+  if (!dronePos) return;
 
   const lat = Cesium.Math.toDegrees(props.positionCartographic.latitude);
   const lon = Cesium.Math.toDegrees(props.positionCartographic.longitude);
@@ -240,7 +254,7 @@ function createOrUpdateLine(skipClear = false) {
   const currentDroneHeight = droneCarto.height;
 
   // Match the drone's current altitude so the line is horizontal
-  targetAltitudeMsl = droneCollection.selectedDrone.value?.position.alt / 1000;
+  targetAltitudeMsl = globalPositionInt.alt / 1000;
 
   targetPosition = Cesium.Cartesian3.fromDegrees(lon, lat, currentDroneHeight);
 
@@ -248,7 +262,7 @@ function createOrUpdateLine(skipClear = false) {
     polyline: {
       positions: new Cesium.CallbackProperty(() => {
         const currentDronePos =
-          droneCollection.selectedDrone.value?.positionCartesian3;
+          droneManager.selectedDrone.value?.positionCartesian3;
         if (!currentDronePos) return [];
 
         const cCarto =
@@ -313,7 +327,12 @@ async function orbit() {
   }
 
   try {
-    await droneCollection.selectedDrone.value!.doOrbit(
+    if (!droneManager.selectedDrone.value) {
+      showToast("No drone selected", ToastSeverity.Error);
+      return;
+    }
+
+    await new DroneCommands(droneManager.selectedDrone.value).doOrbit(
       Cesium.Math.toDegrees(props.positionCartographic.latitude),
       Cesium.Math.toDegrees(props.positionCartographic.longitude),
       targetAltitudeMsl!,
@@ -348,10 +367,12 @@ function createOrUpdateRing(skipClear = false) {
   const viewer = getCesiumViewer();
   if (!viewer) return;
   if (!skipClear) clear();
-  const dronePos = droneCollection.selectedDrone.value?.positionCartesian3;
+  const dronePos = droneManager.selectedDrone.value?.positionCartesian3;
   if (!dronePos) return;
 
-  if (droneCollection.selectedDrone.value?.position.alt === undefined) return;
+  const globalPositionInt =
+    droneManager.selectedDrone.value?.lastGlobalPositionInt;
+  if (!globalPositionInt) return;
 
   const lat = Cesium.Math.toDegrees(props.positionCartographic.latitude);
   const lon = Cesium.Math.toDegrees(props.positionCartographic.longitude);
@@ -361,7 +382,7 @@ function createOrUpdateRing(skipClear = false) {
   const currentDroneHeight = droneCarto.height;
 
   // Match the drone's current altitude so the line is horizontal
-  targetAltitudeMsl = droneCollection.selectedDrone.value?.position.alt / 1000;
+  targetAltitudeMsl = globalPositionInt.alt / 1000;
 
   targetPosition = Cesium.Cartesian3.fromDegrees(lon, lat, currentDroneHeight);
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { droneCollection } from "@/core/DroneCollection";
-import { AnimationFrameScheduler } from "@/utils/AnimationFrameScheduler";
-import { CommandLong, GpsFixType } from "mavlink-mappings/dist/lib/common";
+import { ref, watchEffect } from "vue";
+import { droneManager } from "~/core/drone/DroneManager";
+import { GpsFixType } from "mavlink-mappings/dist/lib/common";
 
-// Reactive properties for the displayed data
+// Reactive state for displayed data
 const gpsData = ref<
   | {
       fix: string;
@@ -27,55 +27,53 @@ const gpsData = ref<
 
 const fusedAltitude = ref<number | undefined>(undefined);
 
-// Animation frame scheduler: used to update the displayed data
-const animationFrameScheduler = new AnimationFrameScheduler(async () => {
-  const selectedDrone = droneCollection.selectedDrone.value;
-
-  if (selectedDrone && selectedDrone.lastMessages) {
-    // gps data
-    const lastGpsMessage = selectedDrone.lastMessages.gpsRawInt?.message;
-    if (lastGpsMessage) {
-      gpsData.value = {
-        fix: GpsFixType[lastGpsMessage.fixType].replace("GPS_FIX_TYPE_", ""),
-        lat: lastGpsMessage.lat / 1e7,
-        lon: lastGpsMessage.lon / 1e7,
-        alt: lastGpsMessage.alt / 1e3,
-        eph: lastGpsMessage.eph,
-        epv: lastGpsMessage.epv,
-        vel: lastGpsMessage.vel,
-        cog: lastGpsMessage.cog,
-        satellitesVisible: lastGpsMessage.satellitesVisible,
-        altEllipsoid: lastGpsMessage.altEllipsoid,
-        hAcc: lastGpsMessage.hAcc,
-        vAcc: lastGpsMessage.vAcc,
-        velAcc: lastGpsMessage.velAcc,
-        hdgAcc: lastGpsMessage.hdgAcc,
-        yaw: lastGpsMessage.yaw,
-      };
-    }
-
-    fusedAltitude.value =
-      selectedDrone.lastMessages.altitude?.message.altitudeAmsl;
-  } else {
+// -- Watch everything in one watchEffect --
+watchEffect(() => {
+  const selectedDrone = droneManager.selectedDrone.value;
+  if (!selectedDrone) {
+    // No drone selected
     gpsData.value = undefined;
     fusedAltitude.value = undefined;
+    return;
   }
-});
 
-// Watch for changes to selectedDrone
-watchEffect(() => {
-  const selectedDrone = droneCollection.selectedDrone.value;
-
-  if (selectedDrone) {
-    animationFrameScheduler.start();
+  // 1) Check lastGpsRawInt.value
+  const lastGps = selectedDrone.lastGpsRawInt;
+  if (lastGps) {
+    gpsData.value = {
+      fix: GpsFixType[lastGps.fixType].replace("GPS_FIX_TYPE_", ""),
+      lat: lastGps.lat / 1e7,
+      lon: lastGps.lon / 1e7,
+      alt: lastGps.alt / 1e3,
+      eph: lastGps.eph,
+      epv: lastGps.epv,
+      vel: lastGps.vel,
+      cog: lastGps.cog,
+      satellitesVisible: lastGps.satellitesVisible,
+      altEllipsoid: lastGps.altEllipsoid,
+      hAcc: lastGps.hAcc,
+      vAcc: lastGps.vAcc,
+      velAcc: lastGps.velAcc,
+      hdgAcc: lastGps.hdgAcc,
+      yaw: lastGps.yaw,
+    };
   } else {
-    animationFrameScheduler.stop();
+    gpsData.value = undefined;
+  }
+
+  // 2) Check lastAltitude.value
+  const altMsg = selectedDrone.lastAltitude;
+  if (altMsg) {
+    fusedAltitude.value = altMsg.altitudeAmsl;
+  } else {
+    fusedAltitude.value = undefined;
   }
 });
 </script>
 
 <template>
   <div class="drone-live-data">
+    <!-- GPS data panel -->
     <div>
       <div v-if="gpsData">
         <div>
@@ -84,9 +82,7 @@ watchEffect(() => {
         </div>
         <div>
           <strong>Satellites visible: </strong>
-          <span>
-            {{ gpsData.satellitesVisible }}
-          </span>
+          <span>{{ gpsData.satellitesVisible }}</span>
         </div>
         <div>
           <strong>Position: </strong>
@@ -97,15 +93,13 @@ watchEffect(() => {
         </div>
         <div>
           <strong>Altitude (MSL): </strong>
-          <span>
-            {{ formatAltitude(gpsData.alt) }}
-          </span>
+          <span>{{ formatAltitude(gpsData.alt) }}</span>
         </div>
         <div>
           <strong>Ground speed: </strong>
           <span>
-            {{ (gpsData.vel / 100).toFixed(2) }}m/s or
-            {{ ((gpsData.vel / 100) * 3.6).toFixed(2) }}km/s
+            {{ (gpsData.vel / 100).toFixed(2) }} m/s or
+            {{ ((gpsData.vel / 100) * 3.6).toFixed(2) }} km/h
           </span>
         </div>
         <div>
@@ -115,8 +109,8 @@ watchEffect(() => {
         <div>
           <strong>Accuracy: </strong>
           <span>
-            {{ gpsData.hAcc / 1e3 }}m (horizontal), {{ gpsData.vAcc / 1e3 }}m
-            (vertical), {{ gpsData.hdgAcc / 1e5 }}m (heading)
+            {{ gpsData.hAcc / 1e3 }} m (horizontal), {{ gpsData.vAcc / 1e3 }} m
+            (vertical), {{ gpsData.hdgAcc / 1e5 }} m (heading)
           </span>
         </div>
         <div>
@@ -131,10 +125,12 @@ watchEffect(() => {
         <p>No GPS data available.</p>
       </div>
     </div>
+
+    <!-- Fused altitude panel -->
     <div style="margin-top: 10px">
       <div v-if="fusedAltitude">
-        <strong>Fused altitude:</strong>
-        <span>{{ formatAltitude(fusedAltitude) }} </span>
+        <strong>Fused altitude: </strong>
+        <span>{{ formatAltitude(fusedAltitude) }}</span>
       </div>
       <div v-else>
         <p>No fused altitude data available.</p>

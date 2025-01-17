@@ -43,8 +43,7 @@ async function mouseClickListener(
     entity.id.id !== "mouse-position-info" &&
     entity.primitive instanceof Model
   ) {
-    console.log("Right clicked entity:");
-    console.log(entity);
+    console.log("Right clicked entity:", entity);
 
     eventBus.emit("cesiumRightClick", {
       entity: entity,
@@ -52,8 +51,7 @@ async function mouseClickListener(
       cartesian3: cartesian3,
     });
   } else {
-    console.log("Right clicked position:");
-    console.log(positionEvent.position);
+    console.log("Right clicked position:", positionEvent.position);
 
     eventBus.emit("cesiumRightClick", {
       entity: undefined,

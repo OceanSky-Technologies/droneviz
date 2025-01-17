@@ -2,30 +2,20 @@
   <div class="h-full w-full bg-black">
     <CesiumViewer style="z-index: 0" />
 
-    <div
-      id="toolbarTopLeft"
-      style="
-        display: flex;
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 5px;
-        position: absolute;
-        top: 5px;
-        left: 5px;
-      "
-    >
+    <!-- Top Left Toolbar -->
+    <div id="toolbarTopLeft" class="toolbar">
       <DarkModeToggle />
 
       <Button
+        ref="connectDisconnectRef"
         :label="connectDisconnectText"
         :disabled="connectDisconnectDisabled"
-        @click="connectDisconnect"
-        ref="connectDisconnectRef"
         :severity="
           connectDisconnectText.toLowerCase() === 'disconnect'
             ? 'danger'
             : 'primary'
         "
+        @click="handleConnectDisconnect"
       >
         <template #icon>
           <Wifi
@@ -41,15 +31,12 @@
         <Button @click="clearCache">Clear cache</Button>
         <p>Available cache quota: {{ formatBytes(cacheQuota) }}</p>
         <p>Total cache size: {{ formatBytes(cacheTotalUsed) }}</p>
-        <p>
-          Cache usage:
-          {{ (Math.round(cacheUsedPercent * 100) / 100).toFixed(2) }}%
-        </p>
+        <p>Cache usage: {{ cacheUsedPercent.toFixed(2) }}%</p>
         <p>Cache details:</p>
         <div
           v-for="cache in cacheDetails"
           :key="cache.cacheName"
-          style="border: 1px solid black"
+          class="cache-detail"
         >
           <h3>{{ cache.cacheName }}</h3>
           <p>Number of cached requests: {{ cache.requestCount }}</p>
@@ -59,39 +46,32 @@
       <div id="demoMenu" />
     </div>
 
+    <!-- Right Click Menu -->
     <DroneRightClickMenu />
+
+    <!-- Main Toolbar -->
     <MainToolbar v-if="cesiumInitialized" id="mainToolbar" />
 
-    <div
-      id="toolbarTopRight"
-      style="display: flex; gap: 5px; position: absolute; top: 5px; right: 5px"
-    >
+    <!-- Top Right Toolbar -->
+    <div id="toolbarTopRight" class="toolbar">
       <NetworkIndicator />
       <GeolocationButton />
     </div>
 
+    <!-- Drone Menu -->
     <DroneMenu />
   </div>
 </template>
 
 <script lang="ts" setup>
-import CesiumViewer from "@/components/CesiumViewer.vue";
-import DarkModeToggle from "@/components/DarkModeToggle.vue";
-import DroneMenu from "@/components/DroneMenu.vue";
-import DroneRightClickMenu from "@/components/DroneRightClickMenu.vue";
-import MainToolbar from "@/components/MainToolbar.vue";
-import GeolocationButton from "@/components/GeolocationButton.vue";
-import NetworkIndicator from "@/components/NetworkIndicator.vue";
+import { ref, onMounted, type ComponentPublicInstance } from "vue";
 import {
   cesiumInitialized,
   getCesiumViewer,
+  waitUntilCesiumInitialized,
 } from "@/components/CesiumViewerWrapper";
-import Button from "primevue/button";
-import { Drone } from "@/core/Drone";
-import { droneCollection } from "@/core/DroneCollection";
-import { SerialOptions, UdpOptions } from "@/types/DroneConnectionOptions";
+import { droneManager } from "~/core/drone/DroneManager";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
-import { onMounted, ref, type ComponentPublicInstance } from "vue";
 import { eventBus } from "~/utils/Eventbus";
 import {
   getCacheStatistics,
@@ -99,20 +79,31 @@ import {
   type CacheStatistics,
   formatBytes,
 } from "~/utils/CacheUtils";
+import CesiumViewer from "@/components/CesiumViewer.vue";
+import DarkModeToggle from "@/components/DarkModeToggle.vue";
+import DroneMenu from "@/components/DroneMenu.vue";
+import DroneRightClickMenu from "@/components/DroneRightClickMenu.vue";
+import MainToolbar from "@/components/MainToolbar.vue";
+import GeolocationButton from "@/components/GeolocationButton.vue";
+import NetworkIndicator from "@/components/NetworkIndicator.vue";
+import Button from "primevue/button";
 import Wifi from "~icons/mdi/wifi";
 import WifiOff from "~icons/mdi/wifi-off";
 
+// Reactive state
 const cacheQuota = ref(0);
 const cacheTotalUsed = ref(0);
 const cacheUsedPercent = ref(0);
 const cacheDetails = ref<CacheStatistics[]>([]);
-
-const connectDisconnectRef = ref("connectDisconnectRef");
+const connectDisconnectRef = ref<ComponentPublicInstance | null>(null);
 const connectDisconnectDisabled = ref(false);
 const connectDisconnectText = ref("Connect");
 const connectedIconRef = ref<ComponentPublicInstance | null>(null);
 
-async function connectDisconnect() {
+/**
+ * Handles connecting and disconnecting from drones.
+ */
+async function handleConnectDisconnect() {
   if (!connectDisconnectRef.value) {
     showToast("connectDisconnectRef button not found", ToastSeverity.Error);
     return;
@@ -121,84 +112,112 @@ async function connectDisconnect() {
   try {
     connectDisconnectDisabled.value = true;
 
-    if (droneCollection.getNumDrones() === 0) {
-      showToast(`Connecting ...`, ToastSeverity.Info);
+    if (!droneManager.connection.connected) {
+      // workaround: force disconnect before connecting to make sure every connection succeeds
+      try {
+        await droneManager.disconnect(true); // force
+        droneManager.destroyAllDrones();
+      } catch (e) {}
+
+      showToast("Connecting...", ToastSeverity.Info);
       connectedIconRef.value?.$el.startRotation(true);
 
-      const drone = droneCollection.addDrone(new Drone(new UdpOptions()));
-      // const drone = droneCollection.addDrone(
-      //   new Drone(new SerialOptions("COM3", 57600)),
+      await droneManager.connect();
+
+      connectedIconRef.value?.$el.stopRotation(true);
+
+      // showToast(
+      //   `Connected! (sysid: ${drone.sysId}, compid: ${drone.compId})`,
+      //   ToastSeverity.Success,
       // );
-
-      await droneCollection.connectAll();
-
-      await connectedIconRef.value?.$el.stopRotation(true);
-
-      showToast(
-        `Connected! (sysid: ${drone.getSysId()}, compid: ${drone.getCompId()})`,
-        ToastSeverity.Success,
-      );
+      // eventBus.emit("droneConnected", drone);
 
       connectDisconnectText.value = "Disconnect";
-
-      eventBus.emit("droneConnected", drone);
-      connectDisconnectDisabled.value = false;
     } else {
-      await droneCollection.disconnectAll();
-      droneCollection.removeAllDrones();
+      await droneManager.disconnect();
+      droneManager.destroyAllDrones();
 
-      await connectedIconRef.value?.$el.stopRotation();
-      await connectedIconRef.value?.$el.rotationStopped();
+      connectedIconRef.value?.$el.stopRotation();
+      connectedIconRef.value?.$el.rotationStopped();
 
       showToast("Disconnected!", ToastSeverity.Success);
-
       connectDisconnectText.value = "Connect";
 
       eventBus.emit("allDronesDisconnected");
-      connectDisconnectDisabled.value = false;
     }
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(e.message, ToastSeverity.Error);
-    } else {
-      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
-    }
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : `Unknown error: ${JSON.stringify(error)}`;
+    showToast(errorMessage, ToastSeverity.Error);
 
+    // Cleanup on failure
+    await droneManager.disconnect(true); // force
+    droneManager.destroyAllDrones();
+    connectedIconRef.value?.$el.stopRotation();
+    connectedIconRef.value?.$el.rotationStopped();
+  } finally {
     connectDisconnectDisabled.value = false;
-    droneCollection.disconnectAll();
-    droneCollection.removeAllDrones();
-
-    await connectedIconRef.value?.$el.stopRotation();
-    await connectedIconRef.value?.$el.rotationStopped();
+    getCesiumViewer().scene.requestRender();
   }
-
-  getCesiumViewer().scene.requestRender();
 }
 
-onMounted(() => {
-  try {
-    getCacheStatistics().then((stats) => {
+/**
+ * Initializes cache statistics and sets up periodic updates.
+ */
+function initializeCacheStats() {
+  const updateCacheStats = async () => {
+    try {
+      const stats = await getCacheStatistics();
       cacheQuota.value = stats.cacheQuota;
       cacheTotalUsed.value = stats.totalUsedCache;
       cacheUsedPercent.value = stats.cachePercentageUsed;
       cacheDetails.value = stats.cacheDetails;
-    });
-
-    // refresh stats every second
-    setInterval(() => {
-      getCacheStatistics().then((stats) => {
-        cacheQuota.value = stats.cacheQuota;
-        cacheTotalUsed.value = stats.totalUsedCache;
-        cacheUsedPercent.value = stats.cachePercentageUsed;
-        cacheDetails.value = stats.cacheDetails;
-      });
-    }, 1_000);
-  } catch (e) {
-    if (e instanceof Error) {
-      showToast(e.message, ToastSeverity.Error);
-    } else {
-      showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : `Unknown error: ${JSON.stringify(error)}`;
+      showToast(errorMessage, ToastSeverity.Error);
     }
-  }
+  };
+
+  // Initial stats load
+  updateCacheStats();
+
+  // Periodically refresh cache stats
+  setInterval(updateCacheStats, 1_000);
+}
+
+// Lifecycle hooks
+onMounted(async () => {
+  await waitUntilCesiumInitialized();
+  initializeCacheStats();
 });
 </script>
+
+<style scoped>
+.toolbar {
+  display: flex;
+  gap: 5px;
+  position: absolute;
+}
+
+#toolbarTopLeft {
+  align-items: flex-start;
+  flex-direction: column;
+  top: 5px;
+  left: 5px;
+}
+
+#toolbarTopRight {
+  top: 5px;
+  right: 5px;
+}
+
+.cache-detail {
+  border: 1px solid black;
+  padding: 5px;
+}
+</style>

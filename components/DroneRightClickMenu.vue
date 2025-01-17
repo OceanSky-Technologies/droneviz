@@ -50,7 +50,7 @@ import type { CSSProperties } from "vue";
 import * as Cesium from "cesium";
 import { eventBus } from "@/utils/Eventbus";
 import DroneRightClickMenuActions from "@/components/DroneRightClickMenuActions.vue";
-import { droneCollection } from "@/core/DroneCollection";
+import { droneManager } from "~/core/drone/DroneManager";
 import {
   getCesiumViewer,
   waitUntilCesiumInitialized,
@@ -170,7 +170,7 @@ function handleCesiumRightClick({
   cartesian3: Cesium.Cartesian3;
 }) {
   // If no drone is selected, do nothing.
-  if (!droneCollection.selectedDrone.value) return;
+  if (!droneManager.selectedDrone.value) return;
 
   // If the user right-clicked empty space (no entity), show the menu
   if (!entity) {

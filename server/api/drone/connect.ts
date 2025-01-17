@@ -20,10 +20,6 @@ export default defineEventHandler(async (event): Promise<QueryResult> => {
 
   setHttpHeaders(event);
 
-  if (drones.length !== 0) {
-    return { success: false, message: "A drone is already connected." };
-  }
-
   const parsedOptions = JSON.parse(query.connectionOptions);
 
   let drone;

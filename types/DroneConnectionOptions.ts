@@ -49,3 +49,5 @@ export class UdpOptions {
     this.targetPort = targetPort;
   }
 }
+
+export type ConnectionOptions = SerialOptions | TcpOptions | UdpOptions;

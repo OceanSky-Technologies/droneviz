@@ -1,9 +1,9 @@
 import type { QueryResult } from "@/types/MessageInterface";
-import { drones } from "./DroneCollection";
 import { setHttpHeaders } from "~/server/utils/headers";
 import { Ping } from "mavlink-mappings/dist/lib/common";
 import { defineEventHandler, readBody } from "h3";
 import { fixBigIntSerialization } from "@/types/bigIntSerializationHelper";
+import { drones } from "./DroneCollection";
 
 fixBigIntSerialization();
 

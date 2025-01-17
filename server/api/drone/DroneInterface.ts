@@ -2,6 +2,7 @@ import { Socket, connect } from "node:net";
 import dgram from "dgram";
 import os from "os";
 import { Readable, Writable } from "stream";
+import type { MavLinkData } from "node-mavlink";
 import {
   MavLinkPacketParser,
   MavLinkPacketSplitter,
@@ -10,8 +11,6 @@ import {
   send as mavlinkSend,
   sendSigned as mavlinkSendSigned,
   MavLinkProtocolV2,
-  MavLinkData,
-  MavLinkProtocolV1,
 } from "node-mavlink";
 import { SerialPort } from "serialport";
 import type { EventStream } from "h3";
@@ -26,6 +25,9 @@ import { fixBigIntSerialization } from "@/types/bigIntSerializationHelper";
 
 fixBigIntSerialization();
 
+/**
+ *
+ */
 export class DroneInterface {
   private connectionOption: SerialOptions | TcpOptions | UdpOptions;
 
@@ -38,6 +40,9 @@ export class DroneInterface {
 
   eventStream?: EventStream;
 
+  /**
+   *
+   */
   constructor(
     connectionOption: SerialOptions | TcpOptions | UdpOptions,
     signatureKey?: string,
@@ -49,6 +54,9 @@ export class DroneInterface {
     }
   }
 
+  /**
+   *
+   */
   async connect() {
     try {
       if (this.connectionOption instanceof SerialOptions) {
@@ -67,6 +75,9 @@ export class DroneInterface {
     }
   }
 
+  /**
+   *
+   */
   async disconnect() {
     this.clients.clear();
 
@@ -89,6 +100,9 @@ export class DroneInterface {
     }
   }
 
+  /**
+   *
+   */
   private async connectSerial() {
     this.port = new SerialPort({
       path: (this.connectionOption as SerialOptions).path,
@@ -123,6 +137,9 @@ export class DroneInterface {
     });
   }
 
+  /**
+   *
+   */
   private async connectTcp() {
     // TODO: structure it the same way like UDP connection
 
@@ -153,6 +170,9 @@ export class DroneInterface {
     });
   }
 
+  /**
+   *
+   */
   private async connectUdp() {
     this.connectionOption = this.connectionOption as UdpOptions;
 
@@ -241,6 +261,9 @@ export class DroneInterface {
     });
   }
 
+  /**
+   *
+   */
   onData(packet: any) {
     // TODO: test signature verification with TCP -> the 'data' callback provides a 'Buffer' object which has no 'signature' property
     if (packet.signature) {
@@ -254,6 +277,9 @@ export class DroneInterface {
     }
   }
 
+  /**
+   *
+   */
   handleMessage(packet: any) {
     // console.log(packet);
     try {
@@ -279,6 +305,9 @@ export class DroneInterface {
     }
   }
 
+  /**
+   *
+   */
   private getInterfaceAddress(type: dgram.SocketType): string {
     const interfaces = os.networkInterfaces();
 
@@ -307,6 +336,9 @@ export class DroneInterface {
     return type === "udp4" ? "0.0.0.0" : "::";
   }
 
+  /**
+   *
+   */
   send(command: MavLinkData): Promise<unknown> {
     if (!this.writeStream) {
       throw new Error("Connection not established");

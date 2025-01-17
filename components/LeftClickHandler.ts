@@ -10,18 +10,22 @@ import {
   getCesiumViewer,
   updateRequestRenderMode,
 } from "./CesiumViewerWrapper";
-import { droneCollection } from "@/core/DroneCollection";
+import { droneManager } from "~/core/drone/DroneManager";
 import { eventBus } from "@/utils/Eventbus";
 import { getPreferredEntity } from "@/utils/EntityUtils";
 import { Colors } from "@/utils/Colors";
+import { showToast, ToastSeverity } from "@/utils/ToastService";
 
 let mouseClickHandler: ScreenSpaceEventHandler;
+
 export let selectedEntityHighlighter: CesiumHighlighter;
 
+/**
+ * Initializes the left-click handler, if it isn't already.
+ */
 export function init() {
   if (mouseClickHandler) return;
 
-  // single click: select
   mouseClickHandler = new ScreenSpaceEventHandler(
     getCesiumViewer().scene.canvas,
   );
@@ -43,40 +47,73 @@ export function init() {
 }
 
 /**
- * Handles mouse clicks on entities. If an entity is selected it gets selected/unselected.
- * @param {ScreenSpaceEventHandler.PositionedEvent} positionEvent Mouse position event
+ * Handles mouse clicks on entities. If an entity is recognized as a drone,
+ * we select/unselect that drone in the DroneManager. Otherwise, we unselect everything.
  */
 async function mouseClickListener(
   positionEvent: ScreenSpaceEventHandler.PositionedEvent,
 ) {
-  const entities = getCesiumViewer().scene.drillPick(positionEvent.position);
+  const entitiesPicked = getCesiumViewer().scene.drillPick(
+    positionEvent.position,
+  );
+  const entity = getPreferredEntity(entitiesPicked);
 
-  const entity = getPreferredEntity(entities);
-
+  // If no entity or not a model-based entity, unselect everything
   if (
     !defined(entity) ||
+    !defined(entity.id) ||
     !defined(entity.primitive) ||
     !(entity.primitive instanceof Model)
   ) {
-    console.log("Unselected all entities");
+    console.log("Unselected all entities (no valid pick).");
     selectedEntityHighlighter.clear();
-    droneCollection.selectedDrone.value = undefined;
+    droneManager.selectedDrone.value = undefined;
     eventBus.emit("cesiumLeftClick", undefined);
+    updateRequestRenderMode();
     return;
   }
 
-  if (!selectedEntityHighlighter.contains(entity)) {
-    console.log("Selected entity:", entity);
+  // If these are ConstantProperties, you can directly read them,
+  // or call getValue(JulianDate.now()) for dynamic properties
+  const sysId = entity.id.properties.sysId?.getValue
+    ? entity.id.properties.sysId.getValue()
+    : entity.id.properties.sysId;
+  const compId = entity.id.properties.compId?.getValue
+    ? entity.id.properties.compId.getValue()
+    : entity.id.properties.compId;
 
+  // If it doesn't have a valid sysId/compId, treat as non-drone
+  if (sysId === undefined || compId === undefined) {
+    console.log("Clicked entity is not a recognized Drone entity:", entity);
+    selectedEntityHighlighter.clear();
+    droneManager.selectedDrone.value = undefined;
+    eventBus.emit("cesiumLeftClick", undefined);
+    updateRequestRenderMode();
+    return;
+  }
+
+  // Now we have a drone. Check if it's already selected or not.
+  if (!selectedEntityHighlighter.contains(entity)) {
+    // SELECT the drone
+    console.log(`Selected entity: ${entity.id ?? "unknown ID"}`);
     selectedEntityHighlighter.add(entity);
-    droneCollection.selectDrone(0);
+
+    // Update the DroneManager selection
+    droneManager.selectDrone(sysId, compId);
+    // Also set the selectedDrone.value in case you want direct reference
+    droneManager.selectedDrone.value = droneManager.allDrones.find(
+      (d) => d.sysId === sysId && d.compId === compId,
+    );
+
+    // Show toast
+    showToast(`Selected drone ${sysId}-${compId}`, ToastSeverity.Success);
 
     eventBus.emit("cesiumLeftClick", entity);
   } else {
-    console.log("Unselected entity:", entity);
-
+    // UNSELECT the drone
+    console.log(`Unselected entity: ${entity.id ?? "unknown ID"}`);
     selectedEntityHighlighter.remove(entity);
-    droneCollection.selectedDrone.value = undefined;
+    droneManager.selectedDrone.value = undefined;
 
     eventBus.emit("cesiumLeftClick", entity);
   }

@@ -27,7 +27,6 @@ class Settings {
   disableAnimations: Ref<boolean>;
 
   heartbeatInterval: Ref<number>; // milliseconds, 0: disabled
-  manualControlInterval: Ref<number>; // milliseconds, 0: disabled
 
   /**
    * Constructs a new Settings class with default values.
@@ -48,7 +47,6 @@ class Settings {
     this.disableAnimations = ref(true);
 
     this.heartbeatInterval = ref(1000);
-    this.manualControlInterval = ref(0);
   }
 }
 

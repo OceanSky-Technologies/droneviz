@@ -68,7 +68,7 @@ export function formatAltitude(altitude?: number): string {
 }
 
 export function calculateCartesian3Position(
-  entity: Cesium.Entity,
+  entity: Cesium.Entity | undefined,
   message: GlobalPositionInt,
 ): Cesium.Cartesian3 {
   const longitude = message.lon / 1e7;
@@ -77,7 +77,7 @@ export function calculateCartesian3Position(
   const altitude = egm96ToEllipsoid(latitude, longitude, message.alt / 1000);
 
   // TODO: clamp model to ground if it's below terrain. Use correct reference instead of "0"
-  if (entity.model) {
+  if (entity && entity.model) {
     if (altitude < 0) {
       // TODO: replace 0 with terrain / 3D tile height
       if (
@@ -96,6 +96,7 @@ export function calculateCartesian3Position(
         );
     }
   }
+
   return Cesium.Cartesian3.fromDegrees(longitude, latitude, altitude);
 }
 

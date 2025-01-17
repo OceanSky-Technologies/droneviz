@@ -43,6 +43,7 @@ export default withNuxt(
       "prefer-template": "off",
       "sort-imports": "off",
       "sort-keys": "off",
+      "@typescript-eslint/no-explicit-any": "off",
       "vue/html-self-closing": "off",
       "vue/max-attributes-per-line": "off",
       "vue/no-parsing-error": "off",

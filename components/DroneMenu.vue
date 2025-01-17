@@ -18,6 +18,11 @@
         <div style="display: flex; flex-direction: column; gap: 10px">
           <Button label="Arm" severity="danger" @click="arm" />
           <Button label="Disarm" severity="danger" @click="disarm" />
+          <Button
+            label="Disarm (force)"
+            severity="danger"
+            @click="disarmForce"
+          />
         </div>
         <div style="display: flex; flex-direction: column; gap: 10px">
           <Button label="Takeoff" @click="takeoff" />
@@ -55,11 +60,12 @@ import IcBaselineWarningAmber from "~icons/ic/baseline-warning-amber";
 import IcBaselineClose from "~icons/ic/baseline-close";
 import DroneTelemetry from "@/components/DroneTelemetry.vue";
 import { useConfirm } from "primevue/useconfirm";
-import { droneCollection } from "@/core/DroneCollection";
+import { droneManager } from "~/core/drone/DroneManager";
 
 import { isTauri } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { showToast, ToastSeverity } from "~/utils/ToastService";
+import { DroneCommands } from "../core/drone/DroneCommand";
 
 const confirm = useConfirm();
 
@@ -80,7 +86,7 @@ function closeMenu() {
   isMenuOpen.value = false;
 }
 
-watch(droneCollection.selectedDrone, (newValue) => {
+watch(droneManager.selectedDrone, (newValue) => {
   if (newValue) {
     showMenu();
   } else {
@@ -89,7 +95,7 @@ watch(droneCollection.selectedDrone, (newValue) => {
 });
 
 async function arm() {
-  if (!droneCollection.selectedDrone.value) {
+  if (!droneManager.selectedDrone.value) {
     showToast("No drone selected", ToastSeverity.Error);
     return;
   }
@@ -104,7 +110,12 @@ async function arm() {
     acceptClass: "p-button-danger",
     accept: async () => {
       try {
-        await droneCollection.selectedDrone.value?.arm();
+        if (!droneManager.selectedDrone.value) {
+          showToast("No drone selected", ToastSeverity.Error);
+          return;
+        }
+
+        await new DroneCommands(droneManager.selectedDrone.value).arm();
         showToast("Armed!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
@@ -118,14 +129,13 @@ async function arm() {
 }
 
 async function disarm() {
-  if (!droneCollection.selectedDrone.value) {
+  if (!droneManager.selectedDrone.value) {
     showToast("No drone selected", ToastSeverity.Error);
     return;
   }
 
   confirm.require({
-    message:
-      "Are you sure you want to disarm the aircraft?\nDisarming while airborne will cause the aircraft to fall immediately. Proceed only if it is safe to do so.",
+    message: "Are you sure you want to disarm the aircraft?",
     header: "Disarming",
     icon: markRaw(IcBaselineWarningAmber) as any,
     rejectLabel: "Cancel",
@@ -133,7 +143,46 @@ async function disarm() {
     acceptClass: "p-button-danger",
     accept: async () => {
       try {
-        await droneCollection.selectedDrone.value?.disarm(true);
+        if (!droneManager.selectedDrone.value) {
+          showToast("No drone selected", ToastSeverity.Error);
+          return;
+        }
+
+        await new DroneCommands(droneManager.selectedDrone.value).disarm();
+        showToast("Disarmed!", ToastSeverity.Info);
+      } catch (e) {
+        if (e instanceof Error) {
+          showToast(e.message, ToastSeverity.Error);
+        } else {
+          showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
+        }
+      }
+    },
+  });
+}
+
+async function disarmForce() {
+  if (!droneManager.selectedDrone.value) {
+    showToast("No drone selected", ToastSeverity.Error);
+    return;
+  }
+
+  confirm.require({
+    message:
+      "Are you sure you want to disarm the aircraft?\nDisarming while airborne will cause the aircraft to fall immediately. Proceed only if it is safe to do so.",
+    header: "Disarming (force)",
+    icon: markRaw(IcBaselineWarningAmber) as any,
+    rejectLabel: "Cancel",
+    acceptLabel: "Disarm",
+    acceptClass: "p-button-danger",
+    accept: async () => {
+      try {
+        if (!droneManager.selectedDrone.value) {
+          showToast("No drone selected", ToastSeverity.Error);
+          return;
+        }
+
+        await new DroneCommands(droneManager.selectedDrone.value).disarm(true);
         showToast("Disarmed!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
@@ -147,7 +196,7 @@ async function disarm() {
 }
 
 async function takeoff() {
-  if (!droneCollection.selectedDrone.value) {
+  if (!droneManager.selectedDrone.value) {
     showToast("No drone selected", ToastSeverity.Error);
     return;
   }
@@ -161,7 +210,12 @@ async function takeoff() {
     acceptClass: "p-button-success",
     accept: async () => {
       try {
-        await droneCollection.selectedDrone.value?.takeoff();
+        if (!droneManager.selectedDrone.value) {
+          showToast("No drone selected", ToastSeverity.Error);
+          return;
+        }
+
+        await new DroneCommands(droneManager.selectedDrone.value).takeoff();
         showToast("Takeoff!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
@@ -175,7 +229,7 @@ async function takeoff() {
 }
 
 async function land() {
-  if (!droneCollection.selectedDrone.value) {
+  if (!droneManager.selectedDrone.value) {
     showToast("No drone selected", ToastSeverity.Error);
     return;
   }
@@ -189,7 +243,12 @@ async function land() {
     acceptClass: "p-button-success",
     accept: async () => {
       try {
-        await droneCollection.selectedDrone.value?.land();
+        if (!droneManager.selectedDrone.value) {
+          showToast("No drone selected", ToastSeverity.Error);
+          return;
+        }
+
+        await new DroneCommands(droneManager.selectedDrone.value).land();
         showToast("Landing!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
@@ -203,7 +262,7 @@ async function land() {
 }
 
 async function autotune() {
-  if (!droneCollection.selectedDrone.value) {
+  if (!droneManager.selectedDrone.value) {
     showToast("No drone selected", ToastSeverity.Error);
     return;
   }
@@ -218,8 +277,14 @@ async function autotune() {
     acceptClass: "p-button-danger",
     accept: async () => {
       try {
+        if (!droneManager.selectedDrone.value) {
+          showToast("No drone selected", ToastSeverity.Error);
+          return;
+        }
+
         showToast("Autotuning...", ToastSeverity.Info);
-        await droneCollection.selectedDrone.value?.autotune();
+
+        await new DroneCommands(droneManager.selectedDrone.value).autotune();
       } catch (e) {
         if (e instanceof Error) {
           showToast(e.message, ToastSeverity.Error);
@@ -241,7 +306,7 @@ function trackUntrack() {
     return;
   }
 
-  if (!defined(droneCollection.selectedDrone.value?.entity)) {
+  if (!defined(droneManager.selectedDrone.value?.entity)) {
     console.log("No entity selected to track.");
 
     getCesiumViewer().trackedEntity = undefined;
@@ -255,11 +320,11 @@ function trackUntrack() {
   }
 
   console.log("Tracking drone:");
-  console.log(droneCollection.selectedDrone.value);
+  console.log(droneManager.selectedDrone.value);
 
   if (!getCesiumViewer().trackedEntity) {
     getCesiumViewer().trackedEntity = toRaw(
-      droneCollection.selectedDrone.value?.entity,
+      droneManager.selectedDrone.value?.entity,
     );
 
     trackUntrackButtonLabel.value = "Untrack";
@@ -280,9 +345,9 @@ async function openVideo() {
     if (isTauri()) {
       const webview = new WebviewWindow(
         "video-ai-" +
-          droneCollection.selectedDrone.value?.getSysId() +
+          droneManager.selectedDrone.value?.sysId +
           "-" +
-          droneCollection.selectedDrone.value?.getCompId(),
+          droneManager.selectedDrone.value?.compId,
         {
           url: "/video-ai",
           title: "Droneviz - Video AI",
@@ -326,7 +391,7 @@ onMounted(() => {
   eventBus.on("droneDisconnected", closeMenu);
   eventBus.on("allDronesDisconnected", closeMenu);
 
-  if (droneCollection.selectedDrone.value) {
+  if (droneManager.selectedDrone.value) {
     showMenu();
   }
 });

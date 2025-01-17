@@ -1,8 +1,8 @@
 import { CommandInt } from "mavlink-mappings/dist/lib/common";
-import { drones } from "./DroneCollection";
 import { setHttpHeaders } from "~/server/utils/headers";
 import type { QueryResult } from "@/types/MessageInterface";
 import { defineEventHandler, readBody } from "h3";
+import { drones } from "./DroneCollection";
 
 export default defineEventHandler(async (event): Promise<QueryResult> => {
   const query: CommandInt = await readBody<CommandInt>(event);
