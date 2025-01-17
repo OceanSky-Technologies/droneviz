@@ -59,6 +59,10 @@
     --color-blue
   ) !important;
   --p-toggleswitch-handle-checked-background: var(--color-dark-blue) !important;
+
+  /* toggle button */
+  --p-togglebutton-checked-background: var(--color-gold) !important;
+  --p-togglebutton-checked-color: black !important;
 }
 
 body {

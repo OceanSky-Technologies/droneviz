@@ -53,7 +53,7 @@ export function formatCoordinate(coordinate?: number): string {
   if (coordinate === undefined) return "undefined";
 
   // 6 decimal places equal 10 cm resolution. 12 digits are maximum.
-  return coordinate.toFixed(6).padStart(12, " ") + "°";
+  return coordinate.toFixed(6) + "°";
 }
 
 /**
@@ -64,10 +64,10 @@ export function formatCoordinate(coordinate?: number): string {
 export function formatAltitude(altitude?: number): string {
   if (!altitude) return "undefined";
 
-  return altitude.toFixed(2).padStart(12, " ") + "m";
+  return altitude.toFixed(2) + "m";
 }
 
-export function calculatePosition(
+export function calculateCartesian3Position(
   entity: Cesium.Entity,
   message: GlobalPositionInt,
 ): Cesium.Cartesian3 {

@@ -24,7 +24,7 @@ class DroneCollection {
       },
       position: new Cesium.CallbackPositionProperty(
         (): Cesium.Cartesian3 | undefined => {
-          return drone.position.value;
+          return drone.positionCartesian3.value;
         },
         false,
       ),

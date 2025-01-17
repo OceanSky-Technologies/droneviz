@@ -29,12 +29,12 @@ export function init() {
 async function mouseClickListener(
   positionEvent: ScreenSpaceEventHandler.PositionedEvent,
 ) {
-  const entities = getCesiumViewer().scene.drillPick(positionEvent.position);
-  const entity = getPreferredEntity(entities);
-
   const cartesian3 = getCesiumViewer().scene.pickPosition(
     positionEvent.position,
   );
+
+  const entities = getCesiumViewer().scene.drillPick(positionEvent.position);
+  const entity = getPreferredEntity(entities);
 
   if (
     defined(entity) &&

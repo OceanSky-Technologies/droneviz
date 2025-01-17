@@ -6,7 +6,7 @@ import type {
 import { showToast, ToastSeverity } from "@/utils/ToastService";
 import { REGISTRY } from "@/types/MavlinkRegistry";
 import { getCesiumViewer } from "../components/CesiumViewerWrapper";
-import { calculatePosition } from "@/utils/CoordinateUtils";
+import { calculateCartesian3Position } from "@/utils/CoordinateUtils";
 import * as Cesium from "cesium";
 import type {
   MavlinkMessageInterface,
@@ -64,7 +64,8 @@ export class Drone {
   // cesium entity to represent the drone
   entity: Cesium.Entity | undefined;
 
-  position: Ref<Cesium.Cartesian3> = ref(new Cesium.Cartesian3());
+  position: Ref<GlobalPositionInt> = ref(new GlobalPositionInt());
+  positionCartesian3: Ref<Cesium.Cartesian3> = ref(new Cesium.Cartesian3());
   orientation: Ref<Cesium.Quaternion> = ref(new Cesium.Quaternion());
 
   private sysid: number = NaN;
@@ -422,7 +423,11 @@ export class Drone {
   private updateEntityPosition(message: GlobalPositionInt) {
     if (!this.entity) return;
 
-    this.position.value = calculatePosition(this.entity, message);
+    this.position.value = message;
+    this.positionCartesian3.value = calculateCartesian3Position(
+      this.entity,
+      message,
+    );
 
     getCesiumViewer().scene.requestRender();
   }

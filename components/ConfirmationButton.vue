@@ -13,7 +13,7 @@ defineProps({
   },
 });
 
-const emit = defineEmits(["click"]);
+const emit = defineEmits(["click", "select"]);
 
 const isConfirming = ref(false);
 const containerRef = ref<HTMLElement | null>(null);
@@ -25,6 +25,7 @@ const handleClick = (): void => {
     emit("click");
     isConfirming.value = false;
   } else {
+    emit("select");
     // Switch to confirmation state
     isConfirming.value = true;
   }
