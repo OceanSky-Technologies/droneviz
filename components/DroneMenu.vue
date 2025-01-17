@@ -1,3 +1,45 @@
+<template>
+  <div class="menu-wrapper" :class="{ open: isMenuOpen }">
+    <CustomConfirmDialog />
+
+    <Button class="close-button" @click="toggleMenu">
+      <IcBaselineClose />
+    </Button>
+
+    <div class="menu">
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 10px;
+          align-items: flex-start;
+        "
+      >
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <Button label="Arm" severity="danger" @click="arm" />
+          <Button label="Disarm" severity="danger" @click="disarm" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <Button label="Takeoff" @click="takeoff" />
+          <Button label="Land" @click="land" />
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <Button label="Autotune" severity="warn" @click="autotune" />
+          <!-- <CameraWindow /> -->
+          <Button @click="openVideo">Open Video</Button>
+        </div>
+      </div>
+      <Button
+        :label="trackUntrackButtonLabel"
+        :icon="trackUntrackButtonIcon"
+        @click="trackUntrack"
+      />
+
+      <DroneTelemetry style="width: 50%" />
+    </div>
+  </div>
+</template>
+
 <script lang="ts" setup>
 import { defined } from "cesium";
 import { ref, onMounted, toRaw, markRaw, watch, onUnmounted } from "vue";
@@ -294,48 +336,6 @@ onUnmounted(() => {
   eventBus.off("allDronesDisconnected", closeMenu);
 });
 </script>
-
-<template>
-  <div class="menu-wrapper" :class="{ open: isMenuOpen }">
-    <CustomConfirmDialog />
-
-    <Button class="close-button" @click="toggleMenu">
-      <IcBaselineClose />
-    </Button>
-
-    <div class="menu">
-      <div
-        style="
-          display: flex;
-          flex-direction: row;
-          gap: 10px;
-          align-items: flex-start;
-        "
-      >
-        <div style="display: flex; flex-direction: column; gap: 10px">
-          <Button label="Arm" @click="arm" severity="danger" />
-          <Button label="Disarm" @click="disarm" severity="danger" />
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 10px">
-          <Button label="Takeoff" @click="takeoff" />
-          <Button label="Land" @click="land" />
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 10px">
-          <Button label="Autotune" @click="autotune" severity="warn" />
-          <!-- <CameraWindow /> -->
-          <Button @click="openVideo">Open Video</Button>
-        </div>
-      </div>
-      <Button
-        :label="trackUntrackButtonLabel"
-        :icon="trackUntrackButtonIcon"
-        @click="trackUntrack"
-      />
-
-      <DroneTelemetry style="width: 50%" />
-    </div>
-  </div>
-</template>
 
 <style scoped lang="postcss">
 .menu-wrapper {

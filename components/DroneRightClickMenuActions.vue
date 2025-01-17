@@ -61,7 +61,7 @@
           id="orbitVelocity"
           v-model="orbitVelocity"
           :min="1"
-          :max="65"
+          :max="100"
           :step="1"
           mode="decimal"
           suffix=" km/h"
@@ -109,7 +109,7 @@ const emit = defineEmits(["call-close", "position-update"]);
 /* ------------- Refs & Constants ------------- */
 const orbitDirectionOptions = ref(["CW", "CCW"]);
 const orbitDirectionValue = ref("CW");
-const orbitRadius = ref(20); // meters
+const orbitRadius = ref(50); // meters
 const orbitVelocity = ref(65); // km/h
 
 /* Entities to visually represent user-chosen flight paths */
@@ -401,7 +401,7 @@ function createOrUpdateRing(skipClear = false) {
 
         // Angular velocity in rad/s
         const radPerSec = orbitRadius.value
-          ? orbitVelocity.value / orbitRadius.value
+          ? orbitVelocity.value / 3.6 / orbitRadius.value
           : 0;
 
         return direction * seconds * radPerSec;

@@ -260,7 +260,7 @@ export class Drone {
       } else if (message instanceof Ping) {
         this.replyToPing(message);
       } else {
-        //console.log(message);
+        // console.log(message);
       }
 
       // Store the last message for the given class
