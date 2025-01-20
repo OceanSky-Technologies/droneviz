@@ -33,7 +33,6 @@ export class DroneCommands {
       () =>
         connection.sendCommandLong(this.drone.sysId, this.drone.compId, cmd),
       (ack: CommandAck) => {
-        console.log("arg", ack);
         return (
           ack instanceof CommandAck &&
           ack.command === cmd.command &&

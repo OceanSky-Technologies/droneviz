@@ -126,14 +126,18 @@ async function showPositionInfoEntity(position: Cartesian2) {
 
     const heightMSLString =
       egm96
-        .meanSeaLevel(latitudeDegrees, longitudeDegrees)
+        .ellipsoidToEgm96(
+          latitudeDegrees,
+          longitudeDegrees,
+          cartographic.height,
+        )
         .toFixed(2)
         .padStart(12, " ") + "m";
 
     // if (!mousePositionInfoEntity.label.show)
     mousePositionInfoEntity.label.show = new ConstantProperty(true);
 
-    const height = await getHeight(cartesian3);
+    const height = await getHeight(cartesian3, cartographic);
 
     if (height === undefined) {
       mousePositionInfoEntity.label.text = new ConstantProperty(

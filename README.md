@@ -80,3 +80,18 @@ Alternatively, the `vscode` configuration comes with the `Testing` tab fully set
 Icons: Use svgs (material outline rounded) from <https://icones.js.org/collection/material-symbols>.
 
 `mavproxy.exe --out=udp:127.0.0.1:14550`
+
+## Reference system
+
+GPS altitude (Mavlink's `alt`) = MSL = Geoid
+Cesium (terrain) = WGS84 ellipsoid (Mavlink's `alt_ellipsoid`)
+
+Cesium (3D tiles) is also according to WGS84 but the values differ compared to cesium and Mavlink! Requires compensating the difference.
+
+Cesium to MSL / Geoid:
+`egm96.ellipsoidToEgm96()`
+
+MSL / Geoid to Cesium:
+`egm96.egm96ToEllipsoid()`
+
+https://support.virtual-surveyor.com/support/solutions/articles/1000261349-the-difference-between-ellipsoidal-geoid-and-orthometric-elevations-

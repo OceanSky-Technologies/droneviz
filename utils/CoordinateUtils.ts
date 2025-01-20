@@ -74,7 +74,15 @@ export function calculateCartesian3Position(
   const longitude = message.lon / 1e7;
   const latitude = message.lat / 1e7;
 
+  // Convert from EGM96 MSL altitude to WGS84 ellipsoidal altitude.
+  // If the GPS sensor uses EGM2008, this will be slightly incorrect.
   const altitude = egm96ToEllipsoid(latitude, longitude, message.alt / 1000);
+
+  console.log(message);
+  console.log(altitude);
+  if (googleTilesEnabled()) {
+    // fix offset for google tiles
+  }
 
   // TODO: clamp model to ground if it's below terrain. Use correct reference instead of "0"
   if (entity && entity.model) {
@@ -102,11 +110,13 @@ export function calculateCartesian3Position(
 
 /**
  * Returns the correct height of the terrain at the given cartographic position with enabled and disabled 3D Google tiles.
- * @param cartographic The cartographic position.
- * @returns The height of the terrain/scene at the given position or undefined.
+ * @param cartesian The cartesian3 position.
+ * @param cartographicIn The cartographic position (optional). If not provided, the cartographic position will be calculated form the cartesian.
+ * @returns The height of the terrain/3D scene at the given position or undefined.
  */
 export async function getHeight(
   cartesian: Cesium.Cartesian3,
+  cartographicIn?: Cesium.Cartographic,
 ): Promise<number | undefined> {
   let height: number | undefined = undefined;
 
@@ -139,7 +149,8 @@ export async function getHeight(
     height = getCesiumViewer().scene.globe.getHeight(cartographic);
     return height;
   } else {
-    const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+    const cartographic =
+      cartographicIn ?? Cesium.Cartographic.fromCartesian(cartesian);
 
     if (settings.mousePositionInfoMostDetailed.value) {
       // increases quota!
