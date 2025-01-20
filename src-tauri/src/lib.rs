@@ -43,9 +43,6 @@ pub fn run() {
             WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url))
                 .title("Droneviz - OceanSky Technologies")
                 .resizable(true)
-                .additional_browser_args("--enable-unsafe-webgpu")
-                .additional_browser_args("--enable-experimental-web-platform-features")
-                .additional_browser_args("--enable-unsafe-webgpu-service")
                 .inner_size(1280.0, 720.0)
                 .build()?
                 .on_window_event(move |event| {

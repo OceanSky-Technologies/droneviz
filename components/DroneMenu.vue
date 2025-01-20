@@ -344,7 +344,7 @@ async function openVideo() {
   try {
     if (isTauri()) {
       const webview = new WebviewWindow(
-        "video-ai-" +
+        "/video-ai-" +
           droneManager.selectedDrone.value?.sysId +
           "-" +
           droneManager.selectedDrone.value?.compId,
@@ -353,6 +353,7 @@ async function openVideo() {
           title: "Droneviz - Video AI",
           width: 1280,
           height: 720,
+          devtools: true,
         },
       );
 
