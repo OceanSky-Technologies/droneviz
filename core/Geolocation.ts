@@ -98,14 +98,13 @@ export async function updateGeolocation(
       ? position.coords.altitudeAccuracy
       : accuracy;
 
-  geolocation.value =
-    altitude !== null
-      ? Cesium.Cartesian3.fromDegrees(
-          longitude,
-          latitude,
-          altitude + terrainHeight,
-        )
-      : Cesium.Cartesian3.fromDegrees(longitude, latitude, terrainHeight);
+  geolocation.value = altitude
+    ? Cesium.Cartesian3.fromDegrees(
+        longitude,
+        latitude,
+        altitude + terrainHeight,
+      )
+    : Cesium.Cartesian3.fromDegrees(longitude, latitude, terrainHeight);
 
   const egoRadii = new Cesium.Cartesian3(
     accuracy / 2,

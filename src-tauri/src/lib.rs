@@ -43,7 +43,7 @@ pub fn run() {
             WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url))
                 .title("Droneviz - OceanSky Technologies")
                 .resizable(true)
-                .inner_size(1280.0, 720.0)
+                .inner_size(1920.0, 1080.0)
                 .build()?
                 .on_window_event(move |event| {
                     // auto kill the child process when the window is closed

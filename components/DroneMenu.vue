@@ -351,8 +351,8 @@ async function openVideo() {
         {
           url: "/video-ai",
           title: "Droneviz - Video AI",
-          width: 1280,
-          height: 720,
+          width: 1920,
+          height: 1080,
           devtools: true,
         },
       );
@@ -375,7 +375,7 @@ async function openVideo() {
       const newWindow = window.open(
         "/video-ai",
         "_blank",
-        "width=1280,height=720,resizable",
+        "width=1920,height=1080,resizable",
       );
 
       if (!newWindow) {
@@ -408,7 +408,6 @@ onUnmounted(() => {
   position: fixed;
   bottom: 0; /* Element is positioned at the bottom but hidden via transform */
   left: 0;
-  height: 300px;
   width: 100%;
   transform: translateY(100%); /* Start off-screen */
   transition: transform 0.2s ease-in-out; /* Smooth sliding effect */
@@ -428,10 +427,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding-bottom: 50px;
   height: 100%;
   width: 100%;
-  padding: 20px;
 }
 
 .close-button {

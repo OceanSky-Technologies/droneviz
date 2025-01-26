@@ -39,7 +39,7 @@ import {
 } from "./CesiumViewerWrapper";
 import { AnimationFrameScheduler } from "~/utils/AnimationFrameScheduler";
 import IcBaselinePerson from "~icons/ic/baseline-person";
-import { geolocation } from "@/core/Geolocation";
+import { geolocation, updateGeolocation } from "@/core/Geolocation";
 
 const visible = ref(false);
 const menu = ref<HTMLElement | null>(null);
@@ -150,9 +150,7 @@ async function handleDoubleClick() {
     },
     duration: 1,
     complete: async () => {
-      // Additional logic once camera flight is complete
-      // e.g., stop some rotation or call updateGeolocation
-      // updateGeolocation(...);
+      updateGeolocation();
       console.log("Camera flight complete!");
     },
   });

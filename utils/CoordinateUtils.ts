@@ -78,8 +78,8 @@ export function calculateCartesian3Position(
   // If the GPS sensor uses EGM2008, this will be slightly incorrect.
   const altitude = egm96ToEllipsoid(latitude, longitude, message.alt / 1000);
 
-  console.log(message);
-  console.log(altitude);
+  // console.log(message);
+  // console.log(altitude);
   if (googleTilesEnabled()) {
     // fix offset for google tiles
   }
