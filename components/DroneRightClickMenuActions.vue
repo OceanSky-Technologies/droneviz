@@ -260,6 +260,7 @@ function createOrUpdateLine(skipClear = false) {
 
   lineEntity.value = viewer.entities.add({
     polyline: {
+      material: Cesium.Color.fromCssColorString(Colors.GOLD),
       positions: new Cesium.CallbackProperty(() => {
         const currentDronePos =
           droneManager.selectedDrone.value?.positionCartesian3;
@@ -280,11 +281,6 @@ function createOrUpdateLine(skipClear = false) {
         );
         return [droneCart3, targetCart3];
       }, false),
-      material: new Cesium.PolylineDashMaterialProperty({
-        color: Cesium.Color.fromCssColorString(Colors.GOLD),
-        dashLength: 16,
-        dashPattern: 255, // 0xFF => 11111111 => effectively a dashed line
-      }),
       width: 1,
       clampToGround: false,
     },
@@ -404,7 +400,7 @@ function createOrUpdateRing(skipClear = false) {
 
       outline: true,
       outlineColor: Cesium.Color.fromCssColorString(Colors.GOLD),
-      outlineWidth: 3,
+      outlineWidth: 2,
 
       // Keep geometry's rotation = 0; we'll rotate the texture instead
       rotation: 0,

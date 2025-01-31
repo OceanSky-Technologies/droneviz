@@ -117,7 +117,9 @@ async function handleConnectDisconnect() {
       try {
         await droneManager.disconnect(true); // force
         droneManager.destroyAllDrones();
-      } catch (e) {}
+      } catch {
+        /* empty */
+      }
 
       showToast("Connecting...", ToastSeverity.Info);
       connectedIconRef.value?.$el.startRotation(true);

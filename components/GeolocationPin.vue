@@ -3,8 +3,8 @@
     <div
       v-show="visible"
       ref="menu"
-      :style="popupStyle"
       :key="animationKey"
+      :style="popupStyle"
       style="padding: 5px"
       class="popup-menu shadow-lg"
       @dblclick="handleDoubleClick"
@@ -62,7 +62,7 @@ const popupStyle = computed<CSSProperties>(() => ({
 let positionCartesian: Cartesian3;
 
 // remove callbacks for cesium listeners (destroyed when component is unmounted)
-let cesiumListenerCbs: (() => void)[] = [];
+const cesiumListenerCbs: (() => void)[] = [];
 
 function updateOverlayPosition() {
   if (!getCesiumViewer() || !menu.value || !positionCartesian) return;

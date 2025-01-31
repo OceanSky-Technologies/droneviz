@@ -167,7 +167,6 @@ async function showPositionInfoEntity(position: Cartesian2) {
           `\nTerrain: ${heightString}`,
       );
     }
-  } catch (e) {
   } finally {
     getCesiumViewer().scene.requestRender();
   }

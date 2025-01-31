@@ -1,15 +1,15 @@
 <template>
   <Button
+    v-tooltip.bottom="tooltip"
     :severity="buttonSeverity"
     @click="checkWebsitesButtonClick"
-    v-tooltip.bottom="tooltip"
   >
     <div class="icon-wrapper">
       <div class="icon-container">
         <MaterialSymbolsGlobe
           ref="networkIndicatorIconRef"
-          class="icon"
           v-rotate
+          class="icon"
         />
       </div>
     </div>
@@ -153,10 +153,14 @@ const refreshIntervalMillis = 10_000;
 onMounted(async () => {
   checkConnectivity();
   refreshInterval = setInterval(checkConnectivity, refreshIntervalMillis);
+
+  // if the cache is cleared automatically reload the cesium data. this prevents that the map is outdated after a cache clear.
+  eventBus.on("cacheCleared", refreshCesiumData);
 });
 
 onUnmounted(() => {
   clearInterval(refreshInterval);
+  eventBus.off("cacheCleared", refreshCesiumData);
 });
 </script>
 

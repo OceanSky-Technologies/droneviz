@@ -70,7 +70,14 @@ import ToggleSwitch from "primevue/toggleswitch";
 import InputText from "primevue/inputtext";
 import Listbox from "primevue/listbox";
 
-import { onMounted, type Ref, ref, useTemplateRef, watch } from "vue";
+import {
+  onMounted,
+  type Ref,
+  ref,
+  useTemplateRef,
+  watch,
+  type ComponentPublicInstance,
+} from "vue";
 import { settings } from "../utils/Settings";
 import {
   disableGoogleTiles,
@@ -82,7 +89,6 @@ import type { Cesium3DTileset, ProviderViewModel } from "cesium";
 import { Cartesian3, SceneMode } from "cesium";
 import type NodeGeocoder from "node-geocoder";
 import { showToast, ToastSeverity } from "@/utils/ToastService";
-import type { ComponentPublicInstance } from "vue";
 import { useRuntimeConfig } from "nuxt/app";
 
 // list of all available map data sources
