@@ -105,7 +105,7 @@ const props = defineProps<{
   positionCartesian: Cesium.Cartesian3;
   positionCartographic: Cesium.Cartographic;
 }>();
-const emit = defineEmits(["call-close", "position-update"]);
+const emit = defineEmits(["call-close"]);
 
 /* ------------- Refs & Constants ------------- */
 const orbitDirectionOptions = ref(["CW", "CCW"]);
@@ -120,6 +120,9 @@ const ringEntity = ref<Cesium.Entity | null>(null);
 /* Keep track of the target position chosen by the user */
 let targetPosition: Cesium.Cartesian3 | null = null;
 let targetAltitudeMsl: number | null = null; // meters
+
+// This makes sure the template sees changes when selectedDrone changes.
+const selectedDrone = computed(() => droneManager.selectedDrone.value);
 
 /* ------------- Lifecycle Expose ------------- */
 defineExpose({ clear });
@@ -190,11 +193,6 @@ function preCheck() {
 function flyToSelected() {
   clear();
   createOrUpdateLine();
-
-  console.log(targetPosition);
-  console.log(targetAltitudeMsl);
-  // Let parent know the menu should reposition to the newly created line's target
-  emit("position-update", targetPosition, targetAltitudeMsl);
 }
 
 /**
@@ -236,14 +234,11 @@ function createOrUpdateLine(skipClear = false) {
   if (!viewer) return;
   if (!skipClear) clear();
 
-  console.log(droneManager.selectedDrone.value!.lastGlobalPositionInt);
-
-  const globalPositionInt =
-    droneManager.selectedDrone.value?.lastGlobalPositionInt;
+  const globalPositionInt = unref(selectedDrone.value?.lastGlobalPositionInt);
   if (!globalPositionInt) return;
 
   // PROBLEM: dronePos is undefined but droneManager.selectedDrone.value is not
-  const dronePos = droneManager.selectedDrone.value?.positionCartesian3;
+  const dronePos = unref(selectedDrone.value?.positionCartesian3);
   if (!dronePos) return;
 
   const lat = Cesium.Math.toDegrees(props.positionCartographic.latitude);
@@ -262,8 +257,7 @@ function createOrUpdateLine(skipClear = false) {
     polyline: {
       material: Cesium.Color.fromCssColorString(Colors.GOLD),
       positions: new Cesium.CallbackProperty(() => {
-        const currentDronePos =
-          droneManager.selectedDrone.value?.positionCartesian3;
+        const currentDronePos = unref(selectedDrone.value?.positionCartesian3);
         if (!currentDronePos) return [];
 
         const cCarto =
@@ -297,7 +291,6 @@ function orbitSelected() {
   clear();
   createOrUpdateLine(true);
   createOrUpdateRing(true);
-  emit("position-update", targetPosition, targetAltitudeMsl);
 }
 
 /**
@@ -363,11 +356,12 @@ function createOrUpdateRing(skipClear = false) {
   const viewer = getCesiumViewer();
   if (!viewer) return;
   if (!skipClear) clear();
-  const dronePos = droneManager.selectedDrone.value?.positionCartesian3;
+  const dronePos = unref(droneManager.selectedDrone.value?.positionCartesian3);
   if (!dronePos) return;
 
-  const globalPositionInt =
-    droneManager.selectedDrone.value?.lastGlobalPositionInt;
+  const globalPositionInt = unref(
+    droneManager.selectedDrone.value?.lastGlobalPositionInt,
+  );
   if (!globalPositionInt) return;
 
   const lat = Cesium.Math.toDegrees(props.positionCartographic.latitude);

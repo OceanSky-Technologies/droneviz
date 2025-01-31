@@ -11,11 +11,15 @@
       <!-- Content -->
       <div>
         <p>
+          Lat:
           {{
             formatCoordinate(
               Cesium.Math.toDegrees(positionCartographic.latitude),
             )
-          }},
+          }}
+        </p>
+        <p>
+          Lon:
           {{
             formatCoordinate(
               Cesium.Math.toDegrees(positionCartographic.longitude),
@@ -23,7 +27,7 @@
           }}
         </p>
         <p>
-          Altitude (MSL):
+          Alt (MSL):
           {{ altitudeMsl.toFixed(2) }}m
         </p>
       </div>
@@ -35,7 +39,6 @@
         ref="droneRightClickMenuActionsRef"
         :position-cartesian="positionCartesian"
         :position-cartographic="positionCartographic"
-        @position-update="overlayPositionTempChange"
         @call-close="closeMenu"
       />
     </div>
@@ -212,50 +215,6 @@ function updateOverlayPosition() {
     menuPosition.x = -9999;
     menuPosition.y = -9999;
   }
-}
-
-/**
- * Called by the child component (DroneRightClickMenuActions) when it wants
- * to reposition the menu to a new cartographic coordinate in a *smooth* way.
- */
-function overlayPositionTempChange(
-  newPosition: Cesium.Cartesian3,
-  targetAltitudeMsl: number,
-) {
-  // Update the altitude
-  altitudeMsl.value = targetAltitudeMsl;
-
-  // Convert old pixel location to a local variable for reference
-  const oldX = menuPosition.x;
-  const oldY = menuPosition.y;
-
-  // Update the underlying cartographic references
-  positionCartesian.value = newPosition;
-  positionCartographic.value = Cesium.Cartographic.fromCartesian(newPosition);
-
-  // First do a *hard* recompute of the final new position
-  updateOverlayPosition();
-  const finalX = menuPosition.x;
-  const finalY = menuPosition.y;
-
-  // Move us back to the old position *immediately* so that a CSS transition
-  // can animate from old -> new over 1s.
-  menuPosition.x = oldX;
-  menuPosition.y = oldY;
-
-  // Apply the "repositioning" class for 1 second
-  isRepositioning.value = true;
-  setTimeout(() => {
-    isRepositioning.value = false;
-  }, 1000);
-
-  // Let Vue update the DOM. The final X/Y will be set on next tick,
-  // and because `.popup-menu-repositioning` is active,
-  // it will animate from oldX/oldY to finalX/finalY.
-  nextTick(() => {
-    menuPosition.x = finalX;
-    menuPosition.y = finalY;
-  });
 }
 </script>
 
