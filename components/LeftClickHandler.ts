@@ -14,7 +14,6 @@ import { droneManager } from "~/core/drone/DroneManager";
 import { eventBus } from "@/utils/Eventbus";
 import { getPreferredEntity } from "@/utils/EntityUtils";
 import { Colors } from "@/utils/Colors";
-import { showToast, ToastSeverity } from "@/utils/ToastService";
 
 let mouseClickHandler: ScreenSpaceEventHandler;
 

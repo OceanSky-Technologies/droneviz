@@ -2,7 +2,7 @@
   <div class="menu-wrapper" :class="{ open: isMenuOpen }">
     <CustomConfirmDialog />
 
-    <Button class="close-button" @click="toggleMenu">
+    <Button class="close-button" @click="closeMenu">
       <IcBaselineClose />
     </Button>
 

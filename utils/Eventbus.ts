@@ -6,7 +6,11 @@ export type Events = {
   // drone events
   droneConnected: Drone;
   droneDisconnected: Drone;
-  allDronesDisconnected: void;
+  allDronesDisconnected: undefined;
+  droneUnselected: undefined;
+
+  // menu events
+  "droneRightClickMenu:close": undefined;
 
   // cesium events
   cesiumLeftClick: Entity | undefined; // undefined: nothing selected

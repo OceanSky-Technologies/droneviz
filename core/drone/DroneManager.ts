@@ -36,6 +36,7 @@ export class DroneManager {
   unselectDrone() {
     this.selectedDroneRef.value = undefined;
     console.log("Unselected drone.");
+    eventBus.emit("droneUnselected");
   }
 
   get selectedDrone() {

@@ -5,7 +5,6 @@
       ref="menu"
       :key="animationKey"
       :style="popupStyle"
-      style="padding: 5px"
       class="popup-menu shadow-lg"
       @dblclick="handleDoubleClick"
     >
@@ -168,7 +167,7 @@ async function handleDoubleClick() {
   overflow: visible; /* Prevent clipping */
   border-radius: 10px;
   z-index: 1000;
-  padding: 10px;
+  padding: 5px;
   background-color: var(--color-gold);
   border-color: var(--p-content-border-color);
   transform: translate(-50%, -100%) translateY(-16px);
