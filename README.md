@@ -1,5 +1,7 @@
 # droneviz
 
+[![demo video](https://img.youtube.com/vi/y2LTxwpAq7o/0.jpg)](https://www.youtube.com/watch?v=y2LTxwpAq7o)
+
 ## Setup
 
 Clone this repository and update the [mavlink-ts](https://github.com/OceanSky-Technologies/mavlink-ts) submodule:
