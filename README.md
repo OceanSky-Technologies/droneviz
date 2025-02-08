@@ -6,12 +6,6 @@ Youtube demo:
 
 ## Setup
 
-Clone this repository and update the [mavlink-ts](https://github.com/OceanSky-Technologies/mavlink-ts) submodule:
-
-```bash
-git submodule update --init --recursive
-```
-
 Use [nvm](https://github.com/nvm-sh/nvm) to install the latest `node` LTS version:
 
 ```bash
@@ -24,8 +18,9 @@ nvm install lts
 nvm use lts
 ```
 
-Also install [pnpm](https://pnpm.io/installation) or [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-Then run
+Also install [pnpm](https://pnpm.io/installation).
+
+Then install all dependencies with
 
 ```bash
 pnpm install
@@ -33,10 +28,18 @@ pnpm install
 
 ## Build and test
 
-To build the project for production with `vite` use:
+Dev mode:
 
 ```bash
-pnpm build
+pnpm dev # browser-based
+pnpm tauri dev # with tauri window
+```
+
+Production build:
+
+```bash
+pnpm build # browser-based
+pnpm tauri build # with tauri window
 ```
 
 Run tests with:
