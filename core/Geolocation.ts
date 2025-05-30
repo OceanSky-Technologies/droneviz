@@ -118,7 +118,9 @@ export async function updateGeolocation(
     sphere = getCesiumViewer().entities.add({
       id: "ego-sphere",
       ellipsoid: {
-        material: Cesium.Color.fromCssColorString(Colors.GOLD).withAlpha(0.3),
+        material: Cesium.Color.fromCssColorString(Colors.DARK_BLUE).withAlpha(
+          0.3,
+        ),
       },
     });
   }

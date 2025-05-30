@@ -6,7 +6,11 @@ export type Events = {
   // drone events
   droneConnected: Drone;
   droneDisconnected: Drone;
-  allDronesDisconnected: void;
+  allDronesDisconnected: undefined;
+  droneUnselected: undefined;
+
+  // menu events
+  "droneRightClickMenu:close": undefined;
 
   // cesium events
   cesiumLeftClick: Entity | undefined; // undefined: nothing selected
@@ -15,6 +19,9 @@ export type Events = {
     cartesian3: Cartesian3;
     position: { x: number; y: number };
   };
+
+  // cache events
+  cacheCleared: undefined;
 };
 
 export const eventBus = mitt<Events>();

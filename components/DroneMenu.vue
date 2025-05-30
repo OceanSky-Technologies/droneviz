@@ -2,7 +2,7 @@
   <div class="menu-wrapper" :class="{ open: isMenuOpen }">
     <CustomConfirmDialog />
 
-    <Button class="close-button" @click="toggleMenu">
+    <Button class="close-button" @click="closeMenu">
       <IcBaselineClose />
     </Button>
 
@@ -116,7 +116,6 @@ async function arm() {
         }
 
         await new DroneCommands(droneManager.selectedDrone.value).arm();
-        showToast("Armed!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
           showToast(e.message, ToastSeverity.Error);
@@ -149,7 +148,6 @@ async function disarm() {
         }
 
         await new DroneCommands(droneManager.selectedDrone.value).disarm();
-        showToast("Disarmed!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
           showToast(e.message, ToastSeverity.Error);
@@ -216,7 +214,6 @@ async function takeoff() {
         }
 
         await new DroneCommands(droneManager.selectedDrone.value).takeoff();
-        showToast("Takeoff!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
           showToast(e.message, ToastSeverity.Error);
@@ -249,7 +246,6 @@ async function land() {
         }
 
         await new DroneCommands(droneManager.selectedDrone.value).land();
-        showToast("Landing!", ToastSeverity.Info);
       } catch (e) {
         if (e instanceof Error) {
           showToast(e.message, ToastSeverity.Error);
@@ -407,18 +403,24 @@ onUnmounted(() => {
 .menu-wrapper {
   position: fixed;
   bottom: 0; /* Element is positioned at the bottom but hidden via transform */
-  left: 0;
-  width: 100%;
-  transform: translateY(100%); /* Start off-screen */
+  left: 50%;
+  width: 900px;
+  height: 260px;
+  transform: translate(-50%, 100%); /* Start off-screen */
   transition: transform 0.2s ease-in-out; /* Smooth sliding effect */
   z-index: 1000;
   overflow: hidden;
   background-color: var(--p-content-background);
   border: 1px solid var(--p-content-border-color); /* Added solid border syntax */
+  border-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
 }
 
 .menu-wrapper.open {
-  transform: translateY(0); /* Slide in */
+  transform: translate(-50%, 0);
 }
 
 .menu {
@@ -429,6 +431,7 @@ onUnmounted(() => {
   gap: 10px;
   height: 100%;
   width: 100%;
+  padding: 10px;
 }
 
 .close-button {

@@ -1,7 +1,19 @@
 <template>
   <div class="flex flex-col items-center gap-3">
+    <p>
+      Drone altitude (MSL):
+      {{
+        selectedDrone
+          ? unref(selectedDrone.lastAltitude).altitudeAmsl.toFixed(2) + "m"
+          : "N/A"
+      }}
+    </p>
+
+    <hr />
+
     <div id="flyHereContainer">
       <ConfirmationButton
+        ref="flyHereButton"
         label="Fly here"
         disable-mouse-leave
         @click="flyTo"
@@ -13,8 +25,11 @@
       </ConfirmationButton>
     </div>
 
+    <hr />
+
     <div class="center grid w-56 grid-cols-2 gap-3">
       <ConfirmationButton
+        ref="orbitButton"
         label="Orbit"
         class="w-full"
         disable-mouse-leave
@@ -37,7 +52,7 @@
         <InputNumber
           id="orbitRadius"
           v-model="orbitRadius"
-          :min="1"
+          :min="10"
           :max="1000"
           :step="1"
           mode="decimal"
@@ -102,10 +117,12 @@ import { DroneCommands } from "@/core/drone/DroneCommand";
 
 /* ------------- Props & Emits ------------- */
 const props = defineProps<{
-  positionCartesian: Cesium.Cartesian3;
-  positionCartographic: Cesium.Cartographic;
+  positionCartesian: Cesium.Cartesian3 | undefined;
+  positionCartographic: Cesium.Cartographic | undefined;
 }>();
-const emit = defineEmits(["call-close", "position-update"]);
+
+const flyHereButton = ref<InstanceType<typeof ConfirmationButton> | null>(null);
+const orbitButton = ref<InstanceType<typeof ConfirmationButton> | null>(null);
 
 /* ------------- Refs & Constants ------------- */
 const orbitDirectionOptions = ref(["CW", "CCW"]);
@@ -119,7 +136,9 @@ const ringEntity = ref<Cesium.Entity | null>(null);
 
 /* Keep track of the target position chosen by the user */
 let targetPosition: Cesium.Cartesian3 | null = null;
-let targetAltitudeMsl: number | null = null; // meters
+
+// This makes sure the template sees changes when selectedDrone changes.
+const selectedDrone = computed(() => droneManager.selectedDrone.value);
 
 /* ------------- Lifecycle Expose ------------- */
 defineExpose({ clear });
@@ -136,11 +155,10 @@ function clear() {
     viewer.entities.remove(ringEntity.value);
     ringEntity.value = null;
   }
-}
 
-function cancel() {
-  clear();
-  emit("call-close");
+  // reset buttons
+  flyHereButton.value?.cancel();
+  orbitButton.value?.cancel();
 }
 
 /**
@@ -148,19 +166,24 @@ function cancel() {
  * If something is invalid, show an error toast and throw.
  */
 function preCheck() {
-  if (!droneManager.selectedDrone.value) {
+  if (!selectedDrone.value) {
     showToast("Drone is not connected", ToastSeverity.Error);
-    cancel();
+    clear();
     throw new Error("Drone is not connected");
   }
-  if (!droneManager.selectedDrone.value?.lastAltitude) {
+  if (!selectedDrone.value?.lastAltitude) {
     showToast("Drone altitude is unknown", ToastSeverity.Error);
-    cancel();
+    clear();
     throw new Error("Drone altitude is unknown");
   }
   if (!props.positionCartesian) {
     showToast("Invalid position", ToastSeverity.Error);
-    cancel();
+    clear();
+    throw new Error("Invalid position");
+  }
+  if (!props.positionCartographic) {
+    showToast("Invalid position", ToastSeverity.Error);
+    clear();
     throw new Error("Invalid position");
   }
   if (
@@ -169,13 +192,13 @@ function preCheck() {
     props.positionCartographic.height === 0
   ) {
     showToast("Invalid coordinates", ToastSeverity.Error);
-    cancel();
+    clear();
     throw new Error("Invalid coordinates");
   }
 
-  if (targetAltitudeMsl === null) {
+  if (!selectedDrone.value) {
     showToast("Invalid altitude", ToastSeverity.Error);
-    cancel();
+    clear();
     throw new Error("Invalid altitude");
   }
 }
@@ -190,11 +213,6 @@ function preCheck() {
 function flyToSelected() {
   clear();
   createOrUpdateLine();
-
-  console.log(targetPosition);
-  console.log(targetAltitudeMsl);
-  // Let parent know the menu should reposition to the newly created line's target
-  emit("position-update", targetPosition, targetAltitudeMsl);
 }
 
 /**
@@ -204,28 +222,28 @@ async function flyTo() {
   preCheck();
 
   try {
-    if (!droneManager.selectedDrone.value) {
+    if (!selectedDrone.value) {
       showToast("No drone selected", ToastSeverity.Error);
       return;
     }
 
-    await new DroneCommands(droneManager.selectedDrone.value).doReposition(
-      Cesium.Math.toDegrees(props.positionCartographic.latitude),
-      Cesium.Math.toDegrees(props.positionCartographic.longitude),
-      targetAltitudeMsl!,
+    await new DroneCommands(selectedDrone.value).doReposition(
+      Cesium.Math.toDegrees(props.positionCartographic!.latitude),
+      Cesium.Math.toDegrees(props.positionCartographic!.longitude),
+      unref(selectedDrone.value!.lastAltitude).altitudeAmsl,
     );
 
     showToast(
       `Repositioning drone:
-       - lat: ${formatCoordinate(Cesium.Math.toDegrees(props.positionCartographic.latitude))}
-       - lon: ${formatCoordinate(Cesium.Math.toDegrees(props.positionCartographic.longitude))}
-       - height: ${targetAltitudeMsl!.toFixed(2)}m (MSL)`,
+       - lat: ${formatCoordinate(Cesium.Math.toDegrees(props.positionCartographic!.latitude))}
+       - lon: ${formatCoordinate(Cesium.Math.toDegrees(props.positionCartographic!.longitude))}
+       - height: ${unref(selectedDrone.value!.lastAltitude).altitudeAmsl.toFixed(2)}m (MSL)`,
       ToastSeverity.Success,
     );
   } catch (e) {
     handleError(e);
   }
-  cancel();
+  clear();
 }
 
 /**
@@ -236,55 +254,42 @@ function createOrUpdateLine(skipClear = false) {
   if (!viewer) return;
   if (!skipClear) clear();
 
-  console.log(droneManager.selectedDrone.value!.lastGlobalPositionInt);
-
-  const globalPositionInt =
-    droneManager.selectedDrone.value?.lastGlobalPositionInt;
+  const globalPositionInt = unref(selectedDrone.value?.lastGlobalPositionInt);
   if (!globalPositionInt) return;
 
-  // PROBLEM: dronePos is undefined but droneManager.selectedDrone.value is not
-  const dronePos = droneManager.selectedDrone.value?.positionCartesian3;
+  // PROBLEM: dronePos is undefined but selectedDrone.value is not
+  const dronePos = unref(selectedDrone.value?.positionCartesian3);
   if (!dronePos) return;
 
-  const lat = Cesium.Math.toDegrees(props.positionCartographic.latitude);
-  const lon = Cesium.Math.toDegrees(props.positionCartographic.longitude);
+  const lat = Cesium.Math.toDegrees(props.positionCartographic!.latitude);
+  const lon = Cesium.Math.toDegrees(props.positionCartographic!.longitude);
 
   const droneCarto = Cesium.Cartographic.fromCartesian(dronePos);
 
   const currentDroneHeight = droneCarto.height;
 
-  // Match the drone's current altitude so the line is horizontal
-  targetAltitudeMsl = globalPositionInt.alt / 1000;
-
   targetPosition = Cesium.Cartesian3.fromDegrees(lon, lat, currentDroneHeight);
 
   lineEntity.value = viewer.entities.add({
     polyline: {
+      material: Cesium.Color.fromCssColorString(Colors.GOLD),
       positions: new Cesium.CallbackProperty(() => {
-        const currentDronePos =
-          droneManager.selectedDrone.value?.positionCartesian3;
+        const currentDronePos = unref(selectedDrone.value?.positionCartesian3);
         if (!currentDronePos) return [];
 
-        const cCarto =
-          Cesium.Ellipsoid.WGS84.cartesianToCartographic(currentDronePos);
-        const cDroneAlt = cCarto.height;
+        const droneCarto = Cesium.Cartographic.fromCartesian(currentDronePos);
         const droneCart3 = Cesium.Cartesian3.fromRadians(
-          cCarto.longitude,
-          cCarto.latitude,
-          cDroneAlt,
+          droneCarto.longitude,
+          droneCarto.latitude,
+          droneCarto.height,
         );
         const targetCart3 = Cesium.Cartesian3.fromDegrees(
           lon,
           lat,
-          currentDroneHeight,
+          droneCarto.height,
         );
         return [droneCart3, targetCart3];
       }, false),
-      material: new Cesium.PolylineDashMaterialProperty({
-        color: Cesium.Color.fromCssColorString(Colors.GOLD),
-        dashLength: 16,
-        dashPattern: 255, // 0xFF => 11111111 => effectively a dashed line
-      }),
       width: 1,
       clampToGround: false,
     },
@@ -301,7 +306,6 @@ function orbitSelected() {
   clear();
   createOrUpdateLine(true);
   createOrUpdateRing(true);
-  emit("position-update", targetPosition, targetAltitudeMsl);
 }
 
 /**
@@ -312,30 +316,30 @@ async function orbit() {
 
   if (!orbitRadius.value || orbitRadius.value < 0) {
     showToast("Invalid radius", ToastSeverity.Error);
-    cancel();
+    clear();
     return;
   }
   if (!orbitVelocity.value) {
     showToast("Invalid velocity", ToastSeverity.Error);
-    cancel();
+    clear();
     return;
   }
   if (!orbitDirectionValue.value) {
     showToast("Invalid orbit direction", ToastSeverity.Error);
-    cancel();
+    clear();
     return;
   }
 
   try {
-    if (!droneManager.selectedDrone.value) {
+    if (!selectedDrone.value) {
       showToast("No drone selected", ToastSeverity.Error);
       return;
     }
 
-    await new DroneCommands(droneManager.selectedDrone.value).doOrbit(
-      Cesium.Math.toDegrees(props.positionCartographic.latitude),
-      Cesium.Math.toDegrees(props.positionCartographic.longitude),
-      targetAltitudeMsl!,
+    await new DroneCommands(selectedDrone.value).doOrbit(
+      Cesium.Math.toDegrees(props.positionCartographic!.latitude),
+      Cesium.Math.toDegrees(props.positionCartographic!.longitude),
+      unref(selectedDrone.value!.lastAltitude).altitudeAmsl,
       orbitDirectionValue.value === "CCW"
         ? -1 * orbitRadius.value
         : orbitRadius.value,
@@ -346,9 +350,9 @@ async function orbit() {
 
     showToast(
       `Orbiting:
-       - lat: ${formatCoordinate(Cesium.Math.toDegrees(props.positionCartographic.latitude))}
-       - lon: ${formatCoordinate(Cesium.Math.toDegrees(props.positionCartographic.longitude))}
-       - height: ${targetAltitudeMsl!.toFixed(2)}m (MSL)
+       - lat: ${formatCoordinate(Cesium.Math.toDegrees(props.positionCartographic!.latitude))}
+       - lon: ${formatCoordinate(Cesium.Math.toDegrees(props.positionCartographic!.longitude))}
+       - height: ${unref(selectedDrone.value!.lastAltitude).altitudeAmsl.toFixed(2)}m (MSL)
        - dir: ${orbitDirectionValue.value}
        - radius: ${orbitRadius.value}m
        - velocity: ${orbitVelocity.value} km/h`,
@@ -357,7 +361,7 @@ async function orbit() {
   } catch (e) {
     handleError(e);
   }
-  cancel();
+  clear();
 }
 
 /**
@@ -367,22 +371,18 @@ function createOrUpdateRing(skipClear = false) {
   const viewer = getCesiumViewer();
   if (!viewer) return;
   if (!skipClear) clear();
-  const dronePos = droneManager.selectedDrone.value?.positionCartesian3;
+  const dronePos = unref(selectedDrone.value?.positionCartesian3);
   if (!dronePos) return;
 
-  const globalPositionInt =
-    droneManager.selectedDrone.value?.lastGlobalPositionInt;
+  const globalPositionInt = unref(selectedDrone.value?.lastGlobalPositionInt);
   if (!globalPositionInt) return;
 
-  const lat = Cesium.Math.toDegrees(props.positionCartographic.latitude);
-  const lon = Cesium.Math.toDegrees(props.positionCartographic.longitude);
+  const lat = Cesium.Math.toDegrees(props.positionCartographic!.latitude);
+  const lon = Cesium.Math.toDegrees(props.positionCartographic!.longitude);
 
   const droneCarto = Cesium.Cartographic.fromCartesian(dronePos);
 
   const currentDroneHeight = droneCarto.height;
-
-  // Match the drone's current altitude so the line is horizontal
-  targetAltitudeMsl = globalPositionInt.alt / 1000;
 
   targetPosition = Cesium.Cartesian3.fromDegrees(lon, lat, currentDroneHeight);
 
@@ -390,7 +390,14 @@ function createOrUpdateRing(skipClear = false) {
     position: targetPosition,
     ellipse: {
       // Keep ring at the drone's altitude
-      height: currentDroneHeight,
+      height: new Cesium.CallbackProperty(() => {
+        const currentDronePos = unref(selectedDrone.value?.positionCartesian3);
+        if (!currentDronePos) return [];
+
+        const droneCarto = Cesium.Cartographic.fromCartesian(currentDronePos);
+        return droneCarto.height;
+      }, false),
+
       // Use the same orbitRadius for both axes to make a circle
       semiMajorAxis: new Cesium.CallbackProperty(
         () => orbitRadius.value,
@@ -404,7 +411,7 @@ function createOrUpdateRing(skipClear = false) {
 
       outline: true,
       outlineColor: Cesium.Color.fromCssColorString(Colors.GOLD),
-      outlineWidth: 3,
+      outlineWidth: 2,
 
       // Keep geometry's rotation = 0; we'll rotate the texture instead
       rotation: 0,
@@ -444,7 +451,22 @@ function handleError(e: unknown) {
   } else {
     showToast(`Unknown error: ${JSON.stringify(e)}`, ToastSeverity.Error);
   }
+  clear();
 }
+
+onMounted(() => {
+  eventBus.on("droneDisconnected", close);
+  eventBus.on("allDronesDisconnected", close);
+  eventBus.on("droneUnselected", clear);
+  eventBus.on("droneRightClickMenu:close", clear);
+});
+
+onBeforeUnmount(() => {
+  eventBus.off("droneDisconnected", close);
+  eventBus.off("allDronesDisconnected", close);
+  eventBus.off("droneUnselected", clear);
+  eventBus.off("droneRightClickMenu:close", clear);
+});
 </script>
 
 <style lang="postcss">

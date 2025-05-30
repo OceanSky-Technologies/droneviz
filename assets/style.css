@@ -149,3 +149,11 @@ svg {
 .p-toast-message-content {
   align-items: center !important;
 }
+
+hr {
+  width: 100%;
+  border: none; /* Remove default styling */
+  border-top: 1px solid var(--p-content-color); /* Make it visible */
+  height: 0px; /* Prevent height issues */
+  margin: 5px;
+}

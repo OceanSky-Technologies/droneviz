@@ -14,7 +14,6 @@ import { droneManager } from "~/core/drone/DroneManager";
 import { eventBus } from "@/utils/Eventbus";
 import { getPreferredEntity } from "@/utils/EntityUtils";
 import { Colors } from "@/utils/Colors";
-import { showToast, ToastSeverity } from "@/utils/ToastService";
 
 let mouseClickHandler: ScreenSpaceEventHandler;
 
@@ -67,7 +66,7 @@ async function mouseClickListener(
   ) {
     console.log("Unselected all entities (no valid pick).");
     selectedEntityHighlighter.clear();
-    droneManager.selectedDrone.value = undefined;
+    droneManager.unselectDrone();
     eventBus.emit("cesiumLeftClick", undefined);
     updateRequestRenderMode();
     return;
@@ -86,7 +85,7 @@ async function mouseClickListener(
   if (sysId === undefined || compId === undefined) {
     console.log("Clicked entity is not a recognized Drone entity:", entity);
     selectedEntityHighlighter.clear();
-    droneManager.selectedDrone.value = undefined;
+    droneManager.unselectDrone();
     eventBus.emit("cesiumLeftClick", undefined);
     updateRequestRenderMode();
     return;
@@ -100,20 +99,13 @@ async function mouseClickListener(
 
     // Update the DroneManager selection
     droneManager.selectDrone(sysId, compId);
-    // Also set the selectedDrone.value in case you want direct reference
-    droneManager.selectedDrone.value = droneManager.allDrones.find(
-      (d) => d.sysId === sysId && d.compId === compId,
-    );
-
-    // Show toast
-    showToast(`Selected drone ${sysId}-${compId}`, ToastSeverity.Success);
 
     eventBus.emit("cesiumLeftClick", entity);
   } else {
     // UNSELECT the drone
     console.log(`Unselected entity: ${entity.id ?? "unknown ID"}`);
     selectedEntityHighlighter.remove(entity);
-    droneManager.selectedDrone.value = undefined;
+    droneManager.unselectDrone();
 
     eventBus.emit("cesiumLeftClick", entity);
   }

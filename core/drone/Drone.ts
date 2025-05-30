@@ -11,6 +11,8 @@ import {
   Ping,
   GpsRawInt,
   Altitude,
+  ExtendedSysState,
+  MavLandedState,
 } from "mavlink-mappings/dist/lib/common";
 
 import type { MavlinkMessageInterface } from "@/types/MessageInterface";
@@ -37,6 +39,7 @@ export class Drone {
   public lastAltitude = ref<Altitude>(new Altitude());
   public lastHeartbeat = ref<Heartbeat>(new Heartbeat());
   public lastGpsRawInt = ref<GpsRawInt>(new GpsRawInt());
+  public lastExtSysState = ref<ExtendedSysState>(new ExtendedSysState());
 
   public entity: Cesium.Entity;
   private heartbeatInterval?: ReturnType<typeof setInterval>;
@@ -90,8 +93,60 @@ export class Drone {
     } else if (msgid === Altitude.MSG_ID) {
       const alt = Object.assign(new Altitude(), data);
       this.lastAltitude.value = alt;
+    } else if (msgid === ExtendedSysState.MSG_ID) {
+      const extSysState = Object.assign(new ExtendedSysState(), data);
+
+      if (
+        this.lastExtSysState &&
+        this.lastExtSysState.value.landedState !== extSysState.landedState
+      ) {
+        if (extSysState.landedState === MavLandedState.LANDING) {
+          showToast(
+            `Drone sysId=${this.sysId}, compId=${this.compId} is landing.`,
+            ToastSeverity.Success,
+          );
+        } else if (extSysState.landedState === MavLandedState.TAKEOFF) {
+          showToast(
+            `Drone sysId=${this.sysId}, compId=${this.compId} is taking off.`,
+            ToastSeverity.Success,
+          );
+        } else if (extSysState.landedState === MavLandedState.IN_AIR) {
+          showToast(
+            `Drone sysId=${this.sysId}, compId=${this.compId} takeoff completed.`,
+            ToastSeverity.Success,
+          );
+        } else if (extSysState.landedState === MavLandedState.ON_GROUND) {
+          showToast(
+            `Drone sysId=${this.sysId}, compId=${this.compId} has landed.`,
+            ToastSeverity.Success,
+          );
+        }
+      }
+
+      this.lastExtSysState.value = extSysState;
     } else if (msgid === Heartbeat.MSG_ID) {
       const hb = Object.assign(new Heartbeat(), data);
+
+      if (this.lastHeartbeat.value) {
+        if (
+          !(this.lastHeartbeat.value.baseMode & MavModeFlag.SAFETY_ARMED) &&
+          hb.baseMode & MavModeFlag.SAFETY_ARMED
+        ) {
+          showToast(
+            `Drone sysId=${this.sysId}, compId=${this.compId} is armed.`,
+            ToastSeverity.Success,
+          );
+        } else if (
+          this.lastHeartbeat.value.baseMode & MavModeFlag.SAFETY_ARMED &&
+          !(hb.baseMode & MavModeFlag.SAFETY_ARMED)
+        ) {
+          showToast(
+            `Drone sysId=${this.sysId}, compId=${this.compId} is disarmed.`,
+            ToastSeverity.Success,
+          );
+        }
+      }
+
       this.lastHeartbeat.value = hb;
     } else if (msgid === GpsRawInt.MSG_ID) {
       const gps = Object.assign(new GpsRawInt(), data);

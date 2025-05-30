@@ -359,7 +359,7 @@ async function startRecording() {
       if (event.data.size > 0 && writableStream) {
         try {
           await writableStream.write(event.data);
-        } catch (error) {
+        } catch {
           // if the stream has been closed, skip the write
         }
       }

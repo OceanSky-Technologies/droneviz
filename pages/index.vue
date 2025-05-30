@@ -47,6 +47,8 @@
     </div>
 
     <!-- Right Click Menu -->
+    <DroneRightClickPin />
+
     <DroneRightClickMenu />
 
     <!-- Main Toolbar -->
@@ -82,7 +84,8 @@ import {
 import CesiumViewer from "@/components/CesiumViewer.vue";
 import DarkModeToggle from "@/components/DarkModeToggle.vue";
 import DroneMenu from "@/components/DroneMenu.vue";
-import DroneRightClickMenu from "@/components/DroneRightClickMenu.vue";
+import DroneRightClickPin from "~/components/DroneRightClickPin.vue";
+import DroneRightClickMenu from "~/components/DroneRightClickMenu.vue";
 import MainToolbar from "@/components/MainToolbar.vue";
 import GeolocationButton from "@/components/GeolocationButton.vue";
 import NetworkIndicator from "@/components/NetworkIndicator.vue";
@@ -117,7 +120,9 @@ async function handleConnectDisconnect() {
       try {
         await droneManager.disconnect(true); // force
         droneManager.destroyAllDrones();
-      } catch (e) {}
+      } catch {
+        /* empty */
+      }
 
       showToast("Connecting...", ToastSeverity.Info);
       connectedIconRef.value?.$el.startRotation(true);

@@ -1,12 +1,10 @@
 # droneviz
 
+Youtube demo:
+
+[![demo video](http://img.youtube.com/vi/9HVz24XpJFk/0.jpg)](https://www.youtube.com/watch?v=9HVz24XpJFk)
+
 ## Setup
-
-Clone this repository and update the [mavlink-ts](https://github.com/OceanSky-Technologies/mavlink-ts) submodule:
-
-```bash
-git submodule update --init --recursive
-```
 
 Use [nvm](https://github.com/nvm-sh/nvm) to install the latest `node` LTS version:
 
@@ -20,8 +18,9 @@ nvm install lts
 nvm use lts
 ```
 
-Also install [pnpm](https://pnpm.io/installation) or [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-Then run
+Also install [pnpm](https://pnpm.io/installation).
+
+Then install all dependencies with
 
 ```bash
 pnpm install
@@ -29,10 +28,18 @@ pnpm install
 
 ## Build and test
 
-To build the project for production with `vite` use:
+Dev mode:
 
 ```bash
-pnpm build
+pnpm dev # browser-based
+pnpm tauri dev # with tauri window
+```
+
+Production build:
+
+```bash
+pnpm build # browser-based
+pnpm tauri build # with tauri window
 ```
 
 Run tests with:
@@ -77,7 +84,7 @@ Alternatively, the `vscode` configuration comes with the `Testing` tab fully set
 
 ## Development
 
-Icons: Use svgs (material outline rounded) from <https://icones.js.org/collection/material-symbols>.
+Icons: Use Material icons from <https://icon-sets.iconify.design/>.
 
 `mavproxy.exe --out=udp:127.0.0.1:14550`
 

@@ -1,3 +1,4 @@
+import mitt from "mitt";
 import { showToast, ToastSeverity } from "./ToastService";
 
 function checkIfCacheAPIIsSupported() {
@@ -16,6 +17,8 @@ export async function clearCache(): Promise<void> {
   const cacheNames = await caches.keys(); // Retrieve all cache names
   await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
   showToast("Cache cleared.", ToastSeverity.Success);
+
+  eventBus.emit("cacheCleared");
 }
 
 export interface CacheStatistics {

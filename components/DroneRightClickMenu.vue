@@ -1,333 +1,209 @@
+<!-- DroneRightClickMenu.vue -->
 <template>
-  <transition name="fade-slide">
-    <div
-      v-show="visible"
-      ref="menu"
-      :key="animationKey"
-      :class="['popup-menu', isRepositioning ? 'popup-menu-repositioning' : '']"
-      :style="popupStyle"
-      @click.self="closeMenu"
-    >
+  <!-- Slide in from the right side -->
+  <transition name="slide-from-right">
+    <div v-if="visible" class="drone-actions-panel">
+      <Button class="close-button" @click="close">
+        <IcBaselineClose />
+      </Button>
+
       <!-- Content -->
       <div>
         <p>
+          Lat:
           {{
-            formatCoordinate(
-              Cesium.Math.toDegrees(positionCartographic.latitude),
-            )
-          }},
-          {{
-            formatCoordinate(
-              Cesium.Math.toDegrees(positionCartographic.longitude),
-            )
+            positionCartographic
+              ? formatCoordinate(
+                  Cesium.Math.toDegrees(positionCartographic.latitude),
+                )
+              : "N/A"
           }}
         </p>
         <p>
-          Altitude (MSL):
-          {{ altitudeMsl.toFixed(2) }}m
+          Lon:
+          {{
+            positionCartographic
+              ? formatCoordinate(
+                  Cesium.Math.toDegrees(positionCartographic.longitude),
+                )
+              : "N/A"
+          }}
+        </p>
+        <p>
+          Alt (MSL):
+          {{
+            positionAltitudeMsl ? positionAltitudeMsl.toFixed(2) + "m" : "N/A"
+          }}
         </p>
       </div>
 
-      <!-- Arrow -->
-      <div class="popup-arrow"></div>
-
-      <DroneRightClickMenuActions
-        ref="droneRightClickMenuActionsRef"
-        :position-cartesian="positionCartesian"
-        :position-cartographic="positionCartographic"
-        @position-update="overlayPositionTempChange"
-        @call-close="closeMenu"
-      />
+      <!-- The actual DroneRightClickMenuActions content here -->
+      <transition name="collapse-fade">
+        <div v-if="droneManager.selectedDrone.value" class="actions-collapse">
+          <DroneRightClickMenuActions
+            v-if="droneManager.selectedDrone.value"
+            ref="droneRightClickMenuActions"
+            :position-cartesian="positionCartesian"
+            :position-cartographic="positionCartographic"
+          />
+        </div>
+      </transition>
     </div>
   </transition>
 </template>
 
 <script lang="ts" setup>
-/* ------------- Imports ------------- */
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from "vue";
-import type { CSSProperties } from "vue";
-
-import * as Cesium from "cesium";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import { eventBus } from "@/utils/Eventbus";
+import * as Cesium from "cesium";
 import DroneRightClickMenuActions from "@/components/DroneRightClickMenuActions.vue";
-import { droneManager } from "~/core/drone/DroneManager";
-import {
-  getCesiumViewer,
-  waitUntilCesiumInitialized,
-} from "./CesiumViewerWrapper";
 import { formatCoordinate } from "~/utils/CoordinateUtils";
-import { AnimationFrameScheduler } from "~/utils/AnimationFrameScheduler";
 import * as egm96 from "egm96-universal";
+import { droneManager } from "~/core/drone/DroneManager";
+import IcBaselineClose from "~icons/ic/baseline-close";
 
-/* ------------- State ------------- */
+// Local state to show/hide the panel
 const visible = ref(false);
-const menu = ref<HTMLDivElement | null>(null);
 
-/** Tracks the current on-screen pixel position of the menu */
-const menuPosition = reactive({ x: 0, y: 0 });
-
-/**
- * When we want a 1-second slide from old to new position,
- * we set this to `true` for that duration
- */
-const isRepositioning = ref(false);
-
-const positionCartesian = ref<Cesium.Cartesian3>(Cesium.Cartesian3.ZERO);
-const positionCartographic = ref<Cesium.Cartographic>(Cesium.Cartographic.ZERO);
-const altitudeMsl = ref(0);
-
-const droneRightClickMenuActionsRef = ref<InstanceType<
+const droneRightClickMenuActions = ref<InstanceType<
   typeof DroneRightClickMenuActions
 > | null>(null);
 
-/** Used to force the transition if the menu is already open */
-const animationKey = ref(0);
+// We store the same values that are passed from DroneRightClickMenu
+const positionCartesian: Ref<Cesium.Cartesian3 | undefined> = ref(undefined);
+const positionCartographic: Ref<Cesium.Cartographic | undefined> =
+  ref(undefined);
+const positionAltitudeMsl: Ref<number | undefined> = ref(undefined);
 
-/** We'll store camera move listeners for easy teardown. */
-const cesiumListenerCbs: Array<() => void> = [];
-
-/* ------------- Computed ------------- */
-const popupStyle = computed<CSSProperties>(() => ({
-  top: menuPosition.y + "px",
-  left: menuPosition.x + "px",
-}));
-
-/** Animation frame scheduler to smoothly track camera moves. */
-const animationFrameScheduler = new AnimationFrameScheduler(async () => {
-  if (visible.value) updateOverlayPosition();
-});
-
-/* ------------- Lifecycle ------------- */
-onMounted(async () => {
-  // Listen for external events that should open/close the menu
-  eventBus.on("cesiumRightClick", handleCesiumRightClick);
-  eventBus.on("cesiumLeftClick", closeMenu);
-  eventBus.on("droneDisconnected", closeMenu);
-  eventBus.on("allDronesDisconnected", closeMenu);
-
-  await waitUntilCesiumInitialized();
-  const viewer = getCesiumViewer();
-  if (!viewer) return;
-
-  // Add camera move listeners to keep the menu pinned as we move the camera
-  cesiumListenerCbs.push(
-    viewer.camera.changed.addEventListener(() => {
-      if (visible.value) updateOverlayPosition();
-    }),
-  );
-  cesiumListenerCbs.push(
-    viewer.camera.moveStart.addEventListener(() => {
-      animationFrameScheduler.start();
-    }),
-  );
-  cesiumListenerCbs.push(
-    viewer.camera.moveEnd.addEventListener(() => {
-      animationFrameScheduler.stop();
-      updateOverlayPosition();
-    }),
-  );
-});
-
-onBeforeUnmount(() => {
-  // Remove eventBus listeners
-  eventBus.off("cesiumRightClick", handleCesiumRightClick);
-  eventBus.off("cesiumLeftClick", closeMenu);
-  eventBus.off("droneDisconnected", closeMenu);
-  eventBus.off("allDronesDisconnected", closeMenu);
-
-  // Remove Cesium camera listeners
-  while (cesiumListenerCbs.length) {
-    const cb = cesiumListenerCbs.pop();
-    if (cb) cb();
-  }
-
-  animationFrameScheduler.stop();
-});
-
-/* ------------- Methods ------------- */
-function showMenu() {
-  // Clear any temporary flight trajectories in the child component
-  droneRightClickMenuActionsRef.value?.clear();
-
+function show() {
   visible.value = true;
-  animationKey.value++;
+
+  // clear on open ensures that if it's already open and we right-click again,
+  // the menu is refreshed
+  droneRightClickMenuActions.value?.clear();
 }
 
-function closeMenu() {
+function handleCloseSignal() {
   visible.value = false;
-  droneRightClickMenuActionsRef.value?.clear();
 }
 
-/**
- * This is called via an eventBus signal on right-click in Cesium.
- * We only show the menu if there's a selected drone and no entity is under the cursor.
- */
+function close() {
+  visible.value = false;
+
+  droneRightClickMenuActions.value?.clear();
+
+  eventBus.emit("droneRightClickMenu:close");
+}
+
 function handleCesiumRightClick({
-  entity,
   cartesian3,
 }: {
   entity?: Cesium.Entity;
   cartesian3: Cesium.Cartesian3;
 }) {
-  // If no drone is selected, do nothing.
-  if (!droneManager.selectedDrone.value) return;
+  positionCartesian.value = cartesian3;
+  positionCartographic.value = Cesium.Cartographic.fromCartesian(cartesian3);
 
-  // If the user right-clicked empty space (no entity), show the menu
-  if (!entity) {
-    positionCartesian.value = cartesian3;
-    positionCartographic.value = Cesium.Cartographic.fromCartesian(cartesian3);
-
-    // get MSL altitude of the terrain
-    altitudeMsl.value = egm96.meanSeaLevel(
-      Cesium.Math.toDegrees(positionCartographic.value.latitude),
-      Cesium.Math.toDegrees(positionCartographic.value.longitude),
-    );
-
-    updateOverlayPosition();
-    showMenu();
-  } else {
-    // Right-clicked some entity => close the menu
-    closeMenu();
-  }
-}
-
-/**
- * Compute the screen (pixel) position of our current "world" location.
- * If it's off-screen, we hide it via offscreen coords for cleanliness.
- */
-function updateOverlayPosition() {
-  const viewer = getCesiumViewer();
-  if (!viewer || !menu.value || !positionCartesian.value) return;
-
-  const screenPosition = Cesium.SceneTransforms.worldToWindowCoordinates(
-    viewer.scene,
-    positionCartesian.value,
+  // get MSL altitude of the terrain
+  positionAltitudeMsl.value = egm96.ellipsoidToEgm96(
+    Cesium.Math.toDegrees(positionCartographic.value.latitude),
+    Cesium.Math.toDegrees(positionCartographic.value.longitude),
+    positionCartographic.value.height,
   );
 
-  if (screenPosition) {
-    menuPosition.x = screenPosition.x;
-    menuPosition.y = screenPosition.y;
-  } else {
-    // If off-screen, push it out of sight
-    menuPosition.x = -9999;
-    menuPosition.y = -9999;
-  }
+  show();
 }
 
-/**
- * Called by the child component (DroneRightClickMenuActions) when it wants
- * to reposition the menu to a new cartographic coordinate in a *smooth* way.
- */
-function overlayPositionTempChange(
-  newPosition: Cesium.Cartesian3,
-  targetAltitudeMsl: number,
-) {
-  // Update the altitude
-  altitudeMsl.value = targetAltitudeMsl;
+onMounted(() => {
+  eventBus.on("cesiumRightClick", handleCesiumRightClick);
+  eventBus.on("droneDisconnected", close);
+  eventBus.on("allDronesDisconnected", close);
+  eventBus.on("droneRightClickMenu:close", handleCloseSignal);
+});
 
-  // Convert old pixel location to a local variable for reference
-  const oldX = menuPosition.x;
-  const oldY = menuPosition.y;
-
-  // Update the underlying cartographic references
-  positionCartesian.value = newPosition;
-  positionCartographic.value = Cesium.Cartographic.fromCartesian(newPosition);
-
-  // First do a *hard* recompute of the final new position
-  updateOverlayPosition();
-  const finalX = menuPosition.x;
-  const finalY = menuPosition.y;
-
-  // Move us back to the old position *immediately* so that a CSS transition
-  // can animate from old -> new over 1s.
-  menuPosition.x = oldX;
-  menuPosition.y = oldY;
-
-  // Apply the "repositioning" class for 1 second
-  isRepositioning.value = true;
-  setTimeout(() => {
-    isRepositioning.value = false;
-  }, 1000);
-
-  // Let Vue update the DOM. The final X/Y will be set on next tick,
-  // and because `.popup-menu-repositioning` is active,
-  // it will animate from oldX/oldY to finalX/finalY.
-  nextTick(() => {
-    menuPosition.x = finalX;
-    menuPosition.y = finalY;
-  });
-}
+onBeforeUnmount(() => {
+  eventBus.off("cesiumRightClick", handleCesiumRightClick);
+  eventBus.off("droneDisconnected", close);
+  eventBus.off("allDronesDisconnected", close);
+  eventBus.off("droneRightClickMenu:close", handleCloseSignal);
+});
 </script>
 
 <style scoped lang="postcss">
-.popup-menu {
-  pointer-events: none;
-  position: absolute;
-  text-align: center;
-  white-space: nowrap;
-  min-width: max-content;
-  min-height: fit-content;
-  overflow: visible;
-  border-radius: 10px;
-  z-index: 1000;
-  padding: 10px;
+.drone-actions-panel {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  width: 250px;
+  transform: translateY(-50%); /* Start off-screen */
   background-color: var(--p-content-background);
-  border: 1px solid var(--p-content-border-color);
-
+  border: 1px solid var(--p-content-border-color); /* Added solid border syntax */
+  border-right: 0;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  z-index: 1000;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-
-  /* Keep transitions for fade-in/out from the <transition name="fade-slide"> block. */
-  transform: translate(-50%, -100%) translateY(-16px);
-  transform-origin: top center;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 
-/* When we specifically want to animate top/left changes in 1s. */
-.popup-menu-repositioning {
+/* Transition to slide in/out from the right side */
+.slide-from-right-enter-active,
+.slide-from-right-leave-active {
   transition:
-    top 0.2s ease,
-    left 0.2s ease;
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+.slide-from-right-enter-from {
+  transform: translate(100%, -50%);
+  opacity: 0;
+}
+.slide-from-right-leave-to {
+  transform: translate(100%, -50%);
+  opacity: 0;
 }
 
-/* If you want a more dramatic "slide," you can also animate `transform`. */
-
-/* Allow click events on child elements like buttons or inputs */
-.popup-menu :is(button, input, select, textarea, a) {
-  pointer-events: auto;
-}
-
-/* Arrow styles */
-.popup-arrow {
+.close-button {
+  /* background: none; */
+  border: none;
+  font-size: 15px;
+  cursor: pointer;
   position: absolute;
-  bottom: -16px;
-  left: calc(50% - 10px);
-  width: 0;
-  height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-top: 17px solid white;
-  z-index: 999;
+  top: 5px;
+  right: 5px;
+  width: 30px;
+  height: 30px;
 }
 
-/* Adjust dark mode arrow */
-.dark .popup-arrow {
-  border-top-color: var(--p-content-background);
+/* collapse the actions panel when no drone is selected */
+.actions-collapse {
+  /* Hide overflow so we can "clip" by max-height */
+  overflow: hidden;
 }
 
-/* Transition classes for fade-slide */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
+/* Run the transitions over 0.3s, adjust to taste */
+.collapse-fade-enter-active,
+.collapse-fade-leave-active {
   transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
+    max-height 0.3s ease,
+    opacity 0.3s ease;
 }
-.fade-slide-enter-from {
+
+/* Starting/ending states */
+.collapse-fade-enter-from,
+.collapse-fade-leave-to {
+  max-height: 0;
   opacity: 0;
-  transform: translate(-50%, -150%);
 }
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -150%);
+.collapse-fade-enter-to,
+.collapse-fade-leave-from {
+  /* Pick a max-height safely larger than your content's height */
+  max-height: 200px;
+  opacity: 1;
 }
 </style>

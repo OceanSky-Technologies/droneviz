@@ -1,8 +1,8 @@
-// DroneManager.ts
 import { ref } from "vue";
 import { MavlinkConnection } from "./MavlinkConnection";
 import type { Drone } from "./Drone";
-import { UdpOptions } from "../../types/DroneConnectionOptions";
+import { UdpOptions } from "@/types/DroneConnectionOptions";
+import { ToastSeverity } from "@/utils/ToastService";
 
 export class DroneManager {
   public connection: MavlinkConnection;
@@ -17,18 +17,30 @@ export class DroneManager {
   }
 
   /** The currently selected Drone instance, or undefined. */
-  public selectedDrone: Ref<Drone | undefined> = ref(undefined);
+  private selectedDroneRef: Ref<Drone | undefined> = ref(undefined);
 
   /** Helper to select a specific Drone by sysId/compId. */
   selectDrone(sysId: number, compId: number) {
     const drone = this.connection.getDrone(sysId, compId);
     if (drone) {
-      this.selectedDrone.value = drone;
-      console.log(`Selected drone sysId=${sysId}, compId=${compId}`);
+      this.selectedDroneRef.value = drone;
+      showToast(`Selected drone ${sysId}-${compId}`, ToastSeverity.Success);
     } else {
-      console.warn(`No drone found with sysId=${sysId}, compId=${compId}`);
-      this.selectedDrone.value = undefined;
+      showToast(
+        `No drone found with sysId=${sysId}, compId=${compId}`,
+        ToastSeverity.Error,
+      );
     }
+  }
+
+  unselectDrone() {
+    this.selectedDroneRef.value = undefined;
+    console.log("Unselected drone.");
+    eventBus.emit("droneUnselected");
+  }
+
+  get selectedDrone() {
+    return this.selectedDroneRef;
   }
 
   /** Connect once. */
@@ -47,10 +59,14 @@ export class DroneManager {
    */
   destroyAllDrones() {
     this.connection.destroyAllDrones();
-    this.selectedDrone.value = undefined;
+    this.unselectDrone();
   }
 }
 
 export const droneManager = new DroneManager(
-  new MavlinkConnection(new UdpOptions()),
+  //new MavlinkConnection(new UdpOptions()), // REAL DRONE
+
+  new MavlinkConnection(
+    new UdpOptions(true, "udp4", "0.0.0.0", 14550, "192.168.144.143", 18570),
+  ), // SIMULATOR
 );

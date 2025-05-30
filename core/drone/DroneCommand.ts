@@ -96,7 +96,7 @@ export class DroneCommands {
     cmd._param1 = 1; // arm
     cmd._param2 = force ? 21196 : 0;
     await this.expectCommandLongAck(cmd, "Arming failed");
-    showToast("Drone armed.", ToastSeverity.Success);
+    showToast("Drone arming initiated.", ToastSeverity.Info);
   }
 
   public async disarm(force = false): Promise<void> {
@@ -105,7 +105,7 @@ export class DroneCommands {
     cmd._param1 = 0; // disarm
     cmd._param2 = force ? 21196 : 0;
     await this.expectCommandLongAck(cmd, "Disarming failed");
-    showToast("Drone disarmed.", ToastSeverity.Success);
+    showToast("Drone disarming initiated.", ToastSeverity.Info);
   }
 
   public async takeoff(): Promise<void> {
@@ -119,7 +119,7 @@ export class DroneCommands {
     cmd._param6 = NaN;
     cmd._param7 = NaN;
     await this.expectCommandLongAck(cmd, "Takeoff failed");
-    showToast("Takeoff initiated.", ToastSeverity.Success);
+    showToast("Takeoff initiated.", ToastSeverity.Info);
   }
 
   public async land(): Promise<void> {
@@ -133,7 +133,7 @@ export class DroneCommands {
     cmd._param6 = NaN;
     cmd._param7 = NaN;
     await this.expectCommandLongAck(cmd, "Landing failed");
-    showToast("Landing initiated.", ToastSeverity.Success);
+    showToast("Landing initiated.", ToastSeverity.Info);
   }
 
   public async doReposition(latDeg: number, lonDeg: number, altMeters: number) {

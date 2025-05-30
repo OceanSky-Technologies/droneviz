@@ -14,12 +14,13 @@ defineProps({
 });
 
 const emit = defineEmits(["click", "select"]);
+defineExpose({ cancel });
 
 const isConfirming = ref(false);
 const containerRef = ref<HTMLElement | null>(null);
 
 // Handlers
-const handleClick = (): void => {
+function handleClick(): void {
   if (isConfirming.value) {
     // Perform the action and reset
     emit("click");
@@ -29,13 +30,13 @@ const handleClick = (): void => {
     // Switch to confirmation state
     isConfirming.value = true;
   }
-};
+}
 
-const handleCancel = (): void => {
+function cancel(): void {
   isConfirming.value = false;
-};
+}
 
-const handleOutsideClick = (event: MouseEvent): void => {
+function handleOutsideClick(event: MouseEvent): void {
   // If we don't have a container, do nothing
   if (!containerRef.value) return;
 
@@ -52,8 +53,8 @@ const handleOutsideClick = (event: MouseEvent): void => {
   }
 
   // Otherwise, handle cancel
-  handleCancel();
-};
+  cancel();
+}
 
 onMounted(() => {
   document.addEventListener("click", handleOutsideClick);
@@ -72,7 +73,7 @@ onUnmounted(() => {
       :severity="isConfirming ? 'warn' : 'primary'"
       class="confirmation-button"
       @click="handleClick"
-      @mouseleave="!disableMouseLeave && handleCancel"
+      @mouseleave="!disableMouseLeave && cancel"
     >
       <template #default>
         <div class="button-content">

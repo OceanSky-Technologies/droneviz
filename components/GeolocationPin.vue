@@ -3,9 +3,8 @@
     <div
       v-show="visible"
       ref="menu"
-      :style="popupStyle"
       :key="animationKey"
-      style="padding: 5px"
+      :style="popupStyle"
       class="popup-menu shadow-lg"
       @dblclick="handleDoubleClick"
     >
@@ -62,7 +61,7 @@ const popupStyle = computed<CSSProperties>(() => ({
 let positionCartesian: Cartesian3;
 
 // remove callbacks for cesium listeners (destroyed when component is unmounted)
-let cesiumListenerCbs: (() => void)[] = [];
+const cesiumListenerCbs: (() => void)[] = [];
 
 function updateOverlayPosition() {
   if (!getCesiumViewer() || !menu.value || !positionCartesian) return;
@@ -168,8 +167,8 @@ async function handleDoubleClick() {
   overflow: visible; /* Prevent clipping */
   border-radius: 10px;
   z-index: 1000;
-  padding: 10px;
-  background-color: var(--color-gold);
+  padding: 5px;
+  background-color: var(--color-dark-blue);
   border-color: var(--p-content-border-color);
   transform: translate(-50%, -100%) translateY(-16px);
   transform-origin: bottom center;
@@ -190,7 +189,7 @@ async function handleDoubleClick() {
   border-right: 10px solid transparent;
   border-top: 17px solid white;
   z-index: 999;
-  border-top-color: var(--color-gold);
+  border-top-color: var(--color-dark-blue);
 }
 
 /* Enable Interaction with Specific Elements */

@@ -4,8 +4,8 @@
       <div class="icon-container">
         <IcOutlinePersonPinCircle
           ref="geolocationIconRef"
-          class="icon"
           v-rotate
+          class="icon"
         />
       </div>
     </div>
