@@ -1,6 +1,7 @@
 import * as Cesium from "cesium";
 import { egm96ToEllipsoid } from "egm96-universal";
-import type { GlobalPositionInt } from "mavlink-mappings/dist/lib/common";
+// GlobalPositionInt (msgid 33) moved from common to standard in mavlink-mappings 1.0.22
+import type { GlobalPositionInt } from "mavlink-mappings/dist/lib/standard";
 import {
   getCesiumViewer,
   googleTilesEnabled,

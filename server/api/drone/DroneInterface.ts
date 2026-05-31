@@ -38,6 +38,11 @@ export class DroneInterface {
   private signatureKey?: Buffer;
   private clients = new Map<string, { address: string; port: number }>();
 
+  // PX4 SITL (and many autopilots) only stream telemetry once the GCS has sent
+  // them a packet first, so they learn where to send. Until a packet arrives we
+  // periodically poke the configured target with a heartbeat to kick it off.
+  private wakeupInterval?: ReturnType<typeof setInterval>;
+
   eventStream?: EventStream;
 
   /**
@@ -79,6 +84,7 @@ export class DroneInterface {
    *
    */
   async disconnect() {
+    this.stopWakeup();
     this.clients.clear();
 
     this.mavlinkPacketParser?.removeAllListeners();
@@ -248,6 +254,9 @@ export class DroneInterface {
         });
       }
 
+      // Got a packet -> the autopilot now knows us, stop poking.
+      this.stopWakeup();
+
       this.readStream!.push(msg);
     });
 
@@ -259,6 +268,94 @@ export class DroneInterface {
       console.error(`Server error: ${err}`);
       this.disconnect();
     });
+
+    // Kick the autopilot so it starts streaming to us (see wakeupInterval doc).
+    this.startWakeup();
+  }
+
+  /**
+   * Periodically send a GCS heartbeat to the configured UDP target so the
+   * autopilot learns our address:port and begins streaming. Stops once any
+   * packet is received (see the "message" handler) or on disconnect.
+   */
+  private startWakeup() {
+    const opt = this.connectionOption as UdpOptions;
+    const targetIp = opt.targetIp;
+    const targetPort = opt.targetPort;
+
+    // Nothing to poke if we don't know where to send the initial packet.
+    if (!targetIp || !targetPort) return;
+
+    const sendPoke = () => {
+      const port = this.port as dgram.Socket | undefined;
+      if (!port) return;
+      const frame = this.buildGcsHeartbeatFrame();
+      port.send(frame, targetPort, targetIp, (err) => {
+        if (err) console.error(`Wakeup poke failed: ${err.message}`);
+      });
+    };
+
+    this.stopWakeup();
+    sendPoke(); // immediate first poke
+    this.wakeupInterval = setInterval(sendPoke, 1000);
+  }
+
+  /**
+   * Stop sending wakeup pokes.
+   */
+  private stopWakeup() {
+    if (this.wakeupInterval) {
+      clearInterval(this.wakeupInterval);
+      this.wakeupInterval = undefined;
+    }
+  }
+
+  /**
+   * Build a minimal MAVLink v2 HEARTBEAT frame (type=GCS) used only to make the
+   * autopilot start streaming. Hand-built so it does not depend on a writable
+   * stream or learned clients (which don't exist yet at connect time).
+   * @returns {Buffer} Encoded MAVLink v2 heartbeat frame.
+   */
+  private buildGcsHeartbeatFrame(): Buffer {
+    // payload: type(1)=6 GCS, autopilot(1)=8 INVALID, base_mode(1)=0,
+    // custom_mode(4)=0, system_status(1)=0, mavlink_version(1)=3
+    const payload = Buffer.from([0x06, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03]);
+    const header = Buffer.from([
+      0xfd, // STX (v2)
+      payload.length, // len
+      0x00, // incompat flags
+      0x00, // compat flags
+      0x00, // seq
+      0xff, // sysid (GCS = 255)
+      0xbe, // compid (190)
+      0x00, // msgid low (HEARTBEAT = 0)
+      0x00, // msgid mid
+      0x00, // msgid high
+    ]);
+    const frameNoCrc = Buffer.concat([header, payload]);
+
+    // CRC-16/MCRF4XX over everything after STX, plus the message CRC_EXTRA (50 for HEARTBEAT).
+    const crc = this.mavlinkCrc(frameNoCrc.subarray(1), 50);
+    const crcBuf = Buffer.from([crc & 0xff, (crc >> 8) & 0xff]);
+    return Buffer.concat([frameNoCrc, crcBuf]);
+  }
+
+  /**
+   * Compute MAVLink CRC-16/MCRF4XX with the trailing CRC_EXTRA byte.
+   * @param {Buffer} data Bytes from len..end of payload (excludes STX).
+   * @param {number} crcExtra Message-specific CRC_EXTRA seed byte.
+   * @returns {number} 16-bit checksum.
+   */
+  private mavlinkCrc(data: Buffer, crcExtra: number): number {
+    let crc = 0xffff;
+    const accumulate = (b: number) => {
+      let tmp = b ^ (crc & 0xff);
+      tmp = (tmp ^ (tmp << 4)) & 0xff;
+      crc = ((crc >> 8) ^ (tmp << 8) ^ (tmp << 3) ^ (tmp >> 4)) & 0xffff;
+    };
+    for (const b of data) accumulate(b);
+    accumulate(crcExtra);
+    return crc;
   }
 
   /**

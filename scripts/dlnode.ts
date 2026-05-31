@@ -9,7 +9,7 @@ import { URL } from "whatwg-url";
 import path from "path";
 import unzipper from "unzipper";
 import zlib from "zlib";
-import tar from "tar";
+import * as tar from "tar";
 import { rimraf } from "rimraf";
 
 const nodeVersion = "v23.0.0";

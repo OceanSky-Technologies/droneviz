@@ -6,7 +6,6 @@ import { settings } from "@/utils/Settings"; // If you have a global settings st
 
 // MAVLink imports
 import {
-  GlobalPositionInt,
   Attitude,
   Ping,
   GpsRawInt,
@@ -14,6 +13,8 @@ import {
   ExtendedSysState,
   MavLandedState,
 } from "mavlink-mappings/dist/lib/common";
+// GlobalPositionInt (msgid 33) moved from common to standard in mavlink-mappings 1.0.22
+import { GlobalPositionInt } from "mavlink-mappings/dist/lib/standard";
 
 import type { MavlinkMessageInterface } from "@/types/MessageInterface";
 import { getCesiumViewer } from "@/components/CesiumViewerWrapper";

@@ -154,7 +154,7 @@ export async function initGoogleTileset(tilesetMock?: Cesium3DTileset) {
   const tileset = await createGooglePhotorealistic3DTileset(
     { key: googleApiKey },
     {
-      //maximumScreenSpaceError: 8, // quality
+      maximumScreenSpaceError: settings.googleTilesMaximumScreenSpaceError.value, // lower = sharper, more bandwidth/VRAM/GPU
       preloadFlightDestinations: true,
       showCreditsOnScreen: true,
       projectTo2D: true,

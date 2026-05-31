@@ -51,6 +51,9 @@
 
     <DroneRightClickMenu />
 
+    <!-- Left-side detected drones panel -->
+    <DroneList />
+
     <!-- Main Toolbar -->
     <MainToolbar v-if="cesiumInitialized" id="mainToolbar" />
 
@@ -84,6 +87,7 @@ import {
 import CesiumViewer from "@/components/CesiumViewer.vue";
 import DarkModeToggle from "@/components/DarkModeToggle.vue";
 import DroneMenu from "@/components/DroneMenu.vue";
+import DroneList from "@/components/DroneList.vue";
 import DroneRightClickPin from "~/components/DroneRightClickPin.vue";
 import DroneRightClickMenu from "~/components/DroneRightClickMenu.vue";
 import MainToolbar from "@/components/MainToolbar.vue";

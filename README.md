@@ -28,6 +28,8 @@ pnpm install
 
 ## Build and test
 
+In CesiumViewerWrapper.ts set the `Ion.defaultAccessToken` from your Cesium account.
+
 Dev mode:
 
 ```bash
@@ -102,3 +104,19 @@ MSL / Geoid to Cesium:
 `egm96.egm96ToEllipsoid()`
 
 https://support.virtual-surveyor.com/support/solutions/articles/1000261349-the-difference-between-ellipsoidal-geoid-and-orthometric-elevations-
+
+# Real/simulated drone
+
+in DroneManager.ts select either the real or a simulated drone:
+
+```
+export const droneManager = new DroneManager(
+  //new MavlinkConnection(new UdpOptions()), // REAL DRONE
+
+  new MavlinkConnection(
+    new UdpOptions(true, "udp4", "0.0.0.0", 14540, "192.168.144.143", 18570),
+  ), // SIMULATOR
+);
+```
+
+(auto-detection is not implemented...)

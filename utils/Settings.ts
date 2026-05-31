@@ -14,6 +14,7 @@ export enum DarkMode {
 class Settings {
   google3DTilesEnabled: Ref<boolean>; // costs quota
   googleApiKey: Ref<string | undefined>; // empty because this will use Cesium's API key which doesn't cost anything.
+  googleTilesMaximumScreenSpaceError: Ref<number>; // lower = sharper 3D tiles but more bandwidth/VRAM/GPU. Cesium default: 16
   bingEnabled: Ref<boolean>; // costs quota
   tileCacheSize: Ref<number>;
   sceneMode: Ref<SceneMode>;
@@ -34,6 +35,7 @@ class Settings {
   constructor() {
     this.google3DTilesEnabled = ref(true);
     this.googleApiKey = ref(undefined);
+    this.googleTilesMaximumScreenSpaceError = ref(8);
     this.bingEnabled = ref(true);
     this.tileCacheSize = ref(1000);
     this.sceneMode = ref(SceneMode.SCENE3D);

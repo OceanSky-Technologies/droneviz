@@ -87,7 +87,7 @@ export class MavlinkConnection {
     };
 
     this.isConnected = true;
-    showToast("Connected (single SSE).", ToastSeverity.Success);
+    //showToast("Connected (single SSE).", ToastSeverity.Success);
   }
 
   /**
